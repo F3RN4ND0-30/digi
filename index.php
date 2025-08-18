@@ -1,3 +1,4 @@
 <?php
-header('location: frontend/login.php');
-?>
+// index.php
+header('Location: frontend/login.php');
+exit;
