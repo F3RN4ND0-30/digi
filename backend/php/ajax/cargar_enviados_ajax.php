@@ -2,13 +2,17 @@
 session_start();
 require '../../db/conexion.php';
 
+header('Content-Type: application/json');
+
 $area_id = $_SESSION['dg_area_id'] ?? null;
 
 if (!$area_id) {
-    exit("❌ Área no definida.");
+    echo json_encode([]);
+    exit;
 }
 
-$sql = "SELECT m.IdMovimientoDocumento, d.NumeroDocumento, d.Asunto, e.Estado, a.Nombre AS AreaDestino, m.Recibido, m.Observacion
+$sql = "SELECT m.IdMovimientoDocumento, m.FechaMovimiento, d.NumeroDocumento, d.Asunto, e.Estado, 
+               a.Nombre AS AreaDestino, m.Recibido, m.Observacion
         FROM movimientodocumento m
         INNER JOIN documentos d ON m.IdDocumentos = d.IdDocumentos
         INNER JOIN estadodocumento e ON d.IdEstadoDocumento = e.IdEstadoDocumento
@@ -20,15 +24,5 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute([$area_id]);
 $documentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-foreach ($documentos as $doc) {
-    $estadoRecepcion = $doc['Recibido'] ? "✅ Recibido" : "⌛ Pendiente";
-
-    echo "<tr>
-            <td>" . htmlspecialchars($doc['NumeroDocumento']) . "</td>
-            <td>" . htmlspecialchars($doc['Asunto']) . "</td>
-            <td>" . htmlspecialchars($doc['Estado']) . "</td>
-            <td>" . htmlspecialchars($doc['AreaDestino']) . "</td>
-            <td>" . htmlspecialchars($doc['Observacion']) . "</td>
-            <td>" . htmlspecialchars($estadoRecepcion) . "</td>
-        </tr>";
-}
+echo json_encode($documentos);
+exit;

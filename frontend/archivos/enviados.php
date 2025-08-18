@@ -8,25 +8,11 @@ if (!isset($_SESSION['dg_id'])) {
 
 require '../../backend/db/conexion.php';
 
-// Obtener ID de área desde sesión
 $area_id = $_SESSION['dg_area_id'] ?? null;
 
 if (!$area_id) {
     die("❌ No se pudo determinar el área del usuario.");
 }
-
-// Obtener documentos enviados por el área actual (ÁreaOrigen)
-$sql = "SELECT m.IdMovimientoDocumento, d.NumeroDocumento, d.Asunto, e.Estado, a.Nombre AS area_destino, m.Recibido, m.Observacion
-        FROM movimientodocumento m
-        INNER JOIN documentos d ON m.IdDocumentos = d.IdDocumentos
-        INNER JOIN estadodocumento e ON d.IdEstadoDocumento = e.IdEstadoDocumento
-        INNER JOIN areas a ON m.AreaDestino = a.IdAreas
-        WHERE m.AreaOrigen = ?
-        ORDER BY m.IdMovimientoDocumento DESC";
-
-$stmt = $pdo->prepare($sql);
-$stmt->execute([$area_id]);
-$documentos_enviados = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -37,17 +23,15 @@ $documentos_enviados = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Documentos Enviados</title>
 
-    <!-- Estilos personalizados -->
     <link rel="stylesheet" href="../../backend/css/sisvis/escritorio.css" />
-    <link rel="stylesheet" href="../../backend/css/recepcion/recepcion.css" />
+    <link rel="stylesheet" href="../../backend/css/archivos/enviados.css" />
 
-    <!-- Fuente moderna -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 
     <!-- DataTables -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 
-    <!-- jQuery primero -->
+    <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <!-- DataTables JS -->
@@ -63,6 +47,7 @@ $documentos_enviados = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <a href="../sisvis/escritorio.php">🏠 Inicio</a>
                 <a href="../archivos/recepcion.php">📥 Recepción</a>
                 <a href="../archivos/enviados.php">📤 Enviados</a>
+                <a href="../archivos/reenviar.php">📤 Reenviar</a>
                 <a href="#">⚙️ Configuración</a>
                 <a href="../logout.php">🚪 Cerrar sesión</a>
             </nav>
@@ -70,66 +55,75 @@ $documentos_enviados = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         <main class="contenido-principal">
             <div class="tarjeta">
-                <h2 style="margin-bottom: 1rem;">📤 Documentos Enviados</h2>
+                <h2>📤 Documentos Enviados</h2>
 
-                <?php if (empty($documentos_enviados)) : ?>
-                    <p>No has enviado documentos desde tu área aún.</p>
-                <?php else : ?>
-                    <div style="overflow-x: auto;">
-                        <table id="tablaEnviados" class="table table-striped" style="width:100%">
-                            <thead>
-                                <tr>
-                                    <th>Número</th>
-                                    <th>Asunto</th>
-                                    <th>Estado</th>
-                                    <th>Área Destino</th>
-                                    <th>Observación</th>
-                                    <th>Recibido</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tablaEnviadosBody">
-                                <?php foreach ($documentos_enviados as $doc) : ?>
-                                    <tr>
-                                        <td><?= htmlspecialchars($doc['NumeroDocumento']) ?></td>
-                                        <td><?= htmlspecialchars($doc['Asunto']) ?></td>
-                                        <td><?= htmlspecialchars($doc['Estado']) ?></td>
-                                        <td><?= htmlspecialchars($doc['area_destino']) ?></td>
-                                        <td><?= htmlspecialchars($doc['Observacion']) ?></td>
-                                        <td><?= $doc['Recibido'] ? '✅ Sí' : '⏳ No' ?></td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                <?php endif; ?>
+                <div style="overflow-x: auto;">
+                    <table id="tablaEnviados" class="table table-striped" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>N°</th>
+                                <th>Número/Nombre</th>
+                                <th>Asunto</th>
+                                <th>Estado</th>
+                                <th>Fecha</th>
+                                <th>Área Destino</th>
+                                <th>Observación</th>
+                                <th>Recibido</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
         </main>
     </div>
 
     <script>
-        function actualizarEnviados() {
-            $.ajax({
-                url: '../../backend/php/ajax/cargar_enviados_ajax.php',
-                method: 'GET',
-                success: function(data) {
-                    $('#tablaEnviadosBody').html(data);
-                },
-                error: function() {
-                    console.error("Error al actualizar la tabla de enviados.");
-                }
-            });
-        }
-
-        setInterval(actualizarEnviados, 10000); // cada 10 segundos
-    </script>
-
-    <script>
         $(document).ready(function() {
-            $('#tablaEnviados').DataTable({
+            const tabla = $('#tablaEnviados').DataTable({
+                ajax: {
+                    url: '../../backend/php/ajax/cargar_enviados_ajax.php',
+                    dataSrc: ''
+                },
+                columns: [{
+                        data: 'IdMovimientoDocumento'
+                    },
+                    {
+                        data: 'NumeroDocumento'
+                    },
+                    {
+                        data: 'Asunto'
+                    },
+                    {
+                        data: 'Estado'
+                    },
+                    {
+                        data: 'FechaMovimiento'
+                    },
+                    {
+                        data: 'AreaDestino'
+                    },
+                    {
+                        data: 'Observacion'
+                    },
+                    {
+                        data: 'Recibido',
+                        render: function(data) {
+                            return data == 1 ? '✅ Sí' : '⏳ No';
+                        }
+                    }
+                ],
+                order: [
+                    [0, 'desc']
+                ],
                 language: {
                     url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
                 }
             });
+
+            setInterval(() => {
+                tabla.ajax.reload(null, false);
+            }, 10000);
         });
     </script>
 </body>

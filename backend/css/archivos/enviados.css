@@ -33,7 +33,7 @@ body {
 /* Column widths */
 .tarjeta table th:nth-child(1),
 .tarjeta table td:nth-child(1) {
-    width: 25%;
+    width: 5%;
 }
 
 .tarjeta table th:nth-child(2),
@@ -43,21 +43,26 @@ body {
 
 .tarjeta table th:nth-child(3),
 .tarjeta table td:nth-child(3) {
-    width: 12%;
+    width: 25%;
 }
 
 .tarjeta table th:nth-child(4),
 .tarjeta table td:nth-child(4) {
-    width: 35%;
+    width: 12%;
 }
 
 .tarjeta table th:nth-child(5),
 .tarjeta table td:nth-child(5) {
-    width: 35%;
+    width: 15%;
 }
 
 .tarjeta table th:nth-child(6),
 .tarjeta table td:nth-child(6) {
+    width: 25%;
+}
+
+.tarjeta table th:nth-child(7),
+.tarjeta table td:nth-child(7) {
     width: 11%;
 }
 

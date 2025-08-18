@@ -48,6 +48,7 @@ unset($_SESSION['mensaje']);
                 <a href="../sisvis/escritorio.php">🏠 Inicio</a>
                 <a href="../archivos/recepcion.php">📊 recepción</a>
                 <a href="../archivos/enviados.php">📤 Enviados</a>
+                <a href="../archivos/reenviar.php">📤 Reenviar</a>
                 <a href="#">⚙️ Configuración</a>
                 <a href="../logout.php">🚪 Cerrar sesión</a>
             </nav>
