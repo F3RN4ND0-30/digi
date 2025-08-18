@@ -20,6 +20,8 @@ if (!isset($_SESSION['usuario'])) {
 
     <p><a href="../logout.php">Cerrar sesión</a></p>
 
+    <p><a href="/digi/backend/php/archivos/registrar_archivo.php">registrar</a></p>
+
     <!-- Aquí irá el listado de documentos, derivaciones, etc. -->
 </body>
 
