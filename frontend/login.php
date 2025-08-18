@@ -27,11 +27,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$bloqueado) {
     if (empty($usuario) || empty($clave)) {
         $error = "Por favor, complete todos los campos.";
     } else {
-        $stmt = $pdo->prepare("SELECT u.*, a.Nombre AS nombre_area 
-                               FROM usuarios u 
-                               INNER JOIN areas a ON u.IdAreas = a.IdAreas 
-                               WHERE u.Usuario = :usuario AND u.Estado = 1 
-                               LIMIT 1");
+        $stmt = $pdo->prepare("SELECT u.*, a.IdAreas, a.Nombre AS nombre_area 
+    FROM usuarios u 
+    INNER JOIN areas a ON u.IdAreas = a.IdAreas 
+    WHERE u.Usuario = :usuario AND u.Estado = 1 
+    LIMIT 1");
         $stmt->execute(['usuario' => $usuario]);
         $usuarioDB = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -44,6 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$bloqueado) {
 
             $_SESSION['dg_usuario'] = $usuarioDB['Usuario'];
             $_SESSION['dg_area'] = $usuarioDB['nombre_area'];
+            $_SESSION['dg_area_id'] = $usuarioDB['IdAreas'];
             $_SESSION['dg_nombre'] = trim($nombre . ' ' . $apellido);
             $_SESSION['dg_rol'] = $usuarioDB['IdRol'];
             $_SESSION['dg_id'] = $usuarioDB['IdUsuarios'];
