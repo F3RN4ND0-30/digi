@@ -1,0 +1,194 @@
+/* ===== VARIABLES Y RESET ===== */
+:root {
+    --fondo: #f4f7fc;
+    --fondo-tarjeta: #ffffff;
+    --color-primario: #6c5ce7;
+    /* morado principal */
+    --color-primario-hover: #5a4bd1;
+    /* morado más oscuro al hover */
+    --texto-primario: #333333;
+    --texto-secundario: #666666;
+    --color-borde: #dddddd;
+    --sombra: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --sombra-ligera: 0 2px 6px rgba(0, 0, 0, 0.05);
+    --transicion: all 0.3s ease;
+    --radio-borde: 10px;
+    --familia-fuente: 'Segoe UI', sans-serif;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: var(--familia-fuente);
+}
+
+/* ===== FONDO ANIMADO ===== */
+body {
+    background: linear-gradient(-45deg, #6c5ce7, #a29bfe, #81ecec, #74b9ff);
+    background-size: 400% 400%;
+    animation: moverFondo 20s ease infinite;
+    color: var(--texto-primario);
+}
+
+/* Animación del fondo */
+@keyframes moverFondo {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* ===== LAYOUT GENERAL ===== */
+.layout-escritorio {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* ===== SIDEBAR COMO NAV SUPERIOR ===== */
+.sidebar {
+    width: 100%;
+    background: var(--color-primario);
+    color: white;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: var(--sombra-ligera);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.sidebar h2 {
+    font-size: 1.4rem;
+}
+
+.sidebar nav {
+    display: flex;
+    gap: 1rem;
+}
+
+.sidebar nav a {
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radio-borde);
+    text-decoration: none;
+    transition: var(--transicion);
+    transform: scale(1);
+}
+
+.sidebar nav a:hover {
+    background-color: var(--color-primario-hover);
+    transform: scale(1.05);
+}
+
+/* ===== BARRA SUPERIOR (secundaria) ===== */
+.barra-superior {
+    background: var(--fondo-tarjeta);
+    padding: 1rem 2rem;
+    border-bottom: 1px solid var(--color-borde);
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    box-shadow: var(--sombra-ligera);
+}
+
+/* ===== CONTENIDO PRINCIPAL ===== */
+.contenido-principal {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ===== PANEL DE TARJETAS ===== */
+.paneles {
+    padding: 2rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+}
+
+/* ===== TARJETAS ===== */
+.tarjeta {
+    background: var(--fondo-tarjeta);
+    padding: 1.5rem;
+    border-radius: var(--radio-borde);
+    box-shadow: var(--sombra-ligera);
+    border: 1px solid var(--color-borde);
+    transition: var(--transicion);
+    animation: fadeInUp 0.8s ease forwards;
+    opacity: 0;
+}
+
+/* Animación secuencial para tarjetas */
+.paneles .tarjeta:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.paneles .tarjeta:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.paneles .tarjeta:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.paneles .tarjeta:nth-child(4) {
+    animation-delay: 0.4s;
+}
+
+.tarjeta:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: var(--sombra);
+}
+
+.tarjeta h3 {
+    font-size: 1.2rem;
+    color: var(--color-primario);
+    margin-bottom: 0.5rem;
+}
+
+.tarjeta p {
+    color: var(--texto-secundario);
+    font-size: 0.95rem;
+}
+
+/* Animación fade-in desde abajo */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .sidebar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .sidebar nav {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .barra-superior {
+        justify-content: center;
+    }
+}
