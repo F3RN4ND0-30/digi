@@ -1,0 +1,87 @@
+.tarjeta {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin: 2rem auto;
+    max-width: 1500px;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+}
+
+.tarjeta table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.tarjeta table thead {
+    background-color: #6c63ff;
+    color: #fff;
+}
+
+.tarjeta table th,
+.tarjeta table td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border: 1px solid #e0e0e0;
+    vertical-align: middle;
+}
+
+/* Column widths */
+.tarjeta table th:nth-child(1),
+.tarjeta table td:nth-child(1) {
+    width: 25%;
+}
+
+.tarjeta table th:nth-child(2),
+.tarjeta table td:nth-child(2) {
+    width: 25%;
+}
+
+.tarjeta table th:nth-child(3),
+.tarjeta table td:nth-child(3) {
+    width: 12%;
+}
+
+.tarjeta table th:nth-child(4),
+.tarjeta table td:nth-child(4) {
+    width: 35%;
+}
+
+.tarjeta table th:nth-child(5),
+.tarjeta table td:nth-child(5) {
+    width: 35%;
+}
+
+.tarjeta table th:nth-child(6),
+.tarjeta table td:nth-child(6) {
+    width: 11%;
+}
+
+/* Zebra striping */
+.tarjeta table tbody tr:nth-child(even) {
+    background-color: #f8f8ff;
+}
+
+.tarjeta table tbody tr:hover {
+    background-color: #eef;
+}
+
+/* Botón */
+.tarjeta form button {
+    background-color: #6c63ff;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.tarjeta form button:hover {
+    background-color: #5548e0;
+}
