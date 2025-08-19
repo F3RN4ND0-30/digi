@@ -6,6 +6,7 @@ if (!isset($_SESSION['dg_id'])) {
 }
 
 require '../../db/conexion.php';
+require_once '../util/notificaciones_util.php';
 
 $documento_id = $_POST['id_documento'] ?? null;
 $nueva_area = $_POST['nueva_area'] ?? null;
@@ -33,6 +34,17 @@ $stmt->execute([$documento_id, $area_origen, $nueva_area, $observacion]);
 // Cambiar estado del documento a 2 (ej: 'Enviado')
 $update = $pdo->prepare("UPDATE documentos SET IdEstadoDocumento = 2 WHERE IdDocumentos = ?");
 $update->execute([$documento_id]);
+
+// Obtener el número del documento
+$consulta = $pdo->prepare("SELECT NumeroDocumento FROM documentos WHERE IdDocumentos = ?");
+$consulta->execute([$documento_id]);
+$numero_documento = $consulta->fetchColumn();
+
+// Crear la notificación para la nueva área destino
+if ($numero_documento) {
+    $mensaje = "Has recibido un documento reenviado: N° $numero_documento";
+    crearNotificacion($pdo, $nueva_area, $mensaje);
+}
 
 header("Location: ../../../frontend/archivos/reenviar.php");
 exit;

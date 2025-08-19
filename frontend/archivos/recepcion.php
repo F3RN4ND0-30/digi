@@ -59,6 +59,8 @@ $documentos_pendientes = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <!-- DataTables JS -->
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+    <script src="../../backend/js/notificaciones.js"></script>
 </head>
 
 <body>
@@ -70,7 +72,18 @@ $documentos_pendientes = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <a href="../archivos/recepcion.php">📥 Recepción</a>
                 <a href="../archivos/enviados.php">📤 Enviados</a>
                 <a href="../archivos/reenviar.php">📤 Reenviar</a>
+                <a href="../seguimiento/busqueda.php">📤 Buscar</a>
                 <a href="#">⚙️ Configuración</a>
+                <!-- En tu navbar o barra lateral -->
+                <div id="notificaciones" style="position: relative; cursor: pointer;">
+                    🔔 <span id="contador" style="color: red; font-weight: bold;"></span>
+                </div>
+
+                <!-- Contenedor para la lista -->
+                <div id="listaNotificaciones" style="display: none; position: absolute; background: #fff; color:black; border: 1px solid #ccc; max-height: 300px; overflow-y: auto; padding: 10px; width: 300px; z-index: 100;">
+                    <strong>Notificaciones:</strong>
+                    <ul id="contenedorNotificaciones" style="list-style: none; padding-left: 0;"></ul>
+                </div>
                 <a href="../logout.php">🚪 Cerrar sesión</a>
             </nav>
         </aside>

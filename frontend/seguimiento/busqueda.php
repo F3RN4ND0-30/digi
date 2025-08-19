@@ -7,12 +7,6 @@ if (!isset($_SESSION['dg_id'])) {
 }
 
 require '../../backend/db/conexion.php';
-
-$area_id = $_SESSION['dg_area_id'] ?? null;
-
-if (!$area_id) {
-    die("❌ No se pudo determinar el área del usuario.");
-}
 ?>
 
 <!DOCTYPE html>
@@ -20,12 +14,10 @@ if (!$area_id) {
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Documentos Enviados</title>
+    <title>Buscar Documentos Enviados</title>
 
-    <link rel="stylesheet" href="../../backend/css/sisvis/escritorio.css" />
-    <link rel="stylesheet" href="../../backend/css/archivos/enviados.css" />
-
+    <link rel="stylesheet" href="../../backend/css/sisvis/escritorio.css">
+    <link rel="stylesheet" href="../../backend/css/seguimiento/busqueda.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 
     <!-- DataTables -->
@@ -56,7 +48,7 @@ if (!$area_id) {
                     🔔 <span id="contador" style="color: red; font-weight: bold;"></span>
                 </div>
 
-                <div id="listaNotificaciones" style="display: none; position: absolute; background: #fff; color:black; border: 1px solid #ccc; max-height: 300px; overflow-y: auto; padding: 10px; width: 350px; z-index: 100;">
+                <div id="listaNotificaciones" style="display: none; position: absolute; background: #fff; color:black; border: 1px solid #ccc; max-height: 300px; overflow-y: auto; padding: 10px; width: 300px; z-index: 100;">
                     <strong>Notificaciones:</strong>
                     <ul id="contenedorNotificaciones" style="list-style: none; padding-left: 0;"></ul>
                 </div>
@@ -65,76 +57,74 @@ if (!$area_id) {
         </aside>
 
         <main class="contenido-principal">
-            <div class="tarjeta">
-                <h2>📤 Documentos Enviados</h2>
+            <div class="container">
+                <h2>🔎 Buscar Documentos Enviados</h2>
 
-                <div style="overflow-x: auto;">
-                    <table id="tablaEnviados" class="table table-striped" style="width:100%">
-                        <thead>
-                            <tr>
-                                <th>N°</th>
-                                <th>Número/Nombre</th>
-                                <th>Asunto</th>
-                                <th>Estado</th>
-                                <th>Fecha</th>
-                                <th>Área Destino</th>
-                                <th>Observación</th>
-                                <th>Recibido</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
+                <input type="text" id="inputBusqueda" placeholder="Ingrese número o asunto del documento...">
+
+                <table id="tablaResultados" class="table table-striped" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>Número Documento</th>
+                            <th>Asunto</th>
+                            <th>Área Destino</th>
+                            <th>Fecha Movimiento</th>
+                            <th>Estado Recepción</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
             </div>
         </main>
     </div>
 
     <script>
         $(document).ready(function() {
-            const tabla = $('#tablaEnviados').DataTable({
+            var tabla = $('#tablaResultados').DataTable({
                 ajax: {
-                    url: '../../backend/php/ajax/cargar_enviados_ajax.php',
-                    dataSrc: ''
+                    url: '../../backend/php/ajax/buscar_documentos_ajax.php',
+                    dataSrc: '',
+                    data: function(d) {
+                        d.busqueda = $('#inputBusqueda').val();
+                    }
                 },
                 columns: [{
-                        data: 'IdMovimientoDocumento'
-                    },
-                    {
                         data: 'NumeroDocumento'
                     },
                     {
                         data: 'Asunto'
                     },
                     {
-                        data: 'Estado'
+                        data: 'AreaDestino'
                     },
                     {
                         data: 'FechaMovimiento'
                     },
                     {
-                        data: 'AreaDestino'
-                    },
-                    {
-                        data: 'Observacion'
-                    },
-                    {
                         data: 'Recibido',
                         render: function(data) {
-                            return data == 1 ? '✅ Sí' : '⏳ No';
+                            return data == 1 ? '✅ Recibido' : '⏳ Pendiente';
+                        }
+                    },
+                    {
+                        data: null,
+                        render: function(data, type, row) {
+                            return `<a href="../../backend/php/archivos/ver_trazabilidad.php?id_documentos=${row.IdDocumentos}" class="btn-seguimiento" target="_blank">🔎 Ver seguimiento</a>`;
                         }
                     }
                 ],
-                order: [
-                    [0, 'desc']
-                ],
                 language: {
                     url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
-                }
+                },
+                order: [
+                    [3, 'desc']
+                ]
             });
 
-            setInterval(() => {
-                tabla.ajax.reload(null, false);
-            }, 10000);
+            $('#inputBusqueda').on('keyup', function() {
+                tabla.ajax.reload();
+            });
         });
     </script>
 </body>
