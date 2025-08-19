@@ -36,122 +36,209 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
 
 <head>
     <meta charset="UTF-8">
-    <title>Reenvío de Documentos</title>
-    <link rel="stylesheet" href="../../backend/css/sisvis/escritorio.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reenvío de Documentos - DIGI MPP</title>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- CSS del Navbar -->
+    <link rel="stylesheet" href="../../backend/css/navbar/navbar.css" />
+
+    <!-- CSS de Reenvío -->
     <link rel="stylesheet" href="../../backend/css/archivos/reenviados.css" />
 
-    <!-- Fuente moderna -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-
-    <!-- DataTables -->
+    <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
-
-    <!-- jQuery primero -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-    <!-- DataTables JS -->
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
     <!-- Selectize CSS -->
     <link href="https://cdn.jsdelivr.net/npm/selectize@0.15.2/dist/css/selectize.default.min.css" rel="stylesheet" />
-
-    <!-- Selectize JS -->
-    <script src="https://cdn.jsdelivr.net/npm/selectize@0.15.2/dist/js/selectize.min.js"></script>
 
     <script src="../../backend/js/notificaciones.js"></script>
 </head>
 
 <body>
     <div class="layout-escritorio">
-        <aside class="sidebar">
-            <h2>DIGI - MPP</h2>
-            <nav>
-                <a href="../sisvis/escritorio.php">🏠 Inicio</a>
-                <a href="../archivos/recepcion.php">📥 Recepción</a>
-                <a href="../archivos/enviados.php">📤 Enviados</a>
-                <a href="../archivos/reenviar.php">📤 Reenviar</a>
-                <a href="../seguimiento/busqueda.php">📤 Buscar</a>
-                <a href="#">⚙️ Configuración</a>
-                <!-- En tu navbar o barra lateral -->
-                <div id="notificaciones" style="position: relative; cursor: pointer;">
-                    🔔 <span id="contador" style="color: red; font-weight: bold;"></span>
-                </div>
 
-                <!-- Contenedor para la lista -->
-                <div id="listaNotificaciones" style="display: none; position: absolute; background: #fff; color:black; border: 1px solid #ccc; max-height: 300px; overflow-y: auto; padding: 10px; width: 300px; z-index: 100;">
-                    <strong>Notificaciones:</strong>
-                    <ul id="contenedorNotificaciones" style="list-style: none; padding-left: 0;"></ul>
-                </div>
-                <a href="../logout.php">🚪 Cerrar sesión</a>
-            </nav>
-        </aside>
+        <?php include '../navbar/navbar.php'; ?>
 
         <main class="contenido-principal">
             <div class="tarjeta">
-                <h2>📤 Reenviar Documentos</h2>
+                <div class="tarjeta-header">
+                    <h2><i class="fas fa-share"></i> Reenviar Documentos</h2>
+                </div>
 
-                <?php if (empty($documentos_recibidos)): ?>
-                    <p>No hay documentos recibidos para reenviar.</p>
-                <?php else: ?>
-                    <table id="tablaReenvio" class="table table-striped" style="width:100%">
-                        <thead>
-                            <tr>
-                                <th>Número</th>
-                                <th>Asunto</th>
-                                <th>Remitente</th>
-                                <th>Reenviar a</th>
-                                <th>Observación</th>
-                                <th>Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($documentos_recibidos as $doc): ?>
-                                <tr>
-                                    <form method="POST" action="../../backend/php/archivos/procesar_reenvio.php">
-                                        <td><?= htmlspecialchars($doc['NumeroDocumento']) ?></td>
-                                        <td><?= htmlspecialchars($doc['Asunto']) ?></td>
-                                        <td><?= htmlspecialchars($doc['Nombres'] . ' ' . $doc['ApellidoPat']) ?></td>
-                                        <td>
-                                            <select name="nueva_area" required>
-                                                <option value="">Seleccione</option>
-                                                <?php foreach ($areas as $a): ?>
-                                                    <option value="<?= $a['IdAreas'] ?>"><?= htmlspecialchars($a['Nombre']) ?></option>
-                                                <?php endforeach; ?>
-                                            </select>
-                                        </td>
-                                        <td><input type="text" name="observacion" placeholder="Opcional"></td>
-                                        <td>
-                                            <input type="hidden" name="id_documento" value="<?= $doc['IdDocumentos'] ?>">
-                                            <button type="submit">Reenviar</button>
-                                        </td>
-                                    </form>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                <?php endif; ?>
+                <div class="tarjeta-body">
+                    <?php if (empty($documentos_recibidos)): ?>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <span>No hay documentos recibidos para reenviar en este momento.</span>
+                        </div>
+                    <?php else: ?>
+                        <div class="table-responsive">
+                            <table id="tablaReenvio" class="table table-striped" style="width:100%">
+                                <thead>
+                                    <tr>
+                                        <th><i class="fas fa-hashtag"></i> Número</th>
+                                        <th><i class="fas fa-align-left"></i> Asunto</th>
+                                        <th><i class="fas fa-user"></i> Remitente</th>
+                                        <th><i class="fas fa-building"></i> Reenviar a</th>
+                                        <th><i class="fas fa-sticky-note"></i> Observación</th>
+                                        <th><i class="fas fa-cogs"></i> Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($documentos_recibidos as $doc): ?>
+                                        <tr>
+                                            <form method="POST" action="../../backend/php/archivos/procesar_reenvio.php" class="reenvio-form">
+                                                <td class="numero-doc">
+                                                    <span class="badge bg-primary">
+                                                        <?= htmlspecialchars($doc['NumeroDocumento']) ?>
+                                                    </span>
+                                                </td>
+                                                <td class="asunto-doc">
+                                                    <div class="text-truncate" title="<?= htmlspecialchars($doc['Asunto']) ?>">
+                                                        <?= htmlspecialchars($doc['Asunto']) ?>
+                                                    </div>
+                                                </td>
+                                                <td class="remitente-doc">
+                                                    <div class="user-info-mini">
+                                                        <i class="fas fa-user-circle"></i>
+                                                        <span><?= htmlspecialchars($doc['Nombres'] . ' ' . $doc['ApellidoPat']) ?></span>
+                                                    </div>
+                                                </td>
+                                                <td class="area-select">
+                                                    <select name="nueva_area" required class="form-select">
+                                                        <option value="">Seleccione área</option>
+                                                        <?php foreach ($areas as $a): ?>
+                                                            <option value="<?= $a['IdAreas'] ?>"><?= htmlspecialchars($a['Nombre']) ?></option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </td>
+                                                <td class="observacion-input">
+                                                    <input type="text"
+                                                        name="observacion"
+                                                        class="form-control form-control-sm"
+                                                        placeholder="Observación opcional..."
+                                                        maxlength="100">
+                                                </td>
+                                                <td class="accion-btn">
+                                                    <input type="hidden" name="id_documento" value="<?= $doc['IdDocumentos'] ?>">
+                                                    <button type="submit" class="btn btn-success btn-sm">
+                                                        <i class="fas fa-paper-plane"></i>
+                                                        Reenviar
+                                                    </button>
+                                                </td>
+                                            </form>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php endif; ?>
+                </div>
             </div>
         </main>
     </div>
 
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/selectize@0.15.2/dist/js/selectize.min.js"></script>
+
     <script>
         $(document).ready(function() {
+            // Inicializar DataTable
             $('#tablaReenvio').DataTable({
                 language: {
                     url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
-                }
+                },
+                responsive: true,
+                pageLength: 25,
+                order: [
+                    [0, 'desc']
+                ]
             });
 
-            $('select').selectize({
+            // Inicializar Selectize para los selects
+            $('select[name="nueva_area"]').selectize({
                 allowEmptyOption: true,
                 placeholder: 'Seleccione un área',
                 sortField: 'text',
                 create: false
             });
+
+            // Mejorar UX del formulario
+            $('.reenvio-form').on('submit', function(e) {
+                const button = $(this).find('button[type="submit"]');
+                const originalText = button.html();
+
+                button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Enviando...');
+
+                // Si hay error, restaurar botón después de 3 segundos
+                setTimeout(() => {
+                    if (button.prop('disabled')) {
+                        button.prop('disabled', false).html(originalText);
+                    }
+                }, 3000);
+            });
+
+            // Validación en tiempo real
+            $('select[name="nueva_area"]').on('change', function() {
+                const row = $(this).closest('tr');
+                const button = row.find('button[type="submit"]');
+
+                if ($(this).val()) {
+                    button.removeClass('btn-secondary').addClass('btn-success');
+                    button.prop('disabled', false);
+                } else {
+                    button.removeClass('btn-success').addClass('btn-secondary');
+                    button.prop('disabled', true);
+                }
+            });
+
+            // Inicializar estado de botones
+            $('select[name="nueva_area"]').each(function() {
+                const row = $(this).closest('tr');
+                const button = row.find('button[type="submit"]');
+                button.removeClass('btn-success').addClass('btn-secondary');
+                button.prop('disabled', true);
+            });
         });
     </script>
 
+    <!-- JavaScript del Navbar -->
+    <script>
+        $(document).ready(function() {
+            // Mobile toggle
+            window.toggleMobileNav = function() {
+                $('.navbar-nav').toggleClass('active');
+            };
+
+            // Dropdown functionality
+            $('.nav-dropdown .dropdown-toggle').on('click', function(e) {
+                e.preventDefault();
+
+                // Cerrar otros dropdowns
+                $('.nav-dropdown').not($(this).parent()).removeClass('active');
+
+                // Toggle este dropdown
+                $(this).parent().toggleClass('active');
+            });
+
+            // Cerrar dropdown al hacer clic fuera
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('.nav-dropdown').length) {
+                    $('.nav-dropdown').removeClass('active');
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>

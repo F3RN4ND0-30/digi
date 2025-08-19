@@ -16,45 +16,28 @@ require '../../backend/db/conexion.php';
     <meta charset="UTF-8" />
     <title>Buscar Documentos Enviados</title>
 
-    <link rel="stylesheet" href="../../backend/css/sisvis/escritorio.css">
-    <link rel="stylesheet" href="../../backend/css/seguimiento/busqueda.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <!-- DataTables -->
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- CSS del Navbar -->
+    <link rel="stylesheet" href="../../backend/css/navbar/navbar.css" />
+
+    <!-- CSS Principal del Escritorio -->
+    <link rel="stylesheet" href="../../backend/css/seguimiento/busqueda.css" />
+
+    <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
-
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-    <!-- DataTables JS -->
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
     <script src="../../backend/js/notificaciones.js"></script>
 </head>
 
 <body>
     <div class="layout-escritorio">
-        <aside class="sidebar">
-            <h2>DIGI - MPP</h2>
-            <nav>
-                <a href="../sisvis/escritorio.php">🏠 Inicio</a>
-                <a href="../archivos/recepcion.php">📥 Recepción</a>
-                <a href="../archivos/enviados.php">📤 Enviados</a>
-                <a href="../archivos/reenviar.php">📤 Reenviar</a>
-                <a href="../seguimiento/busqueda.php">📤 Buscar</a>
-                <a href="#">⚙️ Configuración</a>
-                <div id="notificaciones" style="position: relative; cursor: pointer;">
-                    🔔 <span id="contador" style="color: red; font-weight: bold;"></span>
-                </div>
 
-                <div id="listaNotificaciones" style="display: none; position: absolute; background: #fff; color:black; border: 1px solid #ccc; max-height: 300px; overflow-y: auto; padding: 10px; width: 300px; z-index: 100;">
-                    <strong>Notificaciones:</strong>
-                    <ul id="contenedorNotificaciones" style="list-style: none; padding-left: 0;"></ul>
-                </div>
-                <a href="../logout.php">🚪 Cerrar sesión</a>
-            </nav>
-        </aside>
+        <?php include '../navbar/navbar.php'; ?>
 
         <main class="contenido-principal">
             <div class="container">
@@ -78,7 +61,36 @@ require '../../backend/db/conexion.php';
             </div>
         </main>
     </div>
+    <!-- jQuery (obligatorio para DataTables y scripts con $) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Botón de menú móvil
+            window.toggleMobileNav = function() {
+                $('.navbar-nav').toggleClass('active');
+            };
+
+            // Dropdown
+            $('.nav-dropdown .dropdown-toggle').on('click', function(e) {
+                e.preventDefault();
+
+                // Cerrar otros
+                $('.nav-dropdown').not($(this).parent()).removeClass('active');
+                $(this).parent().toggleClass('active');
+            });
+
+            // Cerrar dropdown si se hace clic afuera
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('.nav-dropdown').length) {
+                    $('.nav-dropdown').removeClass('active');
+                }
+            });
+        });
+    </script>
     <script>
         $(document).ready(function() {
             var tabla = $('#tablaResultados').DataTable({
