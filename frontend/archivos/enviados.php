@@ -33,7 +33,7 @@ if (!$area_id) {
     <link rel="stylesheet" href="../../backend/css/navbar/navbar.css" />
 
     <!-- CSS de enviados -->
-    <link rel="stylesheet" href="../../backend/css/seguimiento/busqueda.css" />
+    <link rel="stylesheet" href="../../backend/css/archivos/enviados.css" />
 
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">

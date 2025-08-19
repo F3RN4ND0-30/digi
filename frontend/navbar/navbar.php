@@ -72,7 +72,7 @@ $user_name = htmlspecialchars($_SESSION['dg_nombre'] ?? 'Usuario');
             <div class="notificaciones">
                 <!-- En tu navbar o barra lateral -->
                 <div id="notificaciones" style="position: relative; cursor: pointer;">
-                    🔔 <span id="contador" style="color: red; font-weight: bold;"></span>
+                    🔔 <span id="contador" style="color: red; font-weight: bold; font-size: 20px; font-family: 'Arial Black', Arial, sans-serif;"></span>
                 </div>
 
                 <!-- Contenedor para la lista -->

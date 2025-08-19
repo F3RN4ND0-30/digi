@@ -111,7 +111,7 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
                                                     </div>
                                                 </td>
                                                 <td class="area-select">
-                                                    <select name="nueva_area" required class="form-select">
+                                                    <select name="nueva_area" required class="form-select area-pequena">
                                                         <option value="">Seleccione área</option>
                                                         <?php foreach ($areas as $a): ?>
                                                             <option value="<?= $a['IdAreas'] ?>"><?= htmlspecialchars($a['Nombre']) ?></option>
@@ -121,7 +121,7 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
                                                 <td class="observacion-input">
                                                     <input type="text"
                                                         name="observacion"
-                                                        class="form-control form-control-sm"
+                                                        class="form-control form-control-sm observacion-grande"
                                                         placeholder="Observación opcional..."
                                                         maxlength="100">
                                                 </td>

@@ -52,8 +52,8 @@ $documentos_pendientes = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <link rel="stylesheet" href="../../backend/css/navbar/navbar.css" />
 
     <!-- CSS Principal del Escritorio -->
-    <link rel="stylesheet" href="../../backend/css/archivos/enviados.css" />
-    
+    <link rel="stylesheet" href="../../backend/css/archivos/recepcion.css" />
+
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 
@@ -178,21 +178,33 @@ $documentos_pendientes = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </script>
 
     <script>
-        $(document).ready(function() {
-            $('#tablaRecepcion').DataTable({
-                language: {
-                    url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+        $('#tablaRecepcion').DataTable({
+            autoWidth: false, // 🔧 IMPORTANTE: desactiva auto ajuste
+            responsive: true,
+            pageLength: 25,
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+            },
+            order: [
+                [4, 'desc']
+            ],
+            columnDefs: [{
+                    targets: 0,
+                    width: '20%'
                 },
-                responsive: true,
-                pageLength: 25,
-                order: [
-                    [4, 'desc']
-                ],
-                columnDefs: [{
-                    targets: [6],
+                {
+                    targets: 2,
+                    width: '2%'
+                },
+                {
+                    targets: 3,
+                    width: '15%'
+                },
+                {
+                    targets: 6,
                     orderable: false
-                }]
-            });
+                }
+            ]
         });
 
         function actualizarRecepcion() {

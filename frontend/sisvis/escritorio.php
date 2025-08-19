@@ -124,6 +124,18 @@ unset($_SESSION['mensaje']);
     <script src="https://cdn.jsdelivr.net/npm/selectize@0.15.2/dist/js/selectize.min.js"></script>
 
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = document.querySelectorAll('input[type="text"], textarea');
+
+            inputs.forEach(function(element) {
+                element.addEventListener('input', function() {
+                    this.value = this.value.toUpperCase();
+                });
+            });
+        });
+    </script>
+
+    <script>
         $(function() {
             $('select').selectize({
                 allowEmptyOption: true,

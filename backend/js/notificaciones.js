@@ -22,8 +22,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     li.style.borderBottom = '1px solid #eee';
                     li.innerHTML = `
                         <div>${n.Mensaje}<br><small style="color: gray;">${n.FechaVisto}</small></div>
-                        <button onclick="actualizarNotificacion(${n.IdNotificacion}, 'vista')" style="margin:4px;">👁️ Marcar como vista</button>
-                        <button onclick="actualizarNotificacion(${n.IdNotificacion}, 'eliminar')" style="margin:4px;">🗑️ Eliminar</button>
+                        <button onclick="actualizarNotificacion(${n.IdNotificacion}, 'vista')" style="margin:4px; size:12px; background: transparent; border: none; cursor: pointer;">Marcar como vista</button>
+                        <button onclick="actualizarNotificacion(${n.IdNotificacion}, 'eliminar')" style="margin:4px; size:12px; background: transparent; border: none; cursor: pointer; margin-left: 80px">X</button>
                     `;
                     contenedor.appendChild(li);
                 });

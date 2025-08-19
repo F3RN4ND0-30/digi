@@ -34,9 +34,11 @@ body {
   0% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
+
   100% {
     background-position: 0% 50%;
   }
@@ -48,7 +50,8 @@ body {
   flex-direction: column;
   min-height: 100vh;
   position: relative;
-  z-index: 1; /* Z-index bajo para no interferir con navbar */
+  z-index: 1;
+  /* Z-index bajo para no interferir con navbar */
 }
 
 .contenido-principal {
@@ -57,7 +60,8 @@ body {
   background: rgba(248, 250, 252, 0.95);
   backdrop-filter: blur(10px);
   position: relative;
-  z-index: 1; /* Z-index bajo para no interferir con navbar */
+  z-index: 1;
+  /* Z-index bajo para no interferir con navbar */
 }
 
 /* Tarjeta principal - SIN overflow hidden que corte el dropdown */
@@ -71,7 +75,8 @@ body {
   border: 1px solid var(--reenviar-border);
   animation: fadeInUp 0.6s ease forwards;
   position: relative;
-  z-index: 1; /* Z-index bajo para no interferir con navbar */
+  z-index: 1;
+  /* Z-index bajo para no interferir con navbar */
   /* NO overflow: hidden - esto es lo que permite que funcione el dropdown */
 }
 
@@ -80,6 +85,7 @@ body {
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -88,16 +94,15 @@ body {
 
 /* Header de la tarjeta - Solo este puede tener overflow hidden */
 .tarjeta-header {
-  background: linear-gradient(
-    135deg,
-    var(--reenviar-primary),
-    var(--reenviar-primary-dark)
-  );
+  background: linear-gradient(135deg,
+      var(--reenviar-primary),
+      var(--reenviar-primary-dark));
   color: var(--reenviar-white);
   padding: 1.5rem 2rem;
   margin: 0;
   position: relative;
-  overflow: hidden; /* Solo el header tiene overflow hidden para efectos */
+  overflow: hidden;
+  /* Solo el header tiene overflow hidden para efectos */
   z-index: 2;
 }
 
@@ -108,12 +113,10 @@ body {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.2),
-    transparent
-  );
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(255, 255, 255, 0.2),
+      transparent);
   animation: shimmer 4s infinite;
 }
 
@@ -121,6 +124,7 @@ body {
   0% {
     left: -100%;
   }
+
   100% {
     left: 100%;
   }
@@ -133,11 +137,9 @@ body {
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(
-    90deg,
-    var(--reenviar-accent),
-    var(--reenviar-success)
-  );
+  background: linear-gradient(90deg,
+      var(--reenviar-accent),
+      var(--reenviar-success));
 }
 
 .tarjeta-header h2 {
@@ -161,8 +163,10 @@ body {
 /* Tabla con overflow específico solo horizontal */
 .table-responsive {
   border-radius: var(--reenviar-radius);
-  overflow-x: auto; /* Solo scroll horizontal */
-  overflow-y: visible; /* Vertical visible para no cortar elementos como tooltips */
+  overflow-x: auto;
+  /* Solo scroll horizontal */
+  overflow-y: visible;
+  /* Vertical visible para no cortar elementos como tooltips */
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   position: relative;
   z-index: 2;
@@ -180,11 +184,9 @@ body {
 }
 
 .tarjeta table thead {
-  background: linear-gradient(
-    135deg,
-    var(--reenviar-primary),
-    var(--reenviar-primary-dark)
-  );
+  background: linear-gradient(135deg,
+      var(--reenviar-primary),
+      var(--reenviar-primary-dark));
   color: var(--reenviar-white);
   position: relative;
   z-index: 3;
@@ -197,11 +199,9 @@ body {
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(
-    90deg,
-    var(--reenviar-accent),
-    var(--reenviar-success)
-  );
+  background: linear-gradient(90deg,
+      var(--reenviar-accent),
+      var(--reenviar-success));
 }
 
 .tarjeta table th {
@@ -309,6 +309,19 @@ body {
   font-size: 0.85rem;
 }
 
+.observacion-grande {
+  min-width: 300px;
+  height: 48px;
+  font-size: 1rem;
+  padding: 0.75rem 1rem;
+}
+
+.area-pequena {
+  width: 250px;
+  font-size: 0.85rem;
+  padding: 0.5rem 0.7rem;
+}
+
 /* Badges modernos */
 .badge {
   display: inline-flex;
@@ -327,11 +340,9 @@ body {
 }
 
 .badge.bg-primary {
-  background: linear-gradient(
-    135deg,
-    var(--reenviar-primary),
-    var(--reenviar-primary-dark)
-  );
+  background: linear-gradient(135deg,
+      var(--reenviar-primary),
+      var(--reenviar-primary-dark));
   color: var(--reenviar-white);
   border-color: rgba(108, 92, 231, 0.3);
 }
@@ -370,12 +381,10 @@ body {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.3),
-    transparent
-  );
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(255, 255, 255, 0.3),
+      transparent);
   transition: left 0.6s;
 }
 
