@@ -1,0 +1,39 @@
+body {
+    font-family: 'Poppins', sans-serif;
+    padding: 20px;
+}
+
+.container {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin: 2rem auto;
+    max-width: 1500px;
+}
+
+h2 {
+    margin-bottom: 20px;
+}
+
+.btn-seguimiento {
+    background-color: #2a9df4;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9em;
+    transition: background-color 0.3s ease;
+}
+
+.btn-seguimiento:hover {
+    background-color: #1e7ad9;
+}
+
+#inputBusqueda {
+    width: 100%;
+    padding: 10px;
+    font-size: 1em;
+    margin-bottom: 15px;
+}

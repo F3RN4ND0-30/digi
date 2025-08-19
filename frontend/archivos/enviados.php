@@ -38,14 +38,48 @@ if (!$area_id) {
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 
+<<<<<<< HEAD
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+=======
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+    <script src="../../backend/js/notificaciones.js"></script>
+>>>>>>> main
 </head>
 
 <body>
     <div class="layout-escritorio">
+<<<<<<< HEAD
 
         <?php include '../navbar/navbar.php'; ?>
+=======
+        <aside class="sidebar">
+            <h2>DIGI - MPP</h2>
+            <nav>
+                <a href="../sisvis/escritorio.php">🏠 Inicio</a>
+                <a href="../archivos/recepcion.php">📥 Recepción</a>
+                <a href="../archivos/enviados.php">📤 Enviados</a>
+                <a href="../archivos/reenviar.php">📤 Reenviar</a>
+                <a href="../seguimiento/busqueda.php">📤 Buscar</a>
+                <a href="#">⚙️ Configuración</a>
+                <div id="notificaciones" style="position: relative; cursor: pointer;">
+                    🔔 <span id="contador" style="color: red; font-weight: bold;"></span>
+                </div>
+
+                <div id="listaNotificaciones" style="display: none; position: absolute; background: #fff; color:black; border: 1px solid #ccc; max-height: 300px; overflow-y: auto; padding: 10px; width: 350px; z-index: 100;">
+                    <strong>Notificaciones:</strong>
+                    <ul id="contenedorNotificaciones" style="list-style: none; padding-left: 0;"></ul>
+                </div>
+                <a href="../logout.php">🚪 Cerrar sesión</a>
+            </nav>
+        </aside>
+>>>>>>> main
 
         <main class="contenido-principal">
             <div class="tarjeta">

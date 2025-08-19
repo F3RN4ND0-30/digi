@@ -7,28 +7,41 @@ if (!isset($_SESSION['dg_id'])) {
 }
 
 require '../../db/conexion.php';
+require_once '../util/notificaciones_util.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id_movimiento = $_POST['id_movimiento'] ?? null;
 
     if ($id_movimiento) {
-        // Marcar como recibido
         $pdo->beginTransaction();
 
         try {
-            // 1. Actualizar movimientodocumento
+            // 1. Marcar como recibido
             $stmt = $pdo->prepare("UPDATE movimientodocumento SET Recibido = 1 WHERE IdMovimientoDocumento = ?");
             $stmt->execute([$id_movimiento]);
 
-            // 2. Obtener IdDocumentos relacionado al movimiento
-            $stmt2 = $pdo->prepare("SELECT IdDocumentos FROM movimientodocumento WHERE IdMovimientoDocumento = ?");
+            // 2. Obtener información relacionada
+            $stmt2 = $pdo->prepare("
+                SELECT md.IdDocumentos, md.AreaOrigen, d.NumeroDocumento 
+                FROM movimientodocumento md
+                JOIN documentos d ON d.IdDocumentos = md.IdDocumentos
+                WHERE md.IdMovimientoDocumento = ?
+            ");
             $stmt2->execute([$id_movimiento]);
-            $id_documento = $stmt2->fetchColumn();
+            $datos = $stmt2->fetch(PDO::FETCH_ASSOC);
 
-            if ($id_documento) {
-                // 3. Actualizar estado del documento a 3
+            if ($datos) {
+                $id_documento = $datos['IdDocumentos'];
+                $area_origen = $datos['AreaOrigen'];
+                $numero_documento = $datos['NumeroDocumento'];
+
+                // 3. Actualizar estado del documento a "Recibido"
                 $stmt3 = $pdo->prepare("UPDATE documentos SET IdEstadoDocumento = 3 WHERE IdDocumentos = ?");
                 $stmt3->execute([$id_documento]);
+
+                // 4. Crear notificación para el área de origen
+                $mensaje = "El documento N° $numero_documento ha sido recepcionado.";
+                crearNotificacion($pdo, $area_origen, $mensaje);
             }
 
             $pdo->commit();

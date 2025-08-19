@@ -7,6 +7,8 @@ if (!isset($_SESSION['dg_id'])) {
 }
 
 require '../../db/conexion.php';
+require_once '../util/notificaciones_util.php';
+
 
 // Ya sabemos que dg_id existe, pero chequeamos de nuevo para evitar errores
 if (!isset($_SESSION['dg_id'])) {
@@ -41,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validaciones básicas
     if (empty($area_destino)) {
         $_SESSION['mensaje'] = "❌ Debe seleccionar un área de destino.";
-        header("Location: ../../Frontend/sisvis/escritorio.php");
+        header("Location: ../../../frontend/sisvis/escritorio.php");
         exit();
     } else {
         // Verificar si el número ya existe
@@ -50,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($check->rowCount() > 0) {
             $_SESSION['mensaje'] = "❌ Ya existe un documento con ese número.";
-            header("Location: ../../sisvis/escritorio.php");
+            header("Location: ../../../frontend/sisvis/escritorio.php");
             exit();
         } else {
             // Insertar nuevo documento
@@ -64,6 +66,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $mov = $pdo->prepare("INSERT INTO movimientodocumento (IdDocumentos, AreaOrigen, AreaDestino, Recibido, Observacion)
                       VALUES (?, ?, ?, 0, ?)");
                 $mov->execute([$idDocumentoNuevo, $area_id, $area_destino, $observacion]);
+
+                $mensaje = "Nuevo documento recibido: N° $numero - '$asunto' desde $areaOrigenNombre";
+                crearNotificacion($pdo, $area_destino, $mensaje);
 
 
                 $_SESSION['mensaje'] = "✅ Documento registrado y enviado al área destino.";
