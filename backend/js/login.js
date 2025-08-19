@@ -269,4 +269,55 @@ document.addEventListener("DOMContentLoaded", function () {
   console.log(
     "Protecciones activas: Anti-clickjacking, Rate limiting, Bloqueo por IP"
   );
+  // ===== NAVBAR - TOGGLE Y DROPDOWN =====
+  const toggleButton = document.querySelector(".mobile-toggle");
+  const nav = document.querySelector(".navbar-nav");
+  const dropdowns = document.querySelectorAll(".nav-dropdown");
+
+  // Mostrar/ocultar menú móvil
+  if (toggleButton && nav) {
+    toggleButton.addEventListener("click", () => {
+      if (window.innerWidth <= 1024) {
+        nav.classList.toggle("active");
+      }
+    });
+  }
+
+  // Cerrar menú móvil al hacer resize a escritorio
+  window.addEventListener("resize", () => {
+    if (window.innerWidth > 1024 && nav?.classList.contains("active")) {
+      nav.classList.remove("active");
+    }
+  });
+
+  // Funcionalidad de dropdowns
+  dropdowns.forEach((dropdown) => {
+    const toggle = dropdown.querySelector(".dropdown-toggle");
+    const menu = dropdown.querySelector(".dropdown-menu");
+
+    if (toggle && menu) {
+      toggle.addEventListener("click", (e) => {
+        e.preventDefault();
+
+        // Cerrar otros dropdowns abiertos
+        dropdowns.forEach((d) => {
+          if (d !== dropdown) {
+            d.classList.remove("active");
+          }
+        });
+
+        dropdown.classList.toggle("active");
+      });
+    }
+  });
+
+  // Cerrar dropdown si haces clic fuera
+  document.addEventListener("click", (e) => {
+    dropdowns.forEach((dropdown) => {
+      if (!dropdown.contains(e.target)) {
+        dropdown.classList.remove("active");
+      }
+    });
+  });
+
 });

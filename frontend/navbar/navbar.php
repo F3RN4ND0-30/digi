@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Navbar modular para Sistema DIGI
  * Archivo: navbar/navbar.php
@@ -54,6 +55,10 @@ $user_name = htmlspecialchars($_SESSION['dg_nombre'] ?? 'Usuario');
                         <i class="fas fa-share"></i>
                         <span>Reenviar</span>
                     </a>
+                    <a href="../seguimiento/busqueda.php" class="dropdown-item">
+                        <i class="fas fa-route"></i>
+                        <span>Seguimiento</span>
+                    </a>
                 </div>
             </div>
 
@@ -62,9 +67,20 @@ $user_name = htmlspecialchars($_SESSION['dg_nombre'] ?? 'Usuario');
                 <span>Configuración</span>
             </a>
         </div>
-
         <!-- Usuario y Logout -->
         <div class="navbar-user">
+            <div class="notificaciones">
+                <!-- En tu navbar o barra lateral -->
+                <div id="notificaciones" style="position: relative; cursor: pointer;">
+                    🔔 <span id="contador" style="color: red; font-weight: bold;"></span>
+                </div>
+
+                <!-- Contenedor para la lista -->
+                <div id="listaNotificaciones" style="display: none; position: absolute; border-radius:7px; top:73px; right: none; background: #bb99f1ff; color:white; border: 1px solid #ccc; max-height: 300px; overflow-y: auto; padding: 10px; width: 300px; z-index: 100;">
+                    <strong>Notificaciones:</strong>
+                    <ul id="contenedorNotificaciones" style="list-style: none; padding-left: 0;"></ul>
+                </div>
+            </div>
             <div class="user-info">
                 <div class="user-avatar">
                     <i class="fas fa-user"></i>

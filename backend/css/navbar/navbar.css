@@ -27,22 +27,22 @@
 /* Navbar principal - MÁS ROBUSTO */
 .navbar-horizontal {
   width: 100% !important;
-  background: linear-gradient(
-    135deg,
-    var(--navbar-primary) 0%,
-    var(--navbar-primary-dark) 100%
-  ) !important;
+  background: linear-gradient(135deg,
+      var(--navbar-primary) 0%,
+      var(--navbar-primary-dark) 100%) !important;
   color: var(--navbar-white) !important;
   position: sticky !important;
   top: 0 !important;
-  z-index: 99999 !important; /* Z-index muy alto para evitar conflictos */
+  z-index: 99999 !important;
+  /* Z-index muy alto para evitar conflictos */
   box-shadow: var(--navbar-shadow-lg) !important;
   backdrop-filter: blur(20px) !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
   font-family: var(--navbar-font) !important;
   margin: 0 !important;
   padding: 0 !important;
-  overflow: visible !important; /* Importante para dropdown */
+  overflow: visible !important;
+  /* Importante para dropdown */
 }
 
 .navbar-container {
@@ -54,7 +54,8 @@
   padding: 0 2rem !important;
   height: 70px !important;
   position: relative !important;
-  overflow: visible !important; /* Importante para dropdown */
+  overflow: visible !important;
+  /* Importante para dropdown */
 }
 
 /* Logo */
@@ -80,18 +81,17 @@
   from {
     filter: drop-shadow(0 0 5px rgba(116, 185, 255, 0.5));
   }
+
   to {
     filter: drop-shadow(0 0 15px rgba(129, 236, 236, 0.8));
   }
 }
 
 .logo-text {
-  background: linear-gradient(
-    45deg,
-    var(--navbar-white),
-    var(--navbar-accent),
-    var(--navbar-white)
-  ) !important;
+  background: linear-gradient(45deg,
+      var(--navbar-white),
+      var(--navbar-accent),
+      var(--navbar-white)) !important;
   background-size: 200% 200% !important;
   -webkit-background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
@@ -101,10 +101,12 @@
 }
 
 @keyframes logoShimmer {
+
   0%,
   100% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
@@ -117,8 +119,33 @@
   align-items: center !important;
   position: relative !important;
   z-index: 99998 !important;
-  overflow: visible !important; /* Crítico para dropdown */
+  overflow: visible !important;
+  /* Crítico para dropdown */
 }
+
+#notificaciones {
+  display: flex;
+  align-items: center;
+  position: relative;
+  margin-left: 0.5rem;
+  font-size: 1.1rem;
+  color: var(--navbar-white);
+}
+
+#notificaciones i {
+  transition: transform 0.3s ease;
+}
+
+#notificaciones:hover i {
+  transform: scale(1.2);
+  color: var(--navbar-accent);
+}
+
+#contador {
+  font-size: 0.8rem;
+  margin-left: 4px;
+}
+
 
 .nav-link {
   display: flex !important;
@@ -145,12 +172,10 @@
   left: -100% !important;
   width: 100% !important;
   height: 100% !important;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.2),
-    transparent
-  ) !important;
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(255, 255, 255, 0.2),
+      transparent) !important;
   transition: left 0.6s !important;
 }
 
@@ -184,7 +209,8 @@
 .nav-dropdown {
   position: relative !important;
   z-index: 99999 !important;
-  overflow: visible !important; /* MUY IMPORTANTE */
+  overflow: visible !important;
+  /* MUY IMPORTANTE */
 }
 
 .dropdown-toggle {
@@ -204,7 +230,8 @@
 /* DROPDOWN MENU - LA CLAVE DEL FIX */
 .dropdown-menu {
   position: absolute !important;
-  top: calc(100% + 0.5rem) !important; /* Separación del botón */
+  top: calc(100% + 0.5rem) !important;
+  /* Separación del botón */
   left: 50% !important;
   transform: translateX(-50%) translateY(-10px) scale(0.95) !important;
   background: var(--navbar-white) !important;
@@ -216,10 +243,12 @@
   visibility: hidden !important;
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
   border: 1px solid var(--navbar-border) !important;
-  z-index: 999999 !important; /* Z-index extremadamente alto */
+  z-index: 999999 !important;
+  /* Z-index extremadamente alto */
   margin: 0 !important;
   overflow: visible !important;
-  pointer-events: none !important; /* Evita conflictos de eventos */
+  pointer-events: none !important;
+  /* Evita conflictos de eventos */
 }
 
 /* Cuando está activo */
@@ -227,7 +256,8 @@
   opacity: 1 !important;
   visibility: visible !important;
   transform: translateX(-50%) translateY(0) scale(1) !important;
-  pointer-events: auto !important; /* Restaura eventos cuando está visible */
+  pointer-events: auto !important;
+  /* Restaura eventos cuando está visible */
 }
 
 .dropdown-menu::before {
@@ -266,22 +296,18 @@
   top: 0 !important;
   bottom: 0 !important;
   width: 3px !important;
-  background: linear-gradient(
-    135deg,
-    var(--navbar-primary),
-    var(--navbar-accent)
-  ) !important;
+  background: linear-gradient(135deg,
+      var(--navbar-primary),
+      var(--navbar-accent)) !important;
   transform: scaleY(0) !important;
   transition: var(--navbar-transition) !important;
   border-radius: 2px !important;
 }
 
 .dropdown-item:hover {
-  background: linear-gradient(
-    135deg,
-    rgba(108, 92, 231, 0.1),
-    rgba(116, 185, 255, 0.05)
-  ) !important;
+  background: linear-gradient(135deg,
+      rgba(108, 92, 231, 0.1),
+      rgba(116, 185, 255, 0.05)) !important;
   color: var(--navbar-primary) !important;
   transform: translateX(5px) !important;
 }
@@ -323,11 +349,9 @@
   width: 32px !important;
   height: 32px !important;
   border-radius: 50% !important;
-  background: linear-gradient(
-    135deg,
-    var(--navbar-accent),
-    var(--navbar-accent-light)
-  ) !important;
+  background: linear-gradient(135deg,
+      var(--navbar-accent),
+      var(--navbar-accent-light)) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -452,6 +476,6 @@ body .navbar-horizontal .dropdown-menu {
 }
 
 /* Evitar que otros elementos interfieran */
-.navbar-horizontal ~ * {
+.navbar-horizontal~* {
   z-index: 1 !important;
 }
