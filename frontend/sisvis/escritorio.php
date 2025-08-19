@@ -1,5 +1,5 @@
 <?php
-// dashboard.php
+// escritorio.php
 session_start();
 if (!isset($_SESSION['dg_id'])) {
     header('Location: ../login.php');
@@ -26,33 +26,28 @@ unset($_SESSION['mensaje']);
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Escritorio</title>
+    <title>Escritorio - DIGI MPP</title>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- CSS del Navbar -->
+    <link rel="stylesheet" href="../../backend/css/navbar/navbar.css" />
+
+    <!-- CSS Principal del Escritorio -->
     <link rel="stylesheet" href="../../backend/css/sisvis/escritorio.css" />
 
     <!-- Selectize CSS -->
     <link href="https://cdn.jsdelivr.net/npm/selectize@0.15.2/dist/css/selectize.default.min.css" rel="stylesheet" />
-
-    <!-- jQuery (requerido por Selectize) -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-    <!-- Selectize JS -->
-    <script src="https://cdn.jsdelivr.net/npm/selectize@0.15.2/dist/js/selectize.min.js"></script>
 </head>
 
 <body>
     <div class="layout-escritorio">
 
-        <aside class="sidebar">
-            <h2>DIGI - MPP</h2>
-            <nav>
-                <a href="../sisvis/escritorio.php">🏠 Inicio</a>
-                <a href="../archivos/recepcion.php">📊 recepción</a>
-                <a href="../archivos/enviados.php">📤 Enviados</a>
-                <a href="../archivos/reenviar.php">📤 Reenviar</a>
-                <a href="#">⚙️ Configuración</a>
-                <a href="../logout.php">🚪 Cerrar sesión</a>
-            </nav>
-        </aside>
+        <?php include '../navbar/navbar.php'; ?>
 
         <main class="contenido-principal">
             <div class="tarjeta bienvenida">
@@ -62,21 +57,21 @@ unset($_SESSION['mensaje']);
             </div>
 
             <div class="tarjeta tarjeta-formulario">
-                <h2>Registrar nuevo documento</h2>
+                <h2><i class="fas fa-plus-circle"></i> Registrar nuevo documento</h2>
 
-                <?php if (isset($mensaje)) : ?>
+                <?php if (!empty($mensaje)) : ?>
                     <p><strong><?= htmlspecialchars($mensaje) ?></strong></p>
                 <?php endif; ?>
 
                 <form method="POST" action="../../backend/php/archivos/registrar_archivo.php">
                     <div class="form-grid">
                         <div class="form-group">
-                            <label>Número de Documento:</label>
-                            <input type="text" name="numero" required>
+                            <label><i class="fas fa-hashtag"></i> Número de Documento:</label>
+                            <input type="text" name="numero" required placeholder="Ej: DOC-2025-001">
                         </div>
 
                         <div class="form-group">
-                            <label>Estado:</label>
+                            <label><i class="fas fa-flag"></i> Estado:</label>
                             <select name="estado" required>
                                 <option value="">Seleccione un estado</option>
                                 <?php foreach ($estados as $estado) : ?>
@@ -86,7 +81,7 @@ unset($_SESSION['mensaje']);
                         </div>
 
                         <div class="form-group">
-                            <label>Área de destino:</label>
+                            <label><i class="fas fa-building"></i> Área de destino:</label>
                             <select name="area_destino" required>
                                 <option value="">Seleccione un área</option>
                                 <?php foreach ($areas as $area) : ?>
@@ -98,21 +93,27 @@ unset($_SESSION['mensaje']);
                         </div>
 
                         <div class="form-group">
-                            <label>Observación:</label>
+                            <label><i class="fas fa-sticky-note"></i> Observación:</label>
                             <textarea name="observacion" rows="3" placeholder="Escriba alguna observación opcional..."></textarea>
                         </div>
 
                         <div class="form-group full-width">
-                            <label>Asunto:</label>
-                            <textarea name="asunto" required></textarea>
+                            <label><i class="fas fa-align-left"></i> Asunto:</label>
+                            <textarea name="asunto" required pla.ceholder="Describa el asunto del documento..." rows="4"></textarea>
                         </div>
                     </div>
 
-                    <button type="submit">Registrar y Enviar</button>
+                    <button type="submit">
+                        <i class="fas fa-rocket"></i> Registrar y Enviar
+                    </button>
                 </form>
             </div>
         </main>
     </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/selectize@0.15.2/dist/js/selectize.min.js"></script>
 
     <script>
         $(function() {
@@ -121,6 +122,33 @@ unset($_SESSION['mensaje']);
                 placeholder: 'Seleccione una opción',
                 sortField: 'text',
                 create: false
+            });
+        });
+    </script>
+    <script>
+        // Esperar a que todo esté cargado
+        $(document).ready(function() {
+            // Mobile toggle
+            window.toggleMobileNav = function() {
+                $('.navbar-nav').toggleClass('active');
+            };
+
+            // Dropdown functionality
+            $('.nav-dropdown .dropdown-toggle').on('click', function(e) {
+                e.preventDefault();
+
+                // Cerrar otros dropdowns
+                $('.nav-dropdown').not($(this).parent()).removeClass('active');
+
+                // Toggle este dropdown
+                $(this).parent().toggleClass('active');
+            });
+
+            // Cerrar dropdown al hacer clic fuera
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('.nav-dropdown').length) {
+                    $('.nav-dropdown').removeClass('active');
+                }
             });
         });
     </script>

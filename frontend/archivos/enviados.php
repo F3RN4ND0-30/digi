@@ -21,66 +21,71 @@ if (!$area_id) {
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Documentos Enviados</title>
+    <title>Documentos Enviados - DIGI MPP</title>
 
-    <link rel="stylesheet" href="../../backend/css/sisvis/escritorio.css" />
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- CSS del Navbar -->
+    <link rel="stylesheet" href="../../backend/css/navbar/navbar.css" />
+
+    <!-- CSS de enviados -->
     <link rel="stylesheet" href="../../backend/css/archivos/enviados.css" />
 
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-
-    <!-- DataTables -->
+    <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-    <!-- DataTables JS -->
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 
 <body>
     <div class="layout-escritorio">
-        <aside class="sidebar">
-            <h2>DIGI - MPP</h2>
-            <nav>
-                <a href="../sisvis/escritorio.php">🏠 Inicio</a>
-                <a href="../archivos/recepcion.php">📥 Recepción</a>
-                <a href="../archivos/enviados.php">📤 Enviados</a>
-                <a href="../archivos/reenviar.php">📤 Reenviar</a>
-                <a href="#">⚙️ Configuración</a>
-                <a href="../logout.php">🚪 Cerrar sesión</a>
-            </nav>
-        </aside>
+
+        <?php include '../navbar/navbar.php'; ?>
 
         <main class="contenido-principal">
             <div class="tarjeta">
-                <h2>📤 Documentos Enviados</h2>
+                <div class="tarjeta-header">
+                    <h2><i class="fas fa-paper-plane"></i> Documentos Enviados</h2>
+                </div>
 
-                <div style="overflow-x: auto;">
-                    <table id="tablaEnviados" class="table table-striped" style="width:100%">
-                        <thead>
-                            <tr>
-                                <th>N°</th>
-                                <th>Número/Nombre</th>
-                                <th>Asunto</th>
-                                <th>Estado</th>
-                                <th>Fecha</th>
-                                <th>Área Destino</th>
-                                <th>Observación</th>
-                                <th>Recibido</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
+                <div class="tarjeta-body">
+                    <div class="table-responsive">
+                        <table id="tablaEnviados" class="table table-striped" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th>N°</th>
+                                    <th>Número/Nombre</th>
+                                    <th>Asunto</th>
+                                    <th>Estado</th>
+                                    <th>Fecha</th>
+                                    <th>Área Destino</th>
+                                    <th>Observación</th>
+                                    <th>Recibido</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </main>
     </div>
 
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+    <!-- DataTables -->
     <script>
         $(document).ready(function() {
-            const tabla = $('#tablaEnviados').DataTable({
+            $('#tablaEnviados').DataTable({
                 ajax: {
                     url: '../../backend/php/ajax/cargar_enviados_ajax.php',
                     dataSrc: ''
@@ -109,7 +114,9 @@ if (!$area_id) {
                     {
                         data: 'Recibido',
                         render: function(data) {
-                            return data == 1 ? '✅ Sí' : '⏳ No';
+                            return data == 1 ?
+                                '<span class="badge bg-success"><i class="fas fa-check"></i> Recibido</span>' :
+                                '<span class="badge bg-warning"><i class="fas fa-clock"></i> Pendiente</span>';
                         }
                     }
                 ],
@@ -118,12 +125,44 @@ if (!$area_id) {
                 ],
                 language: {
                     url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
-                }
+                },
+                responsive: true,
+                pageLength: 25
             });
 
+            // Auto-refresh
             setInterval(() => {
-                tabla.ajax.reload(null, false);
-            }, 10000);
+                $('#tablaEnviados').DataTable().ajax.reload(null, false);
+            }, 30000);
+        });
+    </script>
+
+    <!-- JavaScript del Navbar -->
+    <script>
+        // Esperar a que todo esté cargado
+        $(document).ready(function() {
+            // Mobile toggle
+            window.toggleMobileNav = function() {
+                $('.navbar-nav').toggleClass('active');
+            };
+
+            // Dropdown functionality
+            $('.nav-dropdown .dropdown-toggle').on('click', function(e) {
+                e.preventDefault();
+
+                // Cerrar otros dropdowns
+                $('.nav-dropdown').not($(this).parent()).removeClass('active');
+
+                // Toggle este dropdown
+                $(this).parent().toggleClass('active');
+            });
+
+            // Cerrar dropdown al hacer clic fuera
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('.nav-dropdown').length) {
+                    $('.nav-dropdown').removeClass('active');
+                }
+            });
         });
     </script>
 </body>
