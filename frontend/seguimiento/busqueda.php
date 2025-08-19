@@ -61,12 +61,29 @@ require '../../backend/db/conexion.php';
             </div>
         </main>
     </div>
+
+    <!-- Modal de Seguimiento -->
+    <div id="modalSeguimiento" class="modal-seguimiento" style="display: none;">
+        <div class="modal-content-seguimiento">
+            <div class="modal-header-seguimiento">
+                <h3 id="tituloModal">Trazabilidad del Documento</h3>
+                <button class="close-modal" onclick="cerrarModalSeguimiento()">&times;</button>
+            </div>
+            <div class="modal-body-seguimiento">
+                <div id="contenidoSeguimiento">
+                    <div class="loading">Cargando...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- jQuery (obligatorio para DataTables y scripts con $) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <!-- DataTables JS -->
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
     <script>
         $(document).ready(function() {
             // Botón de menú móvil
@@ -90,8 +107,7 @@ require '../../backend/db/conexion.php';
                 }
             });
         });
-    </script>
-    <script>
+
         $(document).ready(function() {
             var tabla = $('#tablaResultados').DataTable({
                 ajax: {
@@ -122,7 +138,7 @@ require '../../backend/db/conexion.php';
                     {
                         data: null,
                         render: function(data, type, row) {
-                            return `<a href="../../backend/php/archivos/ver_trazabilidad.php?id_documentos=${row.IdDocumentos}" class="btn-seguimiento" target="_blank">🔎 Ver seguimiento</a>`;
+                            return `<button onclick="verSeguimiento(${row.IdDocumentos})" class="btn-seguimiento">🔎 Ver seguimiento</button>`;
                         }
                     }
                 ],
@@ -137,6 +153,85 @@ require '../../backend/db/conexion.php';
             $('#inputBusqueda').on('keyup', function() {
                 tabla.ajax.reload();
             });
+        });
+
+        // Funciones del Modal de Seguimiento
+        function verSeguimiento(idDocumento) {
+            document.getElementById('modalSeguimiento').style.display = 'flex';
+            document.getElementById('tituloModal').textContent = `Trazabilidad del Documento N° ${idDocumento}`;
+            document.getElementById('contenidoSeguimiento').innerHTML = '<div class="loading">Cargando datos...</div>';
+
+            fetch(`../../backend/php/archivos/seguimiento_modal.php?id_documentos=${idDocumento}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById('contenidoSeguimiento').innerHTML =
+                            `<div class="sin-movimientos">Error: ${data.error}</div>`;
+                        return;
+                    }
+
+                    if (data.movimientos.length === 0) {
+                        document.getElementById('contenidoSeguimiento').innerHTML =
+                            '<div class="sin-movimientos">No se encontraron movimientos para este documento.</div>';
+                        return;
+                    }
+
+                    let html = `
+                        <table class="tabla-seguimiento">
+                            <thead>
+                                <tr>
+                                    <th>Área Origen</th>
+                                    <th>Área Destino</th>
+                                    <th>Fecha de Movimiento</th>
+                                    <th>Estado</th>
+                                    <th>Observación</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+
+                    data.movimientos.forEach(mov => {
+                        const estadoClass = mov.Recibido == 1 ? 'estado-recibido' : 'estado-pendiente';
+                        const estadoTexto = mov.Recibido == 1 ? '✅ Recibido' : '⏳ Pendiente';
+
+                        html += `
+                            <tr>
+                                <td>${mov.OrigenNombre || mov.AreaOrigen}</td>
+                                <td>${mov.DestinoNombre || mov.AreaDestino}</td>
+                                <td class="fecha-cell">${mov.FechaMovimiento}</td>
+                                <td class="${estadoClass}">${estadoTexto}</td>
+                                <td class="observacion-cell">${mov.Observacion || '-'}</td>
+                            </tr>
+                        `;
+                    });
+
+                    html += '</tbody></table>';
+                    document.getElementById('contenidoSeguimiento').innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('contenidoSeguimiento').innerHTML =
+                        '<div class="sin-movimientos">Error al cargar los datos.</div>';
+                });
+        }
+
+        function cerrarModalSeguimiento() {
+            document.getElementById('modalSeguimiento').style.display = 'none';
+        }
+
+        // Cerrar modal al hacer clic fuera
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('modalSeguimiento');
+            if (event.target === modal) {
+                cerrarModalSeguimiento();
+            }
+        });
+
+        // Cerrar modal con tecla Escape
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                cerrarModalSeguimiento();
+            }
         });
     </script>
 </body>
