@@ -83,7 +83,9 @@ $user_role = $_SESSION['dg_rol'] ?? 999; // Obtener rol para permisos
                 <span>Configuración</span>
             </a>
         </div>
+
         <script src="../../backend/js/notificaciones.js"></script>
+
         <!-- Usuario y Logout -->
         <div class="navbar-user">
             <!-- Sistema de Notificaciones -->
@@ -125,110 +127,109 @@ $user_role = $_SESSION['dg_rol'] ?? 999; // Obtener rol para permisos
 </nav>
 
 <script>
-    
-    // Función para toggle del menú móvil
-    function toggleMobileNav() {
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Toggle Mobile Nav ---
         const navbarNav = document.querySelector('.navbar-nav');
         const mobileToggle = document.querySelector('.mobile-toggle');
+        mobileToggle.addEventListener('click', () => {
+            navbarNav.classList.toggle('mobile-active');
+            mobileToggle.classList.toggle('active');
+        });
 
-        navbarNav.classList.toggle('mobile-active');
-        mobileToggle.classList.toggle('active');
-    }
-
-    // Sistema de notificaciones con seguridad
-    document.addEventListener('DOMContentLoaded', function() {
-        const notificaciones = document.getElementById('notificaciones');
-        const lista = document.getElementById('listaNotificaciones');
-
-        if (notificaciones) {
-            notificaciones.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-
-                // Toggle de la lista con animación suave
-                if (lista.style.display === 'none' || lista.style.display === '') {
-                    lista.style.display = 'block';
-                    cargarNotificaciones(); // Función para cargar notificaciones via AJAX
-                } else {
-                    lista.style.display = 'none';
-                }
-            });
-        }
-
-        // Cerrar notificaciones al hacer clic fuera
+        // --- Dropdown Menús ---
         document.addEventListener('click', function(e) {
-            if (!notificaciones.contains(e.target)) {
-                lista.style.display = 'none';
+            if (!e.target.closest('.nav-dropdown')) {
+                document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                    menu.style.display = 'none';
+                });
             }
         });
 
-        // Validación de sesión periódica (cada 5 minutos)
+        document.querySelectorAll('.dropdown-toggle').forEach(toggle => {
+            toggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                const menu = this.nextElementSibling;
+                document.querySelectorAll('.dropdown-menu').forEach(otherMenu => {
+                    if (otherMenu !== menu) otherMenu.style.display = 'none';
+                });
+                menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+            });
+        });
+
+        // --- Validar sesión cada 5 min ---
         setInterval(validarSesion, 300000);
-    });
 
-    // Función para cargar notificaciones
-    function cargarNotificaciones() {
-        fetch('../backend/php/obtener_notificaciones.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                const contenedor = document.getElementById('contenedorNotificaciones');
-                const contador = document.getElementById('contador');
+        function validarSesion() {
+            fetch('../backend/php/validar_sesion.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.sesion_valida) {
+                        alert('Su sesión ha expirado. Será redirigido al login.');
+                        window.location.href = '../login.php';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al validar sesión:', error);
+                });
+        }
 
-                if (data.notificaciones && data.notificaciones.length > 0) {
+        // --- Notificaciones ---
+        const btnCampana = document.getElementById('notificaciones');
+        const lista = document.getElementById('listaNotificaciones');
+        const contenedor = document.getElementById('contenedorNotificaciones');
+        const contador = document.getElementById('contador');
+
+        function cargarNotificaciones() {
+            fetch('../../backend/php/notificaciones/cargar_notificaciones.php')
+                .then(res => res.json())
+                .then(data => {
                     contenedor.innerHTML = '';
-                    contador.textContent = data.notificaciones.length;
+                    if (data.length === 0) {
+                        contenedor.innerHTML = '<li style="padding: 5px;">No hay notificaciones.</li>';
+                        contador.textContent = '';
+                        return;
+                    }
 
-                    data.notificaciones.forEach(notif => {
+                    data.forEach(n => {
                         const li = document.createElement('li');
+                        li.style.padding = '10px';
+                        li.style.borderBottom = '1px solid #eee';
                         li.innerHTML = `
-                    <div style="padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.2);">
-                        <strong>${notif.titulo}</strong><br>
-                        <small>${notif.mensaje}</small><br>
-                        <em style="font-size: 0.8em;">${notif.fecha}</em>
-                    </div>
-                `;
+                            <div>${n.Mensaje}<br><small style="color: gray;">${n.FechaVisto}</small></div>
+                            <button onclick="actualizarNotificacion(${n.IdNotificacion}, 'vista')" style="margin:4px; background: transparent; border: none; cursor: pointer;">Marcar como vista</button>
+                            <button onclick="actualizarNotificacion(${n.IdNotificacion}, 'eliminar')" style="margin:4px; background: transparent; border: none; cursor: pointer; float: right;">X</button>
+                        `;
                         contenedor.appendChild(li);
                     });
-                } else {
-                    contenedor.innerHTML = '<li>No hay notificaciones nuevas</li>';
-                    contador.textContent = '';
-                }
-            })
-            .catch(error => {
-                console.error('Error al cargar notificaciones:', error);
-                document.getElementById('contenedorNotificaciones').innerHTML = '<li>Error al cargar notificaciones</li>';
-            });
-    }
 
-    // Auto-ocultar dropdowns al hacer clic fuera
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.nav-dropdown')) {
-            document.querySelectorAll('.dropdown-menu').forEach(menu => {
-                menu.style.display = 'none';
-            });
+                    contador.textContent = data.length;
+                });
         }
-    });
 
-    // Activar/desactivar dropdowns
-    document.querySelectorAll('.dropdown-toggle').forEach(toggle => {
-        toggle.addEventListener('click', function(e) {
-            e.preventDefault();
-            const menu = this.nextElementSibling;
+        // Función global para botones
+        window.actualizarNotificacion = function(id, accion) {
+            fetch('../../backend/php/notificaciones/actualizar_notificacion.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `id=${id}&accion=${accion}`
+            }).then(() => cargarNotificaciones());
+        }
 
-            // Cerrar otros dropdowns
-            document.querySelectorAll('.dropdown-menu').forEach(otherMenu => {
-                if (otherMenu !== menu) {
-                    otherMenu.style.display = 'none';
-                }
-            });
-
-            // Toggle del dropdown actual
-            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+        btnCampana.addEventListener('click', () => {
+            const visible = lista.style.display === 'block';
+            lista.style.display = visible ? 'none' : 'block';
+            if (!visible) contador.textContent = '';
         });
+
+        // Cargar al inicio + cada 30s
+        cargarNotificaciones();
+        setInterval(cargarNotificaciones, 30000);
     });
 </script>
