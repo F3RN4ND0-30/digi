@@ -12,18 +12,18 @@ document.addEventListener("DOMContentLoaded", function () {
   console.log("DOM cargado, inicializando eventos...");
   inicializarEventos();
   inicializarSelectize();
-  
+
   // Verificar que las funciones están disponibles
   console.log("Funciones disponibles:", {
     abrirModal: typeof window.abrirModal,
     editarUsuario: typeof window.editarUsuario,
     cambiarEstado: typeof window.cambiarEstado,
-    cambiarTab: typeof window.cambiarTab
+    cambiarTab: typeof window.cambiarTab,
   });
 });
 
 // FUNCIÓN ABRIR MODAL - DECLARACIÓN GLOBAL EXPLÍCITA
-window.abrirModal = function() {
+window.abrirModal = function () {
   console.log("Ejecutando abrirModal()");
   if (window.modalVisible) return;
 
@@ -44,14 +44,15 @@ window.abrirModal = function() {
 };
 
 // FUNCIÓN EDITAR USUARIO - DECLARACIÓN GLOBAL EXPLÍCITA
-window.editarUsuario = function(id) {
+window.editarUsuario = function (id) {
   console.log("Ejecutando editarUsuario() con ID:", id);
   if (window.modalVisible) return;
 
   window.modoEditar = true;
   document.getElementById("tituloModal").textContent = "Editar Usuario";
   document.getElementById("password").required = false;
-  document.getElementById("passwordHelp").textContent = "Dejar vacío para mantener la contraseña actual";
+  document.getElementById("passwordHelp").textContent =
+    "Dejar vacío para mantener la contraseña actual";
 
   habilitarBusquedaDNI(false);
 
@@ -100,7 +101,7 @@ window.editarUsuario = function(id) {
 };
 
 // FUNCIÓN CAMBIAR ESTADO - DECLARACIÓN GLOBAL EXPLÍCITA
-window.cambiarEstado = function(id, nuevoEstado) {
+window.cambiarEstado = function (id, nuevoEstado) {
   console.log("Ejecutando cambiarEstado() con ID:", id, "Estado:", nuevoEstado);
   const accion = nuevoEstado === 1 ? "reactivar" : "desactivar";
 
@@ -166,7 +167,7 @@ window.cambiarEstado = function(id, nuevoEstado) {
 };
 
 // FUNCIÓN CAMBIAR TAB - DECLARACIÓN GLOBAL EXPLÍCITA
-window.cambiarTab = function(tab) {
+window.cambiarTab = function (tab) {
   console.log("Ejecutando cambiarTab() con tab:", tab);
   document.querySelectorAll(".tab-usuario").forEach((btn) => {
     btn.classList.remove("active");
@@ -180,7 +181,7 @@ window.cambiarTab = function(tab) {
 };
 
 // FUNCIÓN CERRAR MODAL - DECLARACIÓN GLOBAL EXPLÍCITA
-window.cerrarModal = function() {
+window.cerrarModal = function () {
   console.log("Ejecutando cerrarModal()");
   const modal = document.getElementById("modalUsuario");
 
@@ -820,5 +821,5 @@ console.log("Funciones globales definidas:", {
   editarUsuario: typeof window.editarUsuario,
   cambiarEstado: typeof window.cambiarEstado,
   cambiarTab: typeof window.cambiarTab,
-  cerrarModal: typeof window.cerrarModal
+  cerrarModal: typeof window.cerrarModal,
 });
