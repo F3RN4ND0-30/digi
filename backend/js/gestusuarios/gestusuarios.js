@@ -1,121 +1,33 @@
 /**
  * JavaScript para Gestión de Usuarios - DIGI
- * Versión final completa con todas las optimizaciones
+ * Versión corregida con declaraciones globales explícitas
  */
 
-// Variables globales
-let modoEditar = false;
-let modalVisible = false;
+// Variables globales - DECLARACIÓN EXPLÍCITA
+window.modoEditar = false;
+window.modalVisible = false;
 
 // Inicialización cuando la página carga
 document.addEventListener("DOMContentLoaded", function () {
+  console.log("DOM cargado, inicializando eventos...");
   inicializarEventos();
   inicializarSelectize();
+  
+  // Verificar que las funciones están disponibles
+  console.log("Funciones disponibles:", {
+    abrirModal: typeof window.abrirModal,
+    editarUsuario: typeof window.editarUsuario,
+    cambiarEstado: typeof window.cambiarEstado,
+    cambiarTab: typeof window.cambiarTab
+  });
 });
 
-// Función para inicializar Selectize en todos los selects
-function inicializarSelectize() {
-  // Configurar Selectize para área con estilo mejorado
-  if (document.getElementById("area")) {
-    $("#area").selectize({
-      placeholder: "Seleccione un área",
-      searchField: ["text"],
-      maxItems: 1,
-      create: false,
-      allowEmptyOption: false,
-      render: {
-        option: function (item, escape) {
-          return (
-            '<div class="option-item">' +
-            '<i class="fas fa-building" style="margin-right: 8px; color: #6c5ce7;"></i>' +
-            escape(item.text) +
-            "</div>"
-          );
-        },
-        item: function (item, escape) {
-          return '<div class="selected-item">' + escape(item.text) + "</div>";
-        },
-      },
-      onDropdownOpen: function () {
-        this.$dropdown.css("z-index", 99999);
-      },
-    });
-  }
+// FUNCIÓN ABRIR MODAL - DECLARACIÓN GLOBAL EXPLÍCITA
+window.abrirModal = function() {
+  console.log("Ejecutando abrirModal()");
+  if (window.modalVisible) return;
 
-  // Configurar Selectize para rol con estilo mejorado
-  if (document.getElementById("rol")) {
-    $("#rol").selectize({
-      placeholder: "Seleccione un rol",
-      searchField: ["text"],
-      maxItems: 1,
-      create: false,
-      allowEmptyOption: false,
-      render: {
-        option: function (item, escape) {
-          const iconos = {
-            1: "fa-user-shield",
-            2: "fa-user-tie",
-            3: "fa-user",
-          };
-          const colores = {
-            1: "#e74c3c",
-            2: "#f39c12",
-            3: "#3498db",
-          };
-          return (
-            '<div class="option-item">' +
-            '<i class="fas ' +
-            (iconos[item.value] || "fa-user") +
-            '" style="margin-right: 8px; color: ' +
-            (colores[item.value] || "#6c5ce7") +
-            ';"></i>' +
-            escape(item.text) +
-            "</div>"
-          );
-        },
-        item: function (item, escape) {
-          return '<div class="selected-item">' + escape(item.text) + "</div>";
-        },
-      },
-      onDropdownOpen: function () {
-        this.$dropdown.css("z-index", 99999);
-      },
-    });
-  }
-}
-
-// Función para reinicializar Selectize después de abrir modal
-function reinicializarSelectize() {
-  // Destruir instancias existentes
-  ["area", "rol"].forEach((id) => {
-    const element = document.getElementById(id);
-    if (element && element.selectize) {
-      element.selectize.destroy();
-    }
-  });
-
-  // Reinicializar
-  setTimeout(() => {
-    inicializarSelectize();
-  }, 100);
-}
-
-// Función para inicializar todos los eventos
-function inicializarEventos() {
-  const formulario = document.getElementById("formUsuario");
-  if (formulario) {
-    formulario.addEventListener("submit", procesarFormulario);
-  }
-
-  configurarNavegacion();
-  configurarEventosModales();
-}
-
-// Función para abrir modal (crear nuevo usuario)
-function abrirModal() {
-  if (modalVisible) return;
-
-  modoEditar = false;
+  window.modoEditar = false;
   limpiarFormulario();
 
   document.getElementById("tituloModal").textContent = "Crear Usuario";
@@ -129,17 +41,17 @@ function abrirModal() {
   setTimeout(() => {
     reinicializarSelectize();
   }, 200);
-}
+};
 
-// Función para editar usuario
-function editarUsuario(id) {
-  if (modalVisible) return;
+// FUNCIÓN EDITAR USUARIO - DECLARACIÓN GLOBAL EXPLÍCITA
+window.editarUsuario = function(id) {
+  console.log("Ejecutando editarUsuario() con ID:", id);
+  if (window.modalVisible) return;
 
-  modoEditar = true;
+  window.modoEditar = true;
   document.getElementById("tituloModal").textContent = "Editar Usuario";
   document.getElementById("password").required = false;
-  document.getElementById("passwordHelp").textContent =
-    "Dejar vacío para mantener la contraseña actual";
+  document.getElementById("passwordHelp").textContent = "Dejar vacío para mantener la contraseña actual";
 
   habilitarBusquedaDNI(false);
 
@@ -185,6 +97,210 @@ function editarUsuario(id) {
         timer: 4000,
       });
     });
+};
+
+// FUNCIÓN CAMBIAR ESTADO - DECLARACIÓN GLOBAL EXPLÍCITA
+window.cambiarEstado = function(id, nuevoEstado) {
+  console.log("Ejecutando cambiarEstado() con ID:", id, "Estado:", nuevoEstado);
+  const accion = nuevoEstado === 1 ? "reactivar" : "desactivar";
+
+  Swal.fire({
+    title: "¿Confirmar acción?",
+    text: `¿Está seguro de ${accion} este usuario?`,
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonColor: "#6c5ce7",
+    cancelButtonColor: "#d33",
+    confirmButtonText: "Sí, continuar",
+    cancelButtonText: "Cancelar",
+    backdrop: true,
+    allowOutsideClick: true,
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const datos = new FormData();
+      datos.append("accion", "cambiar_estado");
+      datos.append("id", id);
+      datos.append("estado", nuevoEstado);
+
+      fetch("../../backend/php/gestusuarios/gestusuarios.php", {
+        method: "POST",
+        body: datos,
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            Swal.fire({
+              toast: true,
+              position: "top-end",
+              icon: "success",
+              title: data.message,
+              showConfirmButton: false,
+              timer: 1000,
+              timerProgressBar: true,
+            });
+            setTimeout(() => location.reload(), 1000);
+          } else {
+            Swal.fire({
+              toast: true,
+              position: "top-end",
+              icon: "error",
+              title: data.message,
+              showConfirmButton: false,
+              timer: 3000,
+            });
+          }
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+          Swal.fire({
+            toast: true,
+            position: "top-end",
+            icon: "error",
+            title: "Error de conexión al servidor",
+            showConfirmButton: false,
+            timer: 3000,
+          });
+        });
+    }
+  });
+};
+
+// FUNCIÓN CAMBIAR TAB - DECLARACIÓN GLOBAL EXPLÍCITA
+window.cambiarTab = function(tab) {
+  console.log("Ejecutando cambiarTab() con tab:", tab);
+  document.querySelectorAll(".tab-usuario").forEach((btn) => {
+    btn.classList.remove("active");
+  });
+  document.querySelectorAll(".contenido-tab").forEach((contenido) => {
+    contenido.classList.remove("active");
+  });
+
+  event.target.classList.add("active");
+  document.getElementById("contenido-" + tab).classList.add("active");
+};
+
+// FUNCIÓN CERRAR MODAL - DECLARACIÓN GLOBAL EXPLÍCITA
+window.cerrarModal = function() {
+  console.log("Ejecutando cerrarModal()");
+  const modal = document.getElementById("modalUsuario");
+
+  if (Swal.isVisible()) {
+    Swal.close();
+  }
+
+  modal.classList.remove("show");
+
+  setTimeout(() => {
+    modal.style.display = "none";
+    document.body.style.overflow = "auto";
+    document.body.classList.remove("modal-open");
+    window.modalVisible = false;
+    limpiarFormulario();
+  }, 300);
+};
+
+// Función para inicializar Selectize en todos los selects
+function inicializarSelectize() {
+  // Configurar Selectize para área con estilo mejorado
+  if (document.getElementById("area")) {
+    $("#area").selectize({
+      placeholder: "Seleccione un área",
+      searchField: ["text"],
+      maxItems: 1,
+      create: false,
+      allowEmptyOption: false,
+      render: {
+        option: function (item, escape) {
+          return (
+            '<div class="option-item">' +
+            '<i class="fas fa-building" style="margin-right: 8px; color: #6c5ce7;"></i>' +
+            escape(item.text) +
+            "</div>"
+          );
+        },
+        item: function (item, escape) {
+          return '<div class="selected-item">' + escape(item.text) + "</div>";
+        },
+      },
+      onDropdownOpen: function () {
+        this.$dropdown.css("z-index", 99999);
+      },
+    });
+  }
+
+  // Configurar Selectize para rol con estilo mejorado
+  if (document.getElementById("rol")) {
+    $("#rol").selectize({
+      placeholder: "Seleccione un rol",
+      searchField: ["text"],
+      maxItems: 1,
+      create: false,
+      allowEmptyOption: false,
+      render: {
+        option: function (item, escape) {
+          // Iconos dinámicos basados en el nombre del rol
+          let icono = "fa-user";
+          let color = "#3498db";
+
+          const texto = item.text.toLowerCase();
+          if (texto.includes("administrador")) {
+            icono = "fa-user-shield";
+            color = "#e74c3c";
+          } else if (texto.includes("supervisor")) {
+            icono = "fa-user-tie";
+            color = "#f39c12";
+          } else if (texto.includes("usuario")) {
+            icono = "fa-user";
+            color = "#3498db";
+          }
+
+          return (
+            '<div class="option-item">' +
+            '<i class="fas ' +
+            icono +
+            '" style="margin-right: 8px; color: ' +
+            color +
+            ';"></i>' +
+            escape(item.text) +
+            "</div>"
+          );
+        },
+        item: function (item, escape) {
+          return '<div class="selected-item">' + escape(item.text) + "</div>";
+        },
+      },
+      onDropdownOpen: function () {
+        this.$dropdown.css("z-index", 99999);
+      },
+    });
+  }
+}
+
+// Función para reinicializar Selectize después de abrir modal
+function reinicializarSelectize() {
+  // Destruir instancias existentes
+  ["area", "rol"].forEach((id) => {
+    const element = document.getElementById(id);
+    if (element && element.selectize) {
+      element.selectize.destroy();
+    }
+  });
+
+  // Reinicializar
+  setTimeout(() => {
+    inicializarSelectize();
+  }, 100);
+}
+
+// Función para inicializar todos los eventos
+function inicializarEventos() {
+  const formulario = document.getElementById("formUsuario");
+  if (formulario) {
+    formulario.addEventListener("submit", procesarFormulario);
+  }
+
+  configurarNavegacion();
+  configurarEventosModales();
 }
 
 // Función para habilitar/deshabilitar búsqueda DNI
@@ -233,7 +349,7 @@ function configurarEventosBusquedaDNI() {
   let timeoutId;
 
   campoDNI.addEventListener("input", function busquedaAutomatica() {
-    if (modoEditar) return;
+    if (window.modoEditar) return;
 
     const dni = this.value.trim();
     clearTimeout(timeoutId);
@@ -284,7 +400,7 @@ function removerEventosBusquedaDNI() {
 
 // Función para buscar datos del DNI
 function buscarDNI(dni) {
-  if (modoEditar) return;
+  if (window.modoEditar) return;
 
   const campoDNI = document.getElementById("dni");
   const botonBuscar = document.getElementById("btnBuscarDNI");
@@ -338,9 +454,9 @@ function buscarDNI(dni) {
 // Función para llenar los datos de la persona
 function llenarDatosPersona(data) {
   const campos = {
-    nombres: data.prenombres,
-    apellidoPat: data.apPrimer,
-    apellidoMat: data.apSegundo || "",
+    nombres: data.prenombres ? data.prenombres.toUpperCase() : "",
+    apellidoPat: data.apPrimer ? data.apPrimer.toUpperCase() : "",
+    apellidoMat: data.apSegundo ? data.apSegundo.toUpperCase() : "",
   };
 
   Object.keys(campos).forEach((id) => {
@@ -409,7 +525,7 @@ function mostrarModal() {
   modal.style.display = "flex";
   document.body.style.overflow = "hidden";
   document.body.classList.add("modal-open");
-  modalVisible = true;
+  window.modalVisible = true;
   modal.style.zIndex = "999998";
 
   setTimeout(() => {
@@ -418,29 +534,10 @@ function mostrarModal() {
 
   document.addEventListener("keydown", function escapeHandler(e) {
     if (e.key === "Escape" && !document.querySelector(".swal2-container")) {
-      cerrarModal();
+      window.cerrarModal();
       document.removeEventListener("keydown", escapeHandler);
     }
   });
-}
-
-// Función para cerrar el modal
-function cerrarModal() {
-  const modal = document.getElementById("modalUsuario");
-
-  if (Swal.isVisible()) {
-    Swal.close();
-  }
-
-  modal.classList.remove("show");
-
-  setTimeout(() => {
-    modal.style.display = "none";
-    document.body.style.overflow = "auto";
-    document.body.classList.remove("modal-open");
-    modalVisible = false;
-    limpiarFormulario();
-  }, 300);
 }
 
 // Función para limpiar el formulario
@@ -487,10 +584,10 @@ function procesarFormulario(e) {
     '<i class="fas fa-spinner fa-spin"></i> Guardando...';
 
   const datos = new FormData(e.target);
-  datos.append("accion", modoEditar ? "editar" : "crear");
+  datos.append("accion", window.modoEditar ? "editar" : "crear");
 
   // Asegurar que el estado sea siempre 1 (Activo) para nuevos usuarios
-  if (!modoEditar) {
+  if (!window.modoEditar) {
     datos.set("estado", "1");
   }
 
@@ -507,14 +604,14 @@ function procesarFormulario(e) {
           icon: "success",
           title: data.message,
           showConfirmButton: false,
-          timer: 1000, // Reducido a 1 segundo
+          timer: 1000,
           timerProgressBar: true,
         });
 
         setTimeout(() => {
-          cerrarModal();
+          window.cerrarModal();
           location.reload();
-        }, 1000); // Reducido a 1 segundo
+        }, 1000);
       } else {
         Swal.fire({
           toast: true,
@@ -582,7 +679,7 @@ function validarCampoEspecifico(campo) {
       }
       break;
     case "dni":
-      if (modoEditar && !/^\d{8}$/.test(valor)) {
+      if (window.modoEditar && !/^\d{8}$/.test(valor)) {
         mensaje = "El DNI debe tener exactamente 8 dígitos";
       }
       break;
@@ -641,90 +738,12 @@ function mostrarExito(campo) {
   }
 }
 
-// Función para cambiar estado de usuario
-function cambiarEstado(id, nuevoEstado) {
-  const accion = nuevoEstado === 1 ? "reactivar" : "desactivar";
-
-  Swal.fire({
-    title: "¿Confirmar acción?",
-    text: `¿Está seguro de ${accion} este usuario?`,
-    icon: "question",
-    showCancelButton: true,
-    confirmButtonColor: "#6c5ce7",
-    cancelButtonColor: "#d33",
-    confirmButtonText: "Sí, continuar",
-    cancelButtonText: "Cancelar",
-    backdrop: true,
-    allowOutsideClick: true,
-  }).then((result) => {
-    if (result.isConfirmed) {
-      const datos = new FormData();
-      datos.append("accion", "cambiar_estado");
-      datos.append("id", id);
-      datos.append("estado", nuevoEstado);
-
-      fetch("../../backend/php/gestusuarios/gestusuarios.php", {
-        method: "POST",
-        body: datos,
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.success) {
-            Swal.fire({
-              toast: true,
-              position: "top-end",
-              icon: "success",
-              title: data.message,
-              showConfirmButton: false,
-              timer: 1000, // Reducido a 1 segundo
-              timerProgressBar: true,
-            });
-            setTimeout(() => location.reload(), 1000); // Reducido a 1 segundo
-          } else {
-            Swal.fire({
-              toast: true,
-              position: "top-end",
-              icon: "error",
-              title: data.message,
-              showConfirmButton: false,
-              timer: 3000,
-            });
-          }
-        })
-        .catch((error) => {
-          console.error("Error:", error);
-          Swal.fire({
-            toast: true,
-            position: "top-end",
-            icon: "error",
-            title: "Error de conexión al servidor",
-            showConfirmButton: false,
-            timer: 3000,
-          });
-        });
-    }
-  });
-}
-
-// Función para cambiar entre tabs
-function cambiarTab(tab) {
-  document.querySelectorAll(".tab-usuario").forEach((btn) => {
-    btn.classList.remove("active");
-  });
-  document.querySelectorAll(".contenido-tab").forEach((contenido) => {
-    contenido.classList.remove("active");
-  });
-
-  event.target.classList.add("active");
-  document.getElementById("contenido-" + tab).classList.add("active");
-}
-
 // Función para configurar eventos de modales
 function configurarEventosModales() {
   document.addEventListener("click", function (event) {
     const modal = document.getElementById("modalUsuario");
     if (event.target === modal && !document.querySelector(".swal2-container")) {
-      cerrarModal();
+      window.cerrarModal();
     }
   });
 }
@@ -779,6 +798,27 @@ function configurarNavegacion() {
             errorMsg.remove();
           }
         }
+
+        // Convertir a mayúsculas automáticamente los campos de nombres
+        if (
+          this.name === "nombres" ||
+          this.name === "apellidoPat" ||
+          this.name === "apellidoMat"
+        ) {
+          const cursorPos = this.selectionStart;
+          this.value = this.value.toUpperCase();
+          this.setSelectionRange(cursorPos, cursorPos);
+        }
       });
     });
 }
+
+// LOG DE VERIFICACIÓN AL FINAL
+console.log("Archivo gestusuarios.js cargado completamente");
+console.log("Funciones globales definidas:", {
+  abrirModal: typeof window.abrirModal,
+  editarUsuario: typeof window.editarUsuario,
+  cambiarEstado: typeof window.cambiarEstado,
+  cambiarTab: typeof window.cambiarTab,
+  cerrarModal: typeof window.cerrarModal
+});

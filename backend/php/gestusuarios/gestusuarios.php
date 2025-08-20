@@ -19,7 +19,6 @@ $accion = $_POST['accion'] ?? '';
 try {
     switch ($accion) {
         case 'crear':
-            $dni = trim($_POST['dni'] ?? '');
             $usuario = trim($_POST['usuario'] ?? '');
             $password = $_POST['password'] ?? '';
             $nombres = trim($_POST['nombres'] ?? '');
@@ -27,9 +26,8 @@ try {
             $apellidoMat = trim($_POST['apellidoMat'] ?? '');
             $area = (int)($_POST['area'] ?? 0);
             $rol = (int)($_POST['rol'] ?? 0);
-            $estado = 1; // Siempre activo por defecto
+            $estado = (int)($_POST['estado'] ?? 1);
 
-            // Validaciones básicas
             if (empty($usuario) || empty($password) || empty($nombres) || empty($apellidoPat) || !$area || !$rol) {
                 echo json_encode(['success' => false, 'message' => 'Todos los campos obligatorios deben estar completos']);
                 exit;
@@ -45,23 +43,6 @@ try {
                 exit;
             }
 
-            // Validar DNI si se proporciona
-            if (!empty($dni)) {
-                if (!preg_match('/^\d{8}$/', $dni)) {
-                    echo json_encode(['success' => false, 'message' => 'El DNI debe tener exactamente 8 dígitos']);
-                    exit;
-                }
-
-                // Verificar que el DNI no esté en uso
-                $stmt = $pdo->prepare("SELECT COUNT(*) FROM usuarios WHERE Dni = ?");
-                $stmt->execute([$dni]);
-                if ($stmt->fetchColumn() > 0) {
-                    echo json_encode(['success' => false, 'message' => 'El DNI ya está registrado']);
-                    exit;
-                }
-            }
-
-            // Verificar que el usuario no exista
             $stmt = $pdo->prepare("SELECT COUNT(*) FROM usuarios WHERE Usuario = ?");
             $stmt->execute([$usuario]);
             if ($stmt->fetchColumn() > 0) {
@@ -70,18 +51,15 @@ try {
             }
 
             $passwordHash = password_hash($password, PASSWORD_DEFAULT);
-
-            // Insertar con DNI
-            $stmt = $pdo->prepare("INSERT INTO usuarios (Dni, Usuario, Clave, Nombres, ApellidoPat, ApellidoMat, IdAreas, IdRol, Estado) 
-                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$dni, $usuario, $passwordHash, $nombres, $apellidoPat, $apellidoMat, $area, $rol, $estado]);
+            $stmt = $pdo->prepare("INSERT INTO usuarios (Usuario, Clave, Nombres, ApellidoPat, ApellidoMat, IdAreas, IdRol, Estado) 
+                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$usuario, $passwordHash, $nombres, $apellidoPat, $apellidoMat, $area, $rol, $estado]);
 
             echo json_encode(['success' => true, 'message' => 'Usuario creado correctamente']);
             break;
 
         case 'editar':
             $id = (int)($_POST['userId'] ?? 0);
-            $dni = trim($_POST['dni'] ?? '');
             $usuario = trim($_POST['usuario'] ?? '');
             $password = $_POST['password'] ?? '';
             $nombres = trim($_POST['nombres'] ?? '');
@@ -89,6 +67,7 @@ try {
             $apellidoMat = trim($_POST['apellidoMat'] ?? '');
             $area = (int)($_POST['area'] ?? 0);
             $rol = (int)($_POST['rol'] ?? 0);
+            $estado = (int)($_POST['estado'] ?? 1);
 
             if (!$id || empty($usuario) || empty($nombres) || empty($apellidoPat) || !$area || !$rol) {
                 echo json_encode(['success' => false, 'message' => 'Todos los campos obligatorios deben estar completos']);
@@ -100,23 +79,6 @@ try {
                 exit;
             }
 
-            // Validar DNI si se proporciona
-            if (!empty($dni)) {
-                if (!preg_match('/^\d{8}$/', $dni)) {
-                    echo json_encode(['success' => false, 'message' => 'El DNI debe tener exactamente 8 dígitos']);
-                    exit;
-                }
-
-                // Verificar que el DNI no esté en uso por otro usuario
-                $stmt = $pdo->prepare("SELECT COUNT(*) FROM usuarios WHERE Dni = ? AND IdUsuarios != ?");
-                $stmt->execute([$dni, $id]);
-                if ($stmt->fetchColumn() > 0) {
-                    echo json_encode(['success' => false, 'message' => 'El DNI ya está registrado por otro usuario']);
-                    exit;
-                }
-            }
-
-            // Verificar que el usuario no exista (excepto el actual)
             $stmt = $pdo->prepare("SELECT COUNT(*) FROM usuarios WHERE Usuario = ? AND IdUsuarios != ?");
             $stmt->execute([$usuario, $id]);
             if ($stmt->fetchColumn() > 0) {
@@ -124,18 +86,17 @@ try {
                 exit;
             }
 
-            // Actualizar con o sin contraseña
             if (!empty($password)) {
                 if (strlen($password) < 4) {
                     echo json_encode(['success' => false, 'message' => 'La contraseña debe tener al menos 4 caracteres']);
                     exit;
                 }
                 $passwordHash = password_hash($password, PASSWORD_DEFAULT);
-                $stmt = $pdo->prepare("UPDATE usuarios SET Dni=?, Usuario=?, Clave=?, Nombres=?, ApellidoPat=?, ApellidoMat=?, IdAreas=?, IdRol=? WHERE IdUsuarios=?");
-                $stmt->execute([$dni, $usuario, $passwordHash, $nombres, $apellidoPat, $apellidoMat, $area, $rol, $id]);
+                $stmt = $pdo->prepare("UPDATE usuarios SET Usuario=?, Clave=?, Nombres=?, ApellidoPat=?, ApellidoMat=?, IdAreas=?, IdRol=?, Estado=? WHERE IdUsuarios=?");
+                $stmt->execute([$usuario, $passwordHash, $nombres, $apellidoPat, $apellidoMat, $area, $rol, $estado, $id]);
             } else {
-                $stmt = $pdo->prepare("UPDATE usuarios SET Dni=?, Usuario=?, Nombres=?, ApellidoPat=?, ApellidoMat=?, IdAreas=?, IdRol=? WHERE IdUsuarios=?");
-                $stmt->execute([$dni, $usuario, $nombres, $apellidoPat, $apellidoMat, $area, $rol, $id]);
+                $stmt = $pdo->prepare("UPDATE usuarios SET Usuario=?, Nombres=?, ApellidoPat=?, ApellidoMat=?, IdAreas=?, IdRol=?, Estado=? WHERE IdUsuarios=?");
+                $stmt->execute([$usuario, $nombres, $apellidoPat, $apellidoMat, $area, $rol, $estado, $id]);
             }
 
             echo json_encode(['success' => true, 'message' => 'Usuario actualizado correctamente']);
