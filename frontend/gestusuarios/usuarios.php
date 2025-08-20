@@ -22,6 +22,10 @@ $usuarios = $stmt_usuarios->fetchAll(PDO::FETCH_ASSOC);
 $stmt_areas = $pdo->query("SELECT IdAreas, Nombre FROM areas ORDER BY Nombre");
 $areas = $stmt_areas->fetchAll(PDO::FETCH_ASSOC);
 
+// CORREGIR ESTA CONSULTA - usar la tabla correcta
+$stmt_roles = $pdo->query("SELECT IdRol, Descripcion as Nombre FROM rol ORDER BY IdRol");
+$roles = $stmt_roles->fetchAll(PDO::FETCH_ASSOC);
+
 $total_usuarios = count($usuarios);
 $usuarios_activos = count(array_filter($usuarios, fn($u) => $u['Estado'] == 1));
 $administradores = count(array_filter($usuarios, fn($u) => $u['IdRol'] == 1));
@@ -149,8 +153,8 @@ $administradores = count(array_filter($usuarios, fn($u) => $u['IdRol'] == 1));
                                             <td>
                                                 <span class="rol-badge rol-<?= $user['IdRol'] ?>">
                                                     <?php
-                                                    $roles = [1 => 'Administrador', 2 => 'Supervisor', 3 => 'Usuario'];
-                                                    echo $roles[$user['IdRol']] ?? 'Sin definir';
+                                                    $roles_display = [1 => 'Administrador', 2 => 'Supervisor', 3 => 'Usuario'];
+                                                    echo $roles_display[$user['IdRol']] ?? 'Sin definir';
                                                     ?>
                                                 </span>
                                             </td>
@@ -296,9 +300,9 @@ $administradores = count(array_filter($usuarios, fn($u) => $u['IdRol'] == 1));
                                 <label for="rol">Rol *</label>
                                 <select id="rol" name="rol" required>
                                     <option value="">Seleccione un rol</option>
-                                    <option value="1">Administrador</option>
-                                    <option value="2">Supervisor</option>
-                                    <option value="3">Usuario</option>
+                                    <?php foreach ($roles as $rol): ?>
+                                        <option value="<?= $rol['IdRol'] ?>"><?= htmlspecialchars($rol['Nombre']) ?></option>
+                                    <?php endforeach; ?>
                                 </select>
                             </div>
                         </div>
@@ -317,6 +321,168 @@ $administradores = count(array_filter($usuarios, fn($u) => $u['IdRol'] == 1));
 
     <!-- JavaScript del módulo -->
     <script src="../../backend/js/gestusuarios/gestusuarios.js"></script>
+
+    <!-- Script de respaldo -->
+    <script>
+        // Verificar si las funciones están disponibles después de cargar
+        function verificarYCargarRespaldo() {
+            const funciones = ['abrirModal', 'editarUsuario', 'cambiarEstado', 'cambiarTab', 'cerrarModal'];
+            let faltantes = [];
+
+            funciones.forEach(nombre => {
+                if (typeof window[nombre] !== 'function') {
+                    faltantes.push(nombre);
+                }
+            });
+
+            if (faltantes.length > 0) {
+                console.warn('Cargando funciones de respaldo para:', faltantes);
+
+                // Variables globales
+                window.modoEditar = false;
+                window.modalVisible = false;
+
+                // abrirModal
+                if (typeof window.abrirModal !== 'function') {
+                    window.abrirModal = function() {
+                        window.modoEditar = false;
+                        const modal = document.getElementById("modalUsuario");
+                        const form = document.getElementById("formUsuario");
+                        if (form) form.reset();
+
+                        document.getElementById("tituloModal").textContent = "Crear Usuario";
+                        document.getElementById("password").required = true;
+
+                        modal.style.display = "flex";
+                        document.body.style.overflow = "hidden";
+                        window.modalVisible = true;
+
+                        setTimeout(() => modal.classList.add("show"), 10);
+                    };
+                }
+
+                // editarUsuario
+                if (typeof window.editarUsuario !== 'function') {
+                    window.editarUsuario = function(id) {
+                        window.modoEditar = true;
+                        document.getElementById("tituloModal").textContent = "Editar Usuario";
+                        document.getElementById("password").required = false;
+
+                        const datos = new FormData();
+                        datos.append("accion", "obtener");
+                        datos.append("id", id);
+
+                        fetch("../../backend/php/gestusuarios/gestusuarios.php", {
+                                method: "POST",
+                                body: datos,
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    const modal = document.getElementById("modalUsuario");
+                                    modal.style.display = "flex";
+                                    document.body.style.overflow = "hidden";
+                                    window.modalVisible = true;
+
+                                    setTimeout(() => {
+                                        modal.classList.add("show");
+                                        const usuario = data.usuario;
+                                        document.getElementById("userId").value = usuario.IdUsuarios;
+                                        document.getElementById("usuario").value = usuario.Usuario;
+                                        document.getElementById("dni").value = usuario.Dni || "";
+                                        document.getElementById("nombres").value = usuario.Nombres || "";
+                                        document.getElementById("apellidoPat").value = usuario.ApellidoPat || "";
+                                        document.getElementById("apellidoMat").value = usuario.ApellidoMat || "";
+                                        document.getElementById("area").value = usuario.IdAreas;
+                                        document.getElementById("rol").value = usuario.IdRol;
+                                    }, 100);
+                                } else {
+                                    alert("Error: " + (data.message || "No se pudo obtener los datos"));
+                                }
+                            })
+                            .catch(error => {
+                                console.error("Error:", error);
+                                alert("Error de conexión");
+                            });
+                    };
+                }
+
+                // cambiarEstado
+                if (typeof window.cambiarEstado !== 'function') {
+                    window.cambiarEstado = function(id, nuevoEstado) {
+                        const accion = nuevoEstado === 1 ? "reactivar" : "desactivar";
+
+                        if (confirm(`¿Está seguro de ${accion} este usuario?`)) {
+                            const datos = new FormData();
+                            datos.append("accion", "cambiar_estado");
+                            datos.append("id", id);
+                            datos.append("estado", nuevoEstado);
+
+                            fetch("../../backend/php/gestusuarios/gestusuarios.php", {
+                                    method: "POST",
+                                    body: datos,
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        alert("Usuario " + accion + " correctamente");
+                                        location.reload();
+                                    } else {
+                                        alert("Error: " + data.message);
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error("Error:", error);
+                                    alert("Error de conexión");
+                                });
+                        }
+                    };
+                }
+
+                // cambiarTab
+                if (typeof window.cambiarTab !== 'function') {
+                    window.cambiarTab = function(tab) {
+                        document.querySelectorAll(".tab-usuario").forEach(btn => {
+                            btn.classList.remove("active");
+                        });
+                        document.querySelectorAll(".contenido-tab").forEach(contenido => {
+                            contenido.classList.remove("active");
+                        });
+
+                        event.target.classList.add("active");
+                        document.getElementById("contenido-" + tab).classList.add("active");
+                    };
+                }
+
+                // cerrarModal
+                if (typeof window.cerrarModal !== 'function') {
+                    window.cerrarModal = function() {
+                        const modal = document.getElementById("modalUsuario");
+                        modal.classList.remove("show");
+
+                        setTimeout(() => {
+                            modal.style.display = "none";
+                            document.body.style.overflow = "auto";
+                            window.modalVisible = false;
+                            const form = document.getElementById("formUsuario");
+                            if (form) form.reset();
+                        }, 300);
+                    };
+                }
+
+                console.log('Funciones de respaldo cargadas');
+            } else {
+                console.log('Todas las funciones están disponibles');
+            }
+        }
+
+        // Ejecutar verificación
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => setTimeout(verificarYCargarRespaldo, 100));
+        } else {
+            setTimeout(verificarYCargarRespaldo, 100);
+        }
+    </script>
 </body>
 
 </html>
