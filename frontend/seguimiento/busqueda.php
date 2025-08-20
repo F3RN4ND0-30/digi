@@ -124,7 +124,10 @@ require '../../backend/db/conexion.php';
                         data: 'Asunto'
                     },
                     {
-                        data: 'AreaDestino'
+                        data: 'NombreAreaDestino',
+                        render: function(data, type, row) {
+                            return data || `[ID ${row.AreaDestino}]`; // fallback por si no hay nombre
+                        }
                     },
                     {
                         data: 'FechaMovimiento'

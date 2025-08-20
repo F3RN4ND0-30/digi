@@ -429,6 +429,23 @@ body {
   min-width: 90px;
 }
 
+.btn-danger {
+  margin-top: 5px;
+  background: linear-gradient(135deg, #d00000, #a00000);
+  /* Degradado rojo */
+  color: var(--reenviar-white);
+  /* O usa #fff si no usas variables */
+  border: 1px solid rgba(184, 0, 0, 0.3);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: linear-gradient(135deg, #a00000, #8f0000);
+  /* Degradado rojo más oscuro al hacer hover */
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(184, 0, 0, 0.4);
+}
+
+
 /* Alerts mejorados */
 .alert {
   padding: 1rem 1.5rem;

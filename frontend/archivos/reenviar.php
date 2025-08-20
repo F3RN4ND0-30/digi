@@ -9,21 +9,17 @@ require '../../backend/db/conexion.php';
 
 $area_id = $_SESSION['dg_area_id'] ?? null;
 
-$sql = "SELECT m.IdMovimientoDocumento, m.IdDocumentos, d.NumeroDocumento, d.Asunto, u.Nombres, u.ApellidoPat
+$sql = "SELECT m.IdMovimientoDocumento, m.IdDocumentos, d.NumeroDocumento, d.Asunto, d.IdUsuarios, u.Nombres, u.ApellidoPat
         FROM movimientodocumento m
         INNER JOIN documentos d ON m.IdDocumentos = d.IdDocumentos
         INNER JOIN usuarios u ON d.IdUsuarios = u.IdUsuarios
-        WHERE m.AreaDestino = ? 
+        WHERE m.AreaDestino = ?
           AND m.Recibido = 1
-          AND NOT EXISTS (
-              SELECT 1 FROM movimientodocumento m2
-              WHERE m2.IdDocumentos = m.IdDocumentos
-              AND m2.AreaOrigen = ?
-          )
+          AND d.Finalizado = 0
         ORDER BY m.IdMovimientoDocumento DESC";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([$area_id, $area_id]);
+$stmt->execute([$area_id]);
 $documentos_recibidos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $areas = $pdo->prepare("SELECT IdAreas, Nombre FROM areas WHERE IdAreas != ?");
@@ -125,13 +121,25 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
                                                         placeholder="Observación opcional..."
                                                         maxlength="100">
                                                 </td>
-                                                <td class="accion-btn">
+                                                <td class="accion-btn d-flex flex-column gap-1">
+                                                    <!-- Botón Reenviar -->
                                                     <input type="hidden" name="id_documento" value="<?= $doc['IdDocumentos'] ?>">
-                                                    <button type="submit" class="btn btn-success btn-sm">
-                                                        <i class="fas fa-paper-plane"></i>
-                                                        Reenviar
+                                                    <button type="submit" class="btn btn-success btn-sm w-100">
+                                                        <i class="fas fa-paper-plane"></i> Reenviar
                                                     </button>
-                                                </td>
+                                            </form>
+
+                                            <?php if ($doc['IdUsuarios'] == $_SESSION['dg_id']): ?>
+                                                <!-- Botón Finalizar (solo para el creador del documento) -->
+                                                <form method="POST" action="../../backend/php/archivos/finalizar_documento.php">
+                                                    <input type="hidden" name="id_documento" value="<?= $doc['IdDocumentos'] ?>">
+                                                    <button type="submit" class="btn btn-danger btn-sm w-100"
+                                                        onclick="return confirm('¿Estás seguro de que deseas marcar este documento como finalizado?');">
+                                                        <i class="fas fa-check-circle"></i> Finalizar
+                                                    </button>
+                                                </form>
+                                            <?php endif; ?>
+                                            </td>
                                             </form>
                                         </tr>
                                     <?php endforeach; ?>

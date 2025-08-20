@@ -24,9 +24,11 @@ $sql = "
         d.NumeroDocumento,
         d.Asunto,
         md1.AreaDestino,
+        a.Nombre AS NombreAreaDestino,
         md1.FechaMovimiento,
         md1.Recibido
     FROM movimientodocumento md1
+    LEFT JOIN areas a ON md1.AreaDestino = a.IdAreas
     INNER JOIN (
         SELECT IdDocumentos, MAX(FechaMovimiento) AS MaxFecha
         FROM movimientodocumento

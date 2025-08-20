@@ -62,7 +62,7 @@ $user_name = htmlspecialchars($_SESSION['dg_nombre'] ?? 'Usuario');
                 </div>
             </div>
 
-            <a href="../configuracion/index.php" class="nav-link <?= ($current_page === 'configuracion') ? 'active' : '' ?>">
+            <a href="../configuracion/perfil.php" class="nav-link <?= ($current_page === 'configuracion') ? 'active' : '' ?>">
                 <i class="fas fa-cog"></i>
                 <span>Configuración</span>
             </a>
