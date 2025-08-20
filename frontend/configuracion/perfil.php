@@ -152,6 +152,22 @@ unset($_SESSION['mensaje']);
             });
         });
     </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Lista de IDs a convertir a mayúsculas
+            const camposMayusculas = ['nombres', 'apellidoPat', 'apellidoMat'];
+
+            camposMayusculas.forEach(function(id) {
+                const input = document.getElementById(id);
+                if (input) {
+                    input.addEventListener('input', function() {
+                        this.value = this.value.toUpperCase();
+                    });
+                }
+            });
+        });
+    </script>
+
 </body>
 
 </html>

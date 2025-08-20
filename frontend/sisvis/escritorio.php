@@ -41,13 +41,13 @@ unset($_SESSION['mensaje']);
     <link rel="stylesheet" href="../../backend/css/sisvis/escritorio.css" />
 
     <!-- Selectize CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/selectize@0.15.2/dist/css/selectize.default.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/css/selectize.default.css" rel="stylesheet" />
 
     <!-- jQuery (requerido por Selectize) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <!-- Selectize JS -->
-    <script src="https://cdn.jsdelivr.net/npm/selectize@0.15.2/dist/js/selectize.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/js/standalone/selectize.min.js"></script>
 
     <script src="../../backend/js/notificaciones.js"></script>
 </head>
@@ -74,7 +74,7 @@ unset($_SESSION['mensaje']);
                 <form method="POST" action="../../backend/php/archivos/registrar_archivo.php">
                     <div class="form-grid">
                         <div class="form-group">
-                            <label><i class="fas fa-hashtag"></i> Número de Documento:</label>
+                            <label><i class="fas fa-hashtag"></i> Nombre de Documento:</label>
                             <input type="text" name="numero" required placeholder="Ej: DOC-2025-001">
                         </div>
 
@@ -119,10 +119,6 @@ unset($_SESSION['mensaje']);
         </main>
     </div>
 
-    <!-- Scripts -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/selectize@0.15.2/dist/js/selectize.min.js"></script>
-
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const inputs = document.querySelectorAll('input[type="text"], textarea');
@@ -136,12 +132,19 @@ unset($_SESSION['mensaje']);
     </script>
 
     <script>
-        $(function() {
+        $(document).ready(function() {
             $('select').selectize({
                 allowEmptyOption: true,
                 placeholder: 'Seleccione una opción',
                 sortField: 'text',
-                create: false
+                create: false,
+                onFocus: function() {
+                    // 'this' es la instancia de Selectize
+                    // Eliminamos la opción con valor vacío
+                    this.removeOption('');
+                    // Actualizamos la lista para que desaparezca el placeholder
+                    this.refreshOptions(false);
+                }
             });
         });
     </script>

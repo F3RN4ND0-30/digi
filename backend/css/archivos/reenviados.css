@@ -494,11 +494,20 @@ body {
   box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.1) !important;
 }
 
+.selectize-control {
+  overflow: visible !important;
+  z-index: 9999;
+  position: relative;
+}
+
 .selectize-dropdown {
+  position: absolute !important;
+  z-index: 999999 !important;
   border: 2px solid var(--reenviar-primary) !important;
   border-radius: 8px !important;
   box-shadow: var(--reenviar-shadow) !important;
   background: var(--reenviar-white) !important;
+  color: black;
 }
 
 .selectize-dropdown-content .option {

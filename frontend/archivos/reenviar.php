@@ -47,11 +47,15 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
     <!-- CSS de Reenvío -->
     <link rel="stylesheet" href="../../backend/css/archivos/reenviados.css" />
 
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 
     <!-- Selectize CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/selectize@0.15.2/dist/css/selectize.default.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/css/selectize.default.css" rel="stylesheet" />
+    <!-- Selectize JS -->
+    <script src="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/js/standalone/selectize.min.js"></script>
 
     <script src="../../backend/js/notificaciones.js"></script>
 </head>
@@ -107,7 +111,7 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
                                                     </div>
                                                 </td>
                                                 <td class="area-select">
-                                                    <select name="nueva_area" required class="form-select area-pequena">
+                                                    <select name="nueva_area" required class="area-pequena">
                                                         <option value="">Seleccione área</option>
                                                         <?php foreach ($areas as $a): ?>
                                                             <option value="<?= $a['IdAreas'] ?>"><?= htmlspecialchars($a['Nombre']) ?></option>
@@ -153,11 +157,10 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
     </div>
 
     <!-- Scripts -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/selectize@0.15.2/dist/js/selectize.min.js"></script>
 
     <script>
         $(document).ready(function() {
@@ -173,13 +176,18 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
                 ]
             });
 
-            // Inicializar Selectize para los selects
             $('select[name="nueva_area"]').selectize({
                 allowEmptyOption: true,
-                placeholder: 'Seleccione un área',
+                placeholder: 'Seleccione una opción',
                 sortField: 'text',
-                create: false
+                create: false,
+                dropdownParent: 'body', // 🔧 aquí está la clave
+                onFocus: function() {
+                    this.removeOption('');
+                    this.refreshOptions(false);
+                }
             });
+
 
             // Mejorar UX del formulario
             $('.reenvio-form').on('submit', function(e) {
@@ -244,6 +252,18 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
                 if (!$(e.target).closest('.nav-dropdown').length) {
                     $('.nav-dropdown').removeClass('active');
                 }
+            });
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = document.querySelectorAll('input[type="text"], textarea');
+
+            inputs.forEach(function(element) {
+                element.addEventListener('input', function() {
+                    this.value = this.value.toUpperCase();
+                });
             });
         });
     </script>
