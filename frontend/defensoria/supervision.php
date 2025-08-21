@@ -15,7 +15,7 @@ if (($_SESSION['dg_rol'] ?? 999) != 1 && ($_SESSION['dg_rol'] ?? 999) != 4) {
 require '../../backend/db/conexion.php';
 
 // Función para calcular días corridos transcurridos
-function calcularDiasCorridos($fechaInicio)
+function calcularDiasHabiles($fechaInicio)
 {
     try {
         $inicio = new DateTime($fechaInicio);
@@ -24,8 +24,17 @@ function calcularDiasCorridos($fechaInicio)
         $inicio->setTime(0, 0, 0);
         $hoy->setTime(0, 0, 0);
 
-        $diferencia = $hoy->diff($inicio);
-        return $diferencia->days;
+        $diasHabiles = 0;
+
+        while ($inicio < $hoy) {
+            $diaSemana = $inicio->format('N'); // 1 (Lunes) a 7 (Domingo)
+            if ($diaSemana < 6) {
+                $diasHabiles++;
+            }
+            $inicio->modify('+1 day');
+        }
+
+        return $diasHabiles;
     } catch (Exception $e) {
         return 0;
     }
@@ -64,7 +73,7 @@ $resultado = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $documentos = [];
 foreach ($resultado as $doc) {
     // Calcular días transcurridos
-    $doc['DiasTranscurridos'] = calcularDiasCorridos($doc['FechaIngreso']);
+    $doc['DiasTranscurridos'] = calcularDiasHabiles($doc['FechaIngreso']);
 
     // Determinar color del semáforo
     if ($doc['DiasTranscurridos'] <= 2) {
@@ -124,6 +133,8 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
 
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script src="../../backend/js/notificaciones.js"></script>
 </head>
 
 <body>

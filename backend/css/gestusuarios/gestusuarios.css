@@ -301,7 +301,11 @@ body {
   color: white;
 }
 .rol-3 {
-  background: #74b9ff;
+  background: #ff74d5;
+  color: white;
+}
+.rol-4 {
+  background: #ff7474;
   color: white;
 }
 .rol-inactive {

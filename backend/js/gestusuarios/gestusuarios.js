@@ -202,14 +202,14 @@ window.cerrarModal = function () {
 
 // Función para inicializar Selectize en todos los selects
 function inicializarSelectize() {
-  // Configurar Selectize para área con estilo mejorado
   if (document.getElementById("area")) {
     $("#area").selectize({
       placeholder: "Seleccione un área",
       searchField: ["text"],
       maxItems: 1,
       create: false,
-      allowEmptyOption: false,
+      allowEmptyOption: true,
+      preload: true,
       render: {
         option: function (item, escape) {
           return (
@@ -222,6 +222,10 @@ function inicializarSelectize() {
         item: function (item, escape) {
           return '<div class="selected-item">' + escape(item.text) + "</div>";
         },
+      },
+      onInitialize: function () {
+        this.clear(); // ✅ Limpia cualquier valor seleccionado al iniciar
+        this.$control_input.attr("placeholder", "Seleccione un área"); // ✅ Aplica placeholder real en input
       },
       onDropdownOpen: function () {
         this.$dropdown.css("z-index", 99999);
