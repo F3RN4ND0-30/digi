@@ -44,6 +44,10 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
                             GESTIÓN DOCUMENTAL
                         </h6>
                         <div class="column-items">
+                            <a href="../archivos/registrar.php" class="module-item <?= ($current_page === 'registrar') ? 'active' : '' ?>">
+                                <i class="fas fa-plus-circle"></i>
+                                <span>Registrar</span>
+                            </a>
                             <a href="../archivos/recepcion.php" class="module-item <?= ($current_page === 'recepcion') ? 'active' : '' ?>">
                                 <i class="fas fa-inbox"></i>
                                 <span>Recepción</span>
@@ -77,7 +81,9 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
                                 </a>
                             </div>
                         </div>
+                    <?php endif; ?>
 
+                    <?php if ($user_role === 1 || $user_role === 4): ?>
                         <!-- Columna 3: Supervisión -->
                         <div class="module-column">
                             <h6 class="column-header">
@@ -103,13 +109,15 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
             </a>
         </div>
 
+        <script src="../../backend/js/notificaciones.js"></script>
+
         <!-- Usuario y Logout -->
         <div class="navbar-user">
             <!-- Sistema de Notificaciones -->
             <div class="notificaciones">
                 <div id="notificaciones" style="position: relative; cursor: pointer;">
                     <i class="fas fa-bell"></i>
-                    <span id="contador" style="color: red; font-weight: bold;"></span>
+                    <span id="contador" style="color: yellow; font-weight: bold; font-size: 18px; font-family: Arial, sans-serif;"></span>
                 </div>
 
                 <!-- Lista de Notificaciones -->

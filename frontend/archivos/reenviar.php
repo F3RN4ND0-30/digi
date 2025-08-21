@@ -9,7 +9,8 @@ require '../../backend/db/conexion.php';
 
 $area_id = $_SESSION['dg_area_id'] ?? null;
 
-$sql = "SELECT m.IdMovimientoDocumento, m.IdDocumentos, d.NumeroDocumento, d.Asunto, d.IdUsuarios, u.Nombres, u.ApellidoPat
+$sql = "SELECT m.IdMovimientoDocumento, m.IdDocumentos, d.NumeroDocumento, d.Asunto, d.IdUsuarios, d.IdAreaFinal,
+               u.Nombres, u.ApellidoPat
         FROM movimientodocumento m
         INNER JOIN documentos d ON m.IdDocumentos = d.IdDocumentos
         INNER JOIN usuarios u ON d.IdUsuarios = u.IdUsuarios
@@ -128,16 +129,16 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
                                                 <td class="accion-btn d-flex flex-column gap-1">
                                                     <!-- Botón Reenviar -->
                                                     <input type="hidden" name="id_documento" value="<?= $doc['IdDocumentos'] ?>">
-                                                    <button type="submit" class="btn btn-success btn-sm w-100">
+                                                    <button type="submit" class="btn btn-success btn-sm w-100 btn-reenviar">
                                                         <i class="fas fa-paper-plane"></i> Reenviar
                                                     </button>
                                             </form>
 
-                                            <?php if ($doc['IdUsuarios'] == $_SESSION['dg_id']): ?>
+                                            <?php if ($doc['IdAreaFinal'] == $_SESSION['dg_area_id']): ?>
                                                 <!-- Botón Finalizar (solo para el creador del documento) -->
                                                 <form method="POST" action="../../backend/php/archivos/finalizar_documento.php">
                                                     <input type="hidden" name="id_documento" value="<?= $doc['IdDocumentos'] ?>">
-                                                    <button type="submit" class="btn btn-danger btn-sm w-100"
+                                                    <button type="submit" class="btn btn-danger btn-sm w-100 btn-finalizar"
                                                         onclick="return confirm('¿Estás seguro de que deseas marcar este documento como finalizado?');">
                                                         <i class="fas fa-check-circle"></i> Finalizar
                                                     </button>
@@ -221,9 +222,24 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
             // Inicializar estado de botones
             $('select[name="nueva_area"]').each(function() {
                 const row = $(this).closest('tr');
-                const button = row.find('button[type="submit"]');
-                button.removeClass('btn-success').addClass('btn-secondary');
-                button.prop('disabled', true);
+                const btnReenviar = row.find('.btn-reenviar');
+
+                btnReenviar.removeClass('btn-success').addClass('btn-secondary');
+                btnReenviar.prop('disabled', true);
+            });
+
+            // Al cambiar el área seleccionada, activar solo el botón de reenviar
+            $('select[name="nueva_area"]').on('change', function() {
+                const row = $(this).closest('tr');
+                const btnReenviar = row.find('.btn-reenviar');
+
+                if ($(this).val()) {
+                    btnReenviar.removeClass('btn-secondary').addClass('btn-success');
+                    btnReenviar.prop('disabled', false);
+                } else {
+                    btnReenviar.removeClass('btn-success').addClass('btn-secondary');
+                    btnReenviar.prop('disabled', true);
+                }
             });
         });
     </script>
