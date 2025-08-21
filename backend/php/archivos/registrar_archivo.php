@@ -36,7 +36,7 @@ $areaOrigenNombre = $stmtOrigen->fetchColumn();
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $numero = trim($_POST['numero']);
     $asunto = trim($_POST['asunto']);
-    $estado_id = $_POST['estado'] ?? null;
+    $estado_id = 1;
     $area_destino = $_POST['area_destino'] ?? null;
 
     // Por defecto

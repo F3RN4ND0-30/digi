@@ -66,12 +66,8 @@ unset($_SESSION['mensaje']);
 
                         <div class="form-group">
                             <label><i class="fas fa-flag"></i> Estado:</label>
-                            <select name="estado" required>
-                                <option value="">Seleccione un estado</option>
-                                <?php foreach ($estados as $estado) : ?>
-                                    <option value="<?= $estado['IdEstadoDocumento'] ?>"><?= htmlspecialchars($estado['Estado']) ?></option>
-                                <?php endforeach; ?>
-                            </select>
+                            <input type="text" value="Nuevo" readonly disabled>
+                            <input type="hidden" name="estado" value="1"> <!-- ID del estado "Nuevo" -->
                         </div>
 
                         <div class="form-group">
