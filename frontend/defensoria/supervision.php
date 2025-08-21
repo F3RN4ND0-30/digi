@@ -31,14 +31,36 @@ function calcularDiasCorridos($fechaInicio)
     }
 }
 
-// CONSULTA ULTRA BÁSICA - Solo documentos externos finalizados
-$sql = "SELECT * FROM documentos WHERE Exterior = 1 AND Finalizado = 1 ORDER BY IdDocumentos DESC";
+// CONSULTA COMPLETA - Documentos externos finalizados con área, usuario y observaciones
+$sql = "
+    SELECT 
+        d.*,
+        COALESCE(a.Nombre, 'Sin área') as AreaDestino,
+        COALESCE(u.Nombres, 'Sin') as NombreUsuario,
+        COALESCE(u.ApellidoPat, 'usuario') as ApellidoUsuario,
+        obs.Observacion as UltimaObservacion,
+        obs.FechaMovimiento as FechaUltimaObservacion
+    FROM documentos d
+    LEFT JOIN areas a ON d.IdAreaFinal = a.IdAreas
+    LEFT JOIN usuarios u ON d.IdUsuarios = u.IdUsuarios
+    LEFT JOIN (
+        SELECT 
+            IdDocumentos,
+            Observacion,
+            FechaMovimiento,
+            ROW_NUMBER() OVER (PARTITION BY IdDocumentos ORDER BY FechaMovimiento DESC) as rn
+        FROM movimientodocumento 
+        WHERE Observacion IS NOT NULL AND Observacion != ''
+    ) obs ON d.IdDocumentos = obs.IdDocumentos AND obs.rn = 1
+    WHERE d.Exterior = 1 AND d.Finalizado = 1
+    ORDER BY d.IdDocumentos DESC
+";
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute();
 $resultado = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Procesar los datos únicos sin JOINs
+// Procesar los datos directamente
 $documentos = [];
 foreach ($resultado as $doc) {
     // Calcular días transcurridos
@@ -74,11 +96,6 @@ foreach ($resultado as $doc) {
             $doc['EstadoTexto'] = 'SIN ESTADO';
             break;
     }
-
-    // Datos predeterminados
-    $doc['AreaDestino'] = 'Sin área';
-    $doc['NombreUsuario'] = 'Sin usuario';
-    $doc['ApellidoUsuario'] = '';
 
     $documentos[] = $doc;
 }
@@ -261,9 +278,21 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
                                             </div>
                                         </td>
                                         <td>
-                                            <span class="sin-observacion" style="color: #999; font-size: 0.8rem;">
-                                                <i class="fas fa-minus-circle"></i> Sin observaciones
-                                            </span>
+                                            <?php if (!empty($doc['UltimaObservacion'])): ?>
+                                                <div class="observacion-existente"
+                                                    title="<?= htmlspecialchars($doc['UltimaObservacion']) ?>"
+                                                    style="cursor: pointer;"
+                                                    onclick="verObservacionCompleta('<?= htmlspecialchars(addslashes($doc['UltimaObservacion'])) ?>', '<?= date('d/m/Y', strtotime($doc['FechaUltimaObservacion'])) ?>')">
+                                                    <i class="fas fa-comment-check" style="color: #00b894;"></i>
+                                                    <small style="color: #666; font-size: 0.7rem;">
+                                                        <?= date('d/m/Y', strtotime($doc['FechaUltimaObservacion'])) ?>
+                                                    </small>
+                                                </div>
+                                            <?php else: ?>
+                                                <span class="sin-observacion" style="color: #999; font-size: 0.8rem;">
+                                                    <i class="fas fa-minus-circle"></i> Sin observaciones
+                                                </span>
+                                            <?php endif; ?>
                                         </td>
                                         <td>
                                             <div class="usuario-cell">
