@@ -11,8 +11,8 @@ require_once '../util/notificaciones_util.php';
 
 $usuario_id = $_SESSION['dg_id'];
 
-// Obtener área del usuario
-$consulta = $pdo->prepare("SELECT IdAreas FROM usuarios WHERE IdUsuarios = ?");
+// Obtener área y rol del usuario
+$consulta = $pdo->prepare("SELECT IdAreas, IdRol FROM usuarios WHERE IdUsuarios = ?");
 $consulta->execute([$usuario_id]);
 $usuario = $consulta->fetch(PDO::FETCH_ASSOC);
 
@@ -21,6 +21,7 @@ if (!$usuario) {
 }
 
 $area_id = $usuario['IdAreas'] ?? null;
+$rol_id = (int)($usuario['IdRol'] ?? 0);
 
 if ($area_id === null) {
     die("❌ Error: El usuario no tiene un área asignada.");
@@ -37,16 +38,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $asunto = trim($_POST['asunto']);
     $estado_id = $_POST['estado'] ?? null;
     $area_destino = $_POST['area_destino'] ?? null;
-    $exterior = strtoupper(trim($_POST['exterior'] ?? 'NO'));
-    $area_final = $_POST['area_final'] ?? null;
 
-    // Convertir "SI"/"NO" a booleano
-    $exterior_bool = ($exterior === 'SI') ? 1 : 0;
+    // Por defecto
+    $exterior_bool = 0;
+    $area_final = $area_id;
 
-    // Validaciones básicas
-    if (empty($area_destino) || empty($area_final)) {
-        $_SESSION['mensaje'] = "❌ Debe seleccionar un área de destino y un área final.";
-        header("Location: ../../../frontend/sisvis/escritorio.php");
+    // Si el usuario tiene rol 1 (Admin) o 3 (Mesa de Entrada)
+    if ($rol_id === 1 || $rol_id === 3) {
+        $exterior = strtoupper(trim($_POST['exterior'] ?? 'NO'));
+        $area_final = $_POST['area_final'] ?? null;
+        $exterior_bool = ($exterior === 'SI') ? 1 : 0;
+    }
+
+    // Validaciones
+    if (empty($area_destino)) {
+        $_SESSION['mensaje'] = "❌ Debe seleccionar un área de destino.";
+        header("Location: ../../../frontend/archivos/registrar.php");
+        exit();
+    }
+
+    if (($rol_id === 1 || $rol_id === 3) && empty($area_final)) {
+        $_SESSION['mensaje'] = "❌ Debe seleccionar un área final.";
+        header("Location: ../../../frontend/archivos/registrar.php");
         exit();
     }
 
@@ -56,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($check->rowCount() > 0) {
         $_SESSION['mensaje'] = "❌ Ya existe un documento con ese número.";
-        header("Location: ../../../frontend/sisvis/escritorio.php");
+        header("Location: ../../../frontend/archivos/registrar.php");
         exit();
     }
 
@@ -76,23 +89,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ]);
 
     if ($insert_ok) {
-        // Insertar movimiento
         $idDocumentoNuevo = $pdo->lastInsertId();
 
+        // Insertar movimiento
         $mov = $pdo->prepare("INSERT INTO movimientodocumento (IdDocumentos, AreaOrigen, AreaDestino, Recibido, Observacion)
                               VALUES (?, ?, ?, 0, '')");
         $mov->execute([$idDocumentoNuevo, $area_id, $area_destino]);
 
-        // Crear mensaje con nombre del área origen
+        // Crear notificación
         $mensaje = "Nuevo documento recibido: N° $numero - '$asunto' desde $areaOrigenNombre";
         crearNotificacion($pdo, $area_destino, $mensaje);
 
         $_SESSION['mensaje'] = "✅ Documento registrado y enviado al área destino.";
-        header("Location: ../../../frontend/sisvis/escritorio.php");
+        header("Location: ../../../frontend/archivos/registrar.php");
         exit();
     } else {
         $_SESSION['mensaje'] = "❌ Error al registrar el documento.";
-        header("Location: ../../../frontend/sisvis/escritorio.php");
+        header("Location: ../../../frontend/archivos/registrar.php");
         exit();
     }
 }

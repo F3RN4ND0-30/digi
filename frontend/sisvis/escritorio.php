@@ -39,15 +39,10 @@ unset($_SESSION['mensaje']);
 
     <!-- CSS Principal del Escritorio -->
     <link rel="stylesheet" href="../../backend/css/sisvis/escritorio.css" />
-
-    <!-- Selectize CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/css/selectize.default.css" rel="stylesheet" />
+    <link rel="stylesheet" href="../../backend/css/sisvis/asistente.css" />
 
     <!-- jQuery (requerido por Selectize) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-    <!-- Selectize JS -->
-    <script src="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/js/standalone/selectize.min.js"></script>
 
     <script src="../../backend/js/notificaciones.js"></script>
 </head>
@@ -64,106 +59,30 @@ unset($_SESSION['mensaje']);
                 <p>Explora el panel y sácale el máximo provecho a nuestras herramientas para optimizar tu trabajo.</p>
             </div>
 
-            <div class="tarjeta tarjeta-formulario">
-                <h2><i class="fas fa-plus-circle"></i> Registrar nuevo documento</h2>
-
-                <?php if (!empty($mensaje)) : ?>
-                    <p><strong><?= htmlspecialchars($mensaje) ?></strong></p>
-                <?php endif; ?>
-
-                <form method="POST" action="../../backend/php/archivos/registrar_archivo.php">
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label><i class="fas fa-hashtag"></i> Nombre de Documento:</label>
-                            <input type="text" name="numero" required placeholder="Ej: DOC-2025-001">
-                        </div>
-
-                        <div class="form-group">
-                            <label><i class="fas fa-flag"></i> Estado:</label>
-                            <select name="estado" required>
-                                <option value="">Seleccione un estado</option>
-                                <?php foreach ($estados as $estado) : ?>
-                                    <option value="<?= $estado['IdEstadoDocumento'] ?>"><?= htmlspecialchars($estado['Estado']) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label><i class="fas fa-building"></i> Área de destino:</label>
-                            <select name="area_destino" required>
-                                <option value="">Seleccione un área</option>
-                                <?php foreach ($areas as $area) : ?>
-                                    <?php if ((int)$area['IdAreas'] !== (int)$area_id) : ?>
-                                        <option value="<?= $area['IdAreas'] ?>"><?= htmlspecialchars($area['Nombre']) ?></option>
-                                    <?php endif; ?>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label><i class="fas fa-external-link-alt"></i> ¿Es exterior?</label>
-                            <select name="exterior" required>
-                                <option value="">Selecciones una opcion</option>
-                                <option value="SI">Sí</option>
-                                <option value="NO">No</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label><i class="fas fa-align-left"></i> Asunto:</label>
-                            <textarea name="asunto" required placeholder="Describa el asunto del documento..." rows="4"></textarea>
-                        </div>
-
-                        <div class="form-group">
-                            <label><i class="fas fa-map-marker-alt"></i> Área Final:</label>
-                            <select name="area_final" required>
-                                <option value="">Seleccione un área</option>
-                                <?php foreach ($areas as $area) : ?>
-                                    <?php if ((int)$area['IdAreas'] !== (int)$area_id) : ?>
-                                        <option value="<?= $area['IdAreas'] ?>"><?= htmlspecialchars($area['Nombre']) ?></option>
-                                    <?php endif; ?>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                    </div>
-
-                    <button type="submit">
-                        <i class="fas fa-rocket"></i> Registrar y Enviar
-                    </button>
-                </form>
+            <?php
+            $gifs = [
+                'durando_trabajo.gif',
+                'ocupado.gif',
+                'hola.gif',
+                'mensaje.gif',
+                'notificaciones.gif',
+                'señalar.gif',
+                'cafe.gif'
+            ];
+            $gifAleatorio = $gifs[array_rand($gifs)];
+            ?>
+            <div class="seccion-asistente">
+                <div class="asistente-gif">
+                    <img src="../../backend/img/asistentes/<?php echo $gifAleatorio; ?>" alt="Asistente animado">
+                </div>
+                <div class="asistente-mensaje">
+                    <h4>HOLA, <?php echo htmlspecialchars($_SESSION['dg_nombre']); ?></h4>
+                    <p>Yo soy <strong>PenguBot</strong>, tu asistente digital. Estaré aquí para traer notificaciones importantes, recordatorios de documentos y mucho más. ¡No te preocupes, te ayudaré a mantenerte al día!</p>
+                </div>
             </div>
         </main>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const inputs = document.querySelectorAll('input[type="text"], textarea');
-
-            inputs.forEach(function(element) {
-                element.addEventListener('input', function() {
-                    this.value = this.value.toUpperCase();
-                });
-            });
-        });
-    </script>
-
-    <script>
-        $(document).ready(function() {
-            $('select').selectize({
-                allowEmptyOption: true,
-                placeholder: 'Seleccione una opción',
-                sortField: 'text',
-                create: false,
-                onFocus: function() {
-                    // 'this' es la instancia de Selectize
-                    // Eliminamos la opción con valor vacío
-                    this.removeOption('');
-                    // Actualizamos la lista para que desaparezca el placeholder
-                    this.refreshOptions(false);
-                }
-            });
-        });
-    </script>
     <script>
         // Esperar a que todo esté cargado
         $(document).ready(function() {
