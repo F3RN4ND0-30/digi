@@ -31,8 +31,8 @@ function calcularDiasCorridos($fechaInicio)
     }
 }
 
-// CONSULTA ULTRA BÁSICA - Sin JOINs para identificar el problema
-$sql = "SELECT * FROM documentos WHERE Exterior = 1 ORDER BY IdDocumentos DESC";
+// CONSULTA ULTRA BÁSICA - Solo documentos externos finalizados
+$sql = "SELECT * FROM documentos WHERE Exterior = 1 AND Finalizado = 1 ORDER BY IdDocumentos DESC";
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute();
