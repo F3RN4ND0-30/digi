@@ -15,7 +15,7 @@ if (($_SESSION['dg_rol'] ?? 999) != 1 && ($_SESSION['dg_rol'] ?? 999) != 4) {
 require '../../backend/db/conexion.php';
 
 // Función para calcular días corridos transcurridos
-function calcularDiasCorridos($fechaInicio)
+function calcularDiasHabiles($fechaInicio)
 {
     try {
         $inicio = new DateTime($fechaInicio);
@@ -24,35 +24,31 @@ function calcularDiasCorridos($fechaInicio)
         $inicio->setTime(0, 0, 0);
         $hoy->setTime(0, 0, 0);
 
-        $diferencia = $hoy->diff($inicio);
-        return $diferencia->days;
+        $diasHabiles = 0;
+
+        while ($inicio < $hoy) {
+            $diaSemana = $inicio->format('N'); // 1 (Lunes) a 7 (Domingo)
+            if ($diaSemana < 6) {
+                $diasHabiles++;
+            }
+            $inicio->modify('+1 day');
+        }
+
+        return $diasHabiles;
     } catch (Exception $e) {
         return 0;
     }
 }
 
-// Obtener documentos externos con estado y observaciones de movimientodocumento
-$stmt_documentos = $pdo->query("
+// CONSULTA COMPLETA - Documentos externos finalizados con área, usuario y observaciones
+$sql = "
     SELECT 
-        d.IdDocumentos,
-        d.NumeroDocumento,
-        d.Asunto,
-        d.FechaIngreso,
-        d.IdEstadoDocumento,
-        d.Exterior,
-        d.Archivo,
-        a.Nombre as AreaDestino,
-        u.Nombres as NombreUsuario,
-        u.ApellidoPat as ApellidoUsuario,
-        md.Observacion as UltimaObservacion,
-        md.FechaMovimiento as FechaUltimaObservacion,
-        CASE 
-            WHEN d.IdEstadoDocumento = 1 THEN 'PENDIENTE'
-            WHEN d.IdEstadoDocumento = 2 THEN 'EN PROCESO'
-            WHEN d.IdEstadoDocumento = 3 THEN 'REVISADO'
-            WHEN d.IdEstadoDocumento = 4 THEN 'FINALIZADO'
-            ELSE 'SIN ESTADO'
-        END as EstadoTexto
+        d.*,
+        COALESCE(a.Nombre, 'Sin área') as AreaDestino,
+        COALESCE(u.Nombres, 'Sin') as NombreUsuario,
+        COALESCE(u.ApellidoPat, 'usuario') as ApellidoUsuario,
+        obs.Observacion as UltimaObservacion,
+        obs.FechaMovimiento as FechaUltimaObservacion
     FROM documentos d
     LEFT JOIN areas a ON d.IdAreaFinal = a.IdAreas
     LEFT JOIN usuarios u ON d.IdUsuarios = u.IdUsuarios
@@ -64,18 +60,22 @@ $stmt_documentos = $pdo->query("
             ROW_NUMBER() OVER (PARTITION BY IdDocumentos ORDER BY FechaMovimiento DESC) as rn
         FROM movimientodocumento 
         WHERE Observacion IS NOT NULL AND Observacion != ''
-    ) md ON d.IdDocumentos = md.IdDocumentos AND md.rn = 1
-    WHERE d.Exterior = 1
-    ORDER BY d.FechaIngreso DESC
-");
-$documentos = $stmt_documentos->fetchAll(PDO::FETCH_ASSOC);
+    ) obs ON d.IdDocumentos = obs.IdDocumentos AND obs.rn = 1
+    WHERE d.Exterior = 1 AND d.Finalizado = 0
+    ORDER BY d.IdDocumentos DESC
+";
 
-// Agregar cálculo de días corridos a cada documento
-foreach ($documentos as &$doc) {
-    $doc['DiasTranscurridos'] = calcularDiasCorridos($doc['FechaIngreso']);
-    $doc['DiasHabiles'] = $doc['DiasTranscurridos'];
+$stmt = $pdo->prepare($sql);
+$stmt->execute();
+$resultado = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Determinar color del semáforo - 7 DÍAS CORRIDOS
+// Procesar los datos directamente
+$documentos = [];
+foreach ($resultado as $doc) {
+    // Calcular días transcurridos
+    $doc['DiasTranscurridos'] = calcularDiasHabiles($doc['FechaIngreso']);
+
+    // Determinar color del semáforo
     if ($doc['DiasTranscurridos'] <= 2) {
         $doc['SemaforoColor'] = 'verde';
         $doc['SemaforoTexto'] = 'En tiempo';
@@ -86,6 +86,27 @@ foreach ($documentos as &$doc) {
         $doc['SemaforoColor'] = 'rojo';
         $doc['SemaforoTexto'] = 'Urgente';
     }
+
+    // Estado como texto
+    switch ($doc['IdEstadoDocumento']) {
+        case 1:
+            $doc['EstadoTexto'] = 'PENDIENTE';
+            break;
+        case 2:
+            $doc['EstadoTexto'] = 'EN PROCESO';
+            break;
+        case 3:
+            $doc['EstadoTexto'] = 'REVISADO';
+            break;
+        case 4:
+            $doc['EstadoTexto'] = 'FINALIZADO';
+            break;
+        default:
+            $doc['EstadoTexto'] = 'SIN ESTADO';
+            break;
+    }
+
+    $documentos[] = $doc;
 }
 
 // Estadísticas
@@ -149,7 +170,7 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
             <div class="stats-grid">
                 <div class="stat-card" data-filtro="todos">
                     <div class="stat-icon">
-                        <i class="fas fa-file-export"></i>
+                        <i class="fas fa-file-alt"></i>
                     </div>
                     <div class="stat-content">
                         <h3><?= $total_externos ?></h3>
@@ -188,7 +209,7 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
                 </div>
             </div>
 
-            <!-- Controles optimizados -->
+            <!-- Controles -->
             <div class="tarjeta mb-3">
                 <div class="controles-supervision">
                     <div class="controles-busqueda">
@@ -204,7 +225,7 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
                     </div>
 
                     <div class="controles-acciones">
-                        <button onclick="exportarSupervision()" class="btn-primary" title="Exportar datos a Excel, PDF o CSV">
+                        <button onclick="exportarSupervision()" class="btn-primary" title="Exportar datos">
                             <i class="fas fa-download"></i> Exportar
                         </button>
                     </div>
@@ -229,10 +250,13 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
                             </tr>
                         </thead>
                         <tbody>
-                            <?php if (count($documentos) > 0): ?>
-                                <?php foreach ($documentos as $index => $doc): ?>
+                            <?php if ($total_externos > 0): ?>
+                                <?php
+                                $contador = 1;
+                                foreach ($documentos as $doc):
+                                ?>
                                     <tr data-semaforo="<?= $doc['SemaforoColor'] ?>" data-id="<?= $doc['IdDocumentos'] ?>" class="fila-documento">
-                                        <td class="numero-fila"><?= $index + 1 ?></td>
+                                        <td class="numero-fila"><?= $contador ?></td>
                                         <td>
                                             <div class="documento-cell">
                                                 <strong><?= htmlspecialchars($doc['NumeroDocumento']) ?></strong>
@@ -253,7 +277,7 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
                                             <span class="fecha-cell"><?= date('d/m/Y', strtotime($doc['FechaIngreso'])) ?></span>
                                         </td>
                                         <td>
-                                            <span class="area-cell"><?= htmlspecialchars($doc['AreaDestino'] ?? 'No asignada') ?></span>
+                                            <span class="area-cell"><?= htmlspecialchars($doc['AreaDestino']) ?></span>
                                         </td>
                                         <td>
                                             <div class="dias-habiles">
@@ -268,12 +292,10 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
                                             <?php if (!empty($doc['UltimaObservacion'])): ?>
                                                 <div class="observacion-existente"
                                                     title="<?= htmlspecialchars($doc['UltimaObservacion']) ?>"
-                                                    style="cursor: pointer;"
+                                                    style="cursor: pointer; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
                                                     onclick="verObservacionCompleta('<?= htmlspecialchars(addslashes($doc['UltimaObservacion'])) ?>', '<?= date('d/m/Y', strtotime($doc['FechaUltimaObservacion'])) ?>')">
-                                                    <i class="fas fa-comment-check" style="color: #00b894;"></i>
-                                                    <small style="color: #666; font-size: 0.7rem;">
-                                                        <?= date('d/m/Y', strtotime($doc['FechaUltimaObservacion'])) ?>
-                                                    </small>
+                                                    <?= htmlspecialchars(substr($doc['UltimaObservacion'], 0, 50)) ?>
+                                                    <?= strlen($doc['UltimaObservacion']) > 50 ? '...' : '' ?>
                                                 </div>
                                             <?php else: ?>
                                                 <span class="sin-observacion" style="color: #999; font-size: 0.8rem;">
@@ -283,17 +305,20 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
                                         </td>
                                         <td>
                                             <div class="usuario-cell">
-                                                <?= htmlspecialchars($doc['NombreUsuario'] . ' ' . $doc['ApellidoUsuario']) ?>
+                                                <?= htmlspecialchars(trim($doc['NombreUsuario'] . ' ' . $doc['ApellidoUsuario'])) ?>
                                             </div>
                                         </td>
                                     </tr>
-                                <?php endforeach; ?>
+                                <?php
+                                    $contador++;
+                                endforeach;
+                                ?>
                             <?php else: ?>
                                 <tr>
                                     <td colspan="9" class="no-datos">
                                         <div class="mensaje-vacio">
                                             <i class="fas fa-inbox"></i>
-                                            <p>Ningún dato disponible en esta tabla</p>
+                                            <p>No hay documentos externos</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -386,7 +411,6 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
 
         // Procesamiento REAL de exportación
         function procesarExportacionReal(opciones) {
-            // Mostrar progreso
             let progreso = 0;
             const timer = setInterval(() => {
                 progreso += 10;
@@ -409,7 +433,6 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
                     clearInterval(timer);
 
                     setTimeout(() => {
-                        // Generar y descargar archivo REAL
                         generarArchivoReal(opciones);
 
                         Swal.fire({
@@ -439,7 +462,6 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
 
         // Generar archivo REAL
         function generarArchivoReal(opciones) {
-            // Recopilar datos de la tabla
             const filas = document.querySelectorAll('.fila-documento:not([style*="display: none"])');
             const datos = [];
 
@@ -460,12 +482,8 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
 
             if (opciones.formato === 'csv') {
                 descargarCSV(datos);
-            } else if (opciones.formato === 'excel') {
-                // En implementación real, aquí llamarías al backend
-                simularDescargaBackend('excel', datos);
-            } else if (opciones.formato === 'pdf') {
-                // En implementación real, aquí llamarías al backend
-                simularDescargaBackend('pdf', datos);
+            } else {
+                simularDescargaBackend(opciones.formato, datos);
             }
         }
 
@@ -489,7 +507,7 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
                 csvContent.push(fila.join(','));
             });
 
-            const blob = new Blob([csvContent.join('\\n')], {
+            const blob = new Blob([csvContent.join('\n')], {
                 type: 'text/csv;charset=utf-8;'
             });
             const link = document.createElement('a');
@@ -503,9 +521,8 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
             document.body.removeChild(link);
         }
 
-        // Simular descarga para Excel y PDF (requiere backend)
+        // Backend para Excel y PDF
         function simularDescargaBackend(formato, datos) {
-            // IMPLEMENTACIÓN REAL CON BACKEND
             fetch('../../backend/php/exportar-supervision.php', {
                     method: 'POST',
                     headers: {
@@ -522,7 +539,6 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
                         throw new Error('Error en el servidor: ' + response.status);
                     }
 
-                    // Para archivos (Excel, PDF), crear descarga
                     const contentType = response.headers.get('content-type');
                     if (contentType && (contentType.includes('application/') || contentType.includes('text/csv'))) {
                         return response.blob();
@@ -532,7 +548,6 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
                 })
                 .then(blob => {
                     if (blob instanceof Blob) {
-                        // Crear descarga del archivo
                         const fecha = new Date().toISOString().split('T')[0];
                         const extension = formato === 'excel' ? 'xlsx' : formato === 'pdf' ? 'pdf' : 'csv';
                         const nombreArchivo = `supervision_documentos_${fecha}.${extension}`;
@@ -545,10 +560,8 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
                         link.click();
                         document.body.removeChild(link);
 
-                        // Limpiar URL
                         setTimeout(() => URL.revokeObjectURL(link.href), 100);
                     } else {
-                        // Respuesta JSON (error)
                         throw new Error(blob.error || 'Error desconocido');
                     }
                 })
@@ -563,7 +576,7 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
                 });
         }
 
-        // Mejorar búsqueda con contador
+        // Búsqueda con contador
         document.addEventListener('DOMContentLoaded', function() {
             const campoBusqueda = document.getElementById('buscarDocumento');
             const contador = document.getElementById('contadorResultados');
