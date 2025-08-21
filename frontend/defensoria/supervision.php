@@ -52,7 +52,7 @@ $sql = "
         FROM movimientodocumento 
         WHERE Observacion IS NOT NULL AND Observacion != ''
     ) obs ON d.IdDocumentos = obs.IdDocumentos AND obs.rn = 1
-    WHERE d.Exterior = 1 AND d.Finalizado = 1
+    WHERE d.Exterior = 1 AND d.Finalizado = 0
     ORDER BY d.IdDocumentos DESC
 ";
 
@@ -565,28 +565,45 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
                 });
         }
 
-        // Búsqueda con contador
+        // Búsqueda con contador actualizado
         document.addEventListener('DOMContentLoaded', function() {
             const campoBusqueda = document.getElementById('buscarDocumento');
             const contador = document.getElementById('contadorResultados');
+
+            // Función para actualizar contador
+            function actualizarContador() {
+                const filasVisibles = document.querySelectorAll('.fila-documento:not([style*="display: none"])');
+                const cantidad = filasVisibles.length;
+                contador.textContent = `${cantidad} documento${cantidad !== 1 ? 's' : ''}`;
+            }
 
             if (campoBusqueda && contador) {
                 campoBusqueda.addEventListener('input', function() {
                     const busqueda = this.value.toLowerCase().trim();
                     const filas = document.querySelectorAll('.fila-documento');
-                    let visible = 0;
 
                     filas.forEach(fila => {
                         const texto = fila.textContent.toLowerCase();
                         if (texto.includes(busqueda)) {
                             fila.style.display = '';
-                            visible++;
                         } else {
                             fila.style.display = 'none';
                         }
                     });
 
-                    contador.textContent = `${visible} documento${visible !== 1 ? 's' : ''}`;
+                    actualizarContador();
+                });
+            }
+
+            // Observar cambios cuando el supervision.js filtre las cards
+            const observer = new MutationObserver(actualizarContador);
+            const tabla = document.querySelector('.tabla-supervision tbody');
+            if (tabla) {
+                observer.observe(tabla, {
+                    childList: true,
+                    subtree: true,
+                    attributes: true,
+                    attributeFilter: ['style']
                 });
             }
         });
