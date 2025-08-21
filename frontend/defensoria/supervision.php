@@ -20,10 +20,10 @@ function calcularDiasCorridos($fechaInicio)
     try {
         $inicio = new DateTime($fechaInicio);
         $hoy = new DateTime();
-        
+
         $inicio->setTime(0, 0, 0);
         $hoy->setTime(0, 0, 0);
-        
+
         $diferencia = $hoy->diff($inicio);
         return $diferencia->days;
     } catch (Exception $e) {
@@ -112,6 +112,8 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
 
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script src="../../backend/js/notificaciones.js"></script>
 </head>
 
 <body>
@@ -257,17 +259,17 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
                                             <div class="dias-habiles">
                                                 <span class="semaforo <?= $doc['SemaforoColor'] ?>" title="<?= $doc['SemaforoTexto'] ?>"></span>
                                                 <span class="dias-numero">
-                                                    <?= $doc['DiasTranscurridos'] ?> 
+                                                    <?= $doc['DiasTranscurridos'] ?>
                                                     <?= $doc['DiasTranscurridos'] == 1 ? 'día' : 'días' ?>
                                                 </span>
                                             </div>
                                         </td>
                                         <td>
                                             <?php if (!empty($doc['UltimaObservacion'])): ?>
-                                                <div class="observacion-existente" 
-                                                     title="<?= htmlspecialchars($doc['UltimaObservacion']) ?>"
-                                                     style="cursor: pointer;"
-                                                     onclick="verObservacionCompleta('<?= htmlspecialchars(addslashes($doc['UltimaObservacion'])) ?>', '<?= date('d/m/Y', strtotime($doc['FechaUltimaObservacion'])) ?>')">
+                                                <div class="observacion-existente"
+                                                    title="<?= htmlspecialchars($doc['UltimaObservacion']) ?>"
+                                                    style="cursor: pointer;"
+                                                    onclick="verObservacionCompleta('<?= htmlspecialchars(addslashes($doc['UltimaObservacion'])) ?>', '<?= date('d/m/Y', strtotime($doc['FechaUltimaObservacion'])) ?>')">
                                                     <i class="fas fa-comment-check" style="color: #00b894;"></i>
                                                     <small style="color: #666; font-size: 0.7rem;">
                                                         <?= date('d/m/Y', strtotime($doc['FechaUltimaObservacion'])) ?>
@@ -370,7 +372,10 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
                 preConfirm: () => {
                     const formato = document.querySelector('input[name="formato"]:checked').value;
                     const incluirFiltros = document.getElementById('incluirFiltros').checked;
-                    return { formato, incluirFiltros };
+                    return {
+                        formato,
+                        incluirFiltros
+                    };
                 }
             }).then((result) => {
                 if (result.isConfirmed) {
@@ -399,14 +404,14 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
                         </div>
                     `
                 });
-                
+
                 if (progreso >= 100) {
                     clearInterval(timer);
-                    
+
                     setTimeout(() => {
                         // Generar y descargar archivo REAL
                         generarArchivoReal(opciones);
-                        
+
                         Swal.fire({
                             icon: 'success',
                             title: 'Archivo generado',
@@ -417,7 +422,7 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
                     }, 500);
                 }
             }, 200);
-            
+
             Swal.fire({
                 title: 'Procesando exportación...',
                 html: `
@@ -437,7 +442,7 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
             // Recopilar datos de la tabla
             const filas = document.querySelectorAll('.fila-documento:not([style*="display: none"])');
             const datos = [];
-            
+
             filas.forEach((fila, index) => {
                 const celdas = fila.querySelectorAll('td');
                 datos.push({
@@ -468,7 +473,7 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
         function descargarCSV(datos) {
             const headers = ['N°', 'Documento', 'Asunto', 'Estado', 'Fecha', 'Área', 'Días', 'Observación', 'Recibido'];
             const csvContent = [headers.join(',')];
-            
+
             datos.forEach(row => {
                 const fila = [
                     row.numero,
@@ -484,10 +489,12 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
                 csvContent.push(fila.join(','));
             });
 
-            const blob = new Blob([csvContent.join('\\n')], { type: 'text/csv;charset=utf-8;' });
+            const blob = new Blob([csvContent.join('\\n')], {
+                type: 'text/csv;charset=utf-8;'
+            });
             const link = document.createElement('a');
             const fecha = new Date().toISOString().split('T')[0];
-            
+
             link.href = URL.createObjectURL(blob);
             link.download = `supervision_documentos_${fecha}.csv`;
             link.style.display = 'none';
@@ -500,73 +507,73 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
         function simularDescargaBackend(formato, datos) {
             // IMPLEMENTACIÓN REAL CON BACKEND
             fetch('../../backend/php/exportar-supervision.php', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({ 
-                    formato: formato, 
-                    datos: datos 
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        formato: formato,
+                        datos: datos
+                    })
                 })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Error en el servidor: ' + response.status);
-                }
-                
-                // Para archivos (Excel, PDF), crear descarga
-                const contentType = response.headers.get('content-type');
-                if (contentType && (contentType.includes('application/') || contentType.includes('text/csv'))) {
-                    return response.blob();
-                } else {
-                    return response.json();
-                }
-            })
-            .then(blob => {
-                if (blob instanceof Blob) {
-                    // Crear descarga del archivo
-                    const fecha = new Date().toISOString().split('T')[0];
-                    const extension = formato === 'excel' ? 'xlsx' : formato === 'pdf' ? 'pdf' : 'csv';
-                    const nombreArchivo = `supervision_documentos_${fecha}.${extension}`;
-                    
-                    const link = document.createElement('a');
-                    link.href = URL.createObjectURL(blob);
-                    link.download = nombreArchivo;
-                    link.style.display = 'none';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    
-                    // Limpiar URL
-                    setTimeout(() => URL.revokeObjectURL(link.href), 100);
-                } else {
-                    // Respuesta JSON (error)
-                    throw new Error(blob.error || 'Error desconocido');
-                }
-            })
-            .catch(error => {
-                console.error('Error en exportación:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error en la exportación',
-                    text: 'No se pudo generar el archivo. ' + error.message,
-                    confirmButtonColor: '#6c5ce7'
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Error en el servidor: ' + response.status);
+                    }
+
+                    // Para archivos (Excel, PDF), crear descarga
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && (contentType.includes('application/') || contentType.includes('text/csv'))) {
+                        return response.blob();
+                    } else {
+                        return response.json();
+                    }
+                })
+                .then(blob => {
+                    if (blob instanceof Blob) {
+                        // Crear descarga del archivo
+                        const fecha = new Date().toISOString().split('T')[0];
+                        const extension = formato === 'excel' ? 'xlsx' : formato === 'pdf' ? 'pdf' : 'csv';
+                        const nombreArchivo = `supervision_documentos_${fecha}.${extension}`;
+
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(blob);
+                        link.download = nombreArchivo;
+                        link.style.display = 'none';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+
+                        // Limpiar URL
+                        setTimeout(() => URL.revokeObjectURL(link.href), 100);
+                    } else {
+                        // Respuesta JSON (error)
+                        throw new Error(blob.error || 'Error desconocido');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error en exportación:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error en la exportación',
+                        text: 'No se pudo generar el archivo. ' + error.message,
+                        confirmButtonColor: '#6c5ce7'
+                    });
                 });
-            });
         }
 
         // Mejorar búsqueda con contador
         document.addEventListener('DOMContentLoaded', function() {
             const campoBusqueda = document.getElementById('buscarDocumento');
             const contador = document.getElementById('contadorResultados');
-            
+
             if (campoBusqueda && contador) {
                 campoBusqueda.addEventListener('input', function() {
                     const busqueda = this.value.toLowerCase().trim();
                     const filas = document.querySelectorAll('.fila-documento');
                     let visible = 0;
-                    
+
                     filas.forEach(fila => {
                         const texto = fila.textContent.toLowerCase();
                         if (texto.includes(busqueda)) {
@@ -576,7 +583,7 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
                             fila.style.display = 'none';
                         }
                     });
-                    
+
                     contador.textContent = `${visible} documento${visible !== 1 ? 's' : ''}`;
                 });
             }
