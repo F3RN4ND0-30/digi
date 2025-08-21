@@ -281,12 +281,10 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
                                             <?php if (!empty($doc['UltimaObservacion'])): ?>
                                                 <div class="observacion-existente"
                                                     title="<?= htmlspecialchars($doc['UltimaObservacion']) ?>"
-                                                    style="cursor: pointer;"
+                                                    style="cursor: pointer; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
                                                     onclick="verObservacionCompleta('<?= htmlspecialchars(addslashes($doc['UltimaObservacion'])) ?>', '<?= date('d/m/Y', strtotime($doc['FechaUltimaObservacion'])) ?>')">
-                                                    <i class="fas fa-comment-check" style="color: #00b894;"></i>
-                                                    <small style="color: #666; font-size: 0.7rem;">
-                                                        <?= date('d/m/Y', strtotime($doc['FechaUltimaObservacion'])) ?>
-                                                    </small>
+                                                    <?= htmlspecialchars(substr($doc['UltimaObservacion'], 0, 50)) ?>
+                                                    <?= strlen($doc['UltimaObservacion']) > 50 ? '...' : '' ?>
                                                 </div>
                                             <?php else: ?>
                                                 <span class="sin-observacion" style="color: #999; font-size: 0.8rem;">
