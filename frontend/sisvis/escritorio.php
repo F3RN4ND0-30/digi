@@ -101,13 +101,29 @@ unset($_SESSION['mensaje']);
                         </div>
 
                         <div class="form-group">
-                            <label><i class="fas fa-sticky-note"></i> Observación:</label>
-                            <textarea name="observacion" rows="3" placeholder="Escriba alguna observación opcional..."></textarea>
+                            <label><i class="fas fa-external-link-alt"></i> ¿Es exterior?</label>
+                            <select name="exterior" required>
+                                <option value="">Selecciones una opcion</option>
+                                <option value="SI">Sí</option>
+                                <option value="NO">No</option>
+                            </select>
                         </div>
 
-                        <div class="form-group full-width">
+                        <div class="form-group">
                             <label><i class="fas fa-align-left"></i> Asunto:</label>
-                            <textarea name="asunto" required pla.ceholder="Describa el asunto del documento..." rows="4"></textarea>
+                            <textarea name="asunto" required placeholder="Describa el asunto del documento..." rows="4"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label><i class="fas fa-map-marker-alt"></i> Área Final:</label>
+                            <select name="area_final" required>
+                                <option value="">Seleccione un área</option>
+                                <?php foreach ($areas as $area) : ?>
+                                    <?php if ((int)$area['IdAreas'] !== (int)$area_id) : ?>
+                                        <option value="<?= $area['IdAreas'] ?>"><?= htmlspecialchars($area['Nombre']) ?></option>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
                     </div>
 

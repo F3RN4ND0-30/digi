@@ -8,24 +8,32 @@ if (!isset($_SESSION['dg_id'])) {
 require '../../db/conexion.php';
 
 $documento_id = $_POST['id_documento'] ?? null;
-$usuario_actual = $_SESSION['dg_id'];
+$area_usuario = $_SESSION['dg_area_id'] ?? null;
 
-if (!$documento_id || !$usuario_actual) {
+if (!$documento_id || !$area_usuario) {
     die("❌ Datos inválidos.");
 }
 
-// Verificar si el usuario actual es el creador del documento
-$consulta = $pdo->prepare("SELECT IdUsuarios FROM documentos WHERE IdDocumentos = ?");
+// Verificar si el área del usuario es el área final del documento
+$consulta = $pdo->prepare("SELECT IdAreaFinal, Finalizado FROM documentos WHERE IdDocumentos = ?");
 $consulta->execute([$documento_id]);
-$creador = $consulta->fetchColumn();
+$documento = $consulta->fetch(PDO::FETCH_ASSOC);
 
-if ($creador != $usuario_actual) {
-    die("❌ No tienes permiso para finalizar este documento.");
+if (!$documento) {
+    die("❌ Documento no encontrado.");
+}
+
+if ((int)$documento['IdAreaFinal'] !== (int)$area_usuario) {
+    die("❌ No tienes permiso para finalizar este documento. Área usuario: $area_usuario");
+}
+
+if ($documento['Finalizado']) {
+    die("❌ El documento ya está finalizado.");
 }
 
 // Actualizar el campo Finalizado
-$stmt = $pdo->prepare("UPDATE documentos SET Finalizado = 1 WHERE IdDocumentos = ?");
+$stmt = $pdo->prepare("UPDATE documentos SET Finalizado = 1, IdEstadoDocumento = 1 WHERE IdDocumentos = ?");
 $stmt->execute([$documento_id]);
 
-header("Location: ../../../frontend/archivos/reenviar.php");
+header("Location: ../../../frontend/archivos/reenviar.php?msg=Documento finalizado correctamente");
 exit;

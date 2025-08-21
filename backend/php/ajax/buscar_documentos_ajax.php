@@ -38,7 +38,7 @@ $sql = "
     WHERE md1.IdDocumentos IN (
         SELECT DISTINCT IdDocumentos
         FROM movimientodocumento
-        WHERE AreaOrigen = :area_id
+        WHERE AreaOrigen = :area_id OR AreaDestino = :area_id
     )
     AND (d.NumeroDocumento LIKE :busqueda OR d.Asunto LIKE :busqueda)
     ORDER BY md1.FechaMovimiento DESC

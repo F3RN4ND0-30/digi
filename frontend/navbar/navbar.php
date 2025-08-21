@@ -92,7 +92,7 @@ $user_role = $_SESSION['dg_rol'] ?? 999; // Obtener rol para permisos
             <div class="notificaciones">
                 <div id="notificaciones" style="position: relative; cursor: pointer;">
                     <i class="fas fa-bell"></i>
-                    <span id="contador" style="color: red; font-weight: bold;"></span>
+                    <span id="contador" style="color: red; font-weight: bold; font-size: 18px; font-family: Arial, sans-serif;"></span>
                 </div>
 
                 <!-- Lista de Notificaciones -->

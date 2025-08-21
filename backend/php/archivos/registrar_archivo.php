@@ -37,11 +37,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $asunto = trim($_POST['asunto']);
     $estado_id = $_POST['estado'] ?? null;
     $area_destino = $_POST['area_destino'] ?? null;
-    $observacion = trim($_POST['observacion'] ?? '');
+    $exterior = strtoupper(trim($_POST['exterior'] ?? 'NO'));
+    $area_final = $_POST['area_final'] ?? null;
+
+    // Convertir "SI"/"NO" a booleano
+    $exterior_bool = ($exterior === 'SI') ? 1 : 0;
 
     // Validaciones básicas
-    if (empty($area_destino)) {
-        $_SESSION['mensaje'] = "❌ Debe seleccionar un área de destino.";
+    if (empty($area_destino) || empty($area_final)) {
+        $_SESSION['mensaje'] = "❌ Debe seleccionar un área de destino y un área final.";
         header("Location: ../../../frontend/sisvis/escritorio.php");
         exit();
     }
@@ -57,16 +61,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // Insertar nuevo documento
-    $stmt = $pdo->prepare("INSERT INTO documentos (NumeroDocumento, Asunto, IdEstadoDocumento, IdUsuarios, IdAreas) VALUES (?, ?, ?, ?, ?)");
-    $insert_ok = $stmt->execute([$numero, $asunto, $estado_id, $usuario_id, $area_id]);
+    $stmt = $pdo->prepare("INSERT INTO documentos 
+        (NumeroDocumento, Asunto, IdEstadoDocumento, IdUsuarios, IdAreas, Exterior, IdAreaFinal) 
+        VALUES (?, ?, ?, ?, ?, ?, ?)");
+
+    $insert_ok = $stmt->execute([
+        $numero,
+        $asunto,
+        $estado_id,
+        $usuario_id,
+        $area_id,
+        $exterior_bool,
+        $area_final
+    ]);
 
     if ($insert_ok) {
         // Insertar movimiento
         $idDocumentoNuevo = $pdo->lastInsertId();
 
         $mov = $pdo->prepare("INSERT INTO movimientodocumento (IdDocumentos, AreaOrigen, AreaDestino, Recibido, Observacion)
-                              VALUES (?, ?, ?, 0, ?)");
-        $mov->execute([$idDocumentoNuevo, $area_id, $area_destino, $observacion]);
+                              VALUES (?, ?, ?, 0, '')");
+        $mov->execute([$idDocumentoNuevo, $area_id, $area_destino]);
 
         // Crear mensaje con nombre del área origen
         $mensaje = "Nuevo documento recibido: N° $numero - '$asunto' desde $areaOrigenNombre";
