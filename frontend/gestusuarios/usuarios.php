@@ -153,7 +153,7 @@ $administradores = count(array_filter($usuarios, fn($u) => $u['IdRol'] == 1));
                                             <td>
                                                 <span class="rol-badge rol-<?= $user['IdRol'] ?>">
                                                     <?php
-                                                    $roles_display = [1 => 'Administrador', 2 => 'Usuario', 3 => 'Mesa'];
+                                                    $roles_display = [1 => 'Administrador', 2 => 'Usuario', 3 => 'Mesa', 4 => 'defensoría'];
                                                     echo $roles_display[$user['IdRol']] ?? 'Sin definir';
                                                     ?>
                                                 </span>

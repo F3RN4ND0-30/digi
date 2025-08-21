@@ -83,6 +83,22 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
                         </div>
                     <?php endif; ?>
 
+                    <?php if ($user_role === 1 || $user_role === 4): ?>
+                        <!-- Columna 3: Supervisión -->
+                        <div class="module-column">
+                            <h6 class="column-header">
+                                <i class="fas fa-eye"></i>
+                                SUPERVISIÓN
+                            </h6>
+                            <div class="column-items">
+                                <a href="../defensoria/supervision.php" class="module-item <?= ($current_page === 'supervision') ? 'active' : '' ?>">
+                                    <i class="fas fa-shield"></i>
+                                    <span>Supervisión</span>
+                                </a>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
                 </div>
             </div>
 
