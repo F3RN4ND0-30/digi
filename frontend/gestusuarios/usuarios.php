@@ -268,7 +268,7 @@ $administradores = count(array_filter($usuarios, fn($u) => $u['IdRol'] == 1));
                             <div class="campo">
                                 <label for="area">Área *</label>
                                 <select id="area" name="area" required>
-                                    <option value="">Seleccione un área</option>
+                                    <option value="" disabled selected>Seleccione un área</option>
                                     <?php foreach ($areas as $area): ?>
                                         <option value="<?= $area['IdAreas'] ?>"><?= htmlspecialchars($area['Nombre']) ?></option>
                                     <?php endforeach; ?>
