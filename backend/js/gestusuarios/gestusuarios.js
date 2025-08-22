@@ -1,6 +1,5 @@
 /**
  * JavaScript para Gestión de Usuarios - DIGI
- * Versión corregida con declaraciones globales explícitas
  */
 
 // Variables globales - DECLARACIÓN EXPLÍCITA

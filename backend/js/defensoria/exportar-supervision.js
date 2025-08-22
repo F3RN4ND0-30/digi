@@ -1,6 +1,5 @@
 /**
  * Módulo de Exportación para Supervisión - DIGI
- * exportar-supervision.js - Versión corregida para descarga directa
  */
 
 /**

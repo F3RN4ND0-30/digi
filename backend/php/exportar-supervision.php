@@ -2,7 +2,6 @@
 
 /**
  * Backend para exportación de reportes de supervisión
- * exportar-supervision.php - VERSIÓN COMPACTA FINAL
  */
 
 // Verificar que sea POST
