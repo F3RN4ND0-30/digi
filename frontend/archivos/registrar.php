@@ -54,6 +54,8 @@ unset($_SESSION['mensaje']);
     <link href="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/css/selectize.default.css" rel="stylesheet" />
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/js/standalone/selectize.min.js"></script>
+    
+    <link rel="icon" type="image/png" href="../../backend/img/logoPisco.png" />
 </head>
 
 <body>

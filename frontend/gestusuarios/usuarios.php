@@ -68,6 +68,7 @@ $administradores = count(array_filter($usuarios, fn($u) => $u['IdRol'] == 1));
 
     <!-- Selectize JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.15.2/js/selectize.min.js"></script>
+    <link rel="icon" type="image/png" href="../../backend/img/logoPisco.png" />
 </head>
 
 <body>

@@ -51,6 +51,8 @@ unset($_SESSION['mensaje']);
     <link rel="stylesheet" href="../../backend/css/sisvis/escritorio.css" />
     <link rel="stylesheet" href="../../backend/css/sisvis/asistente.css" />
 
+    <link rel="icon" type="image/png" href="../../backend/img/logoPisco.png" />
+
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>

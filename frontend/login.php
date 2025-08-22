@@ -205,7 +205,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
             registrarIntentoEnBD($pdo, $ip_cliente, $usuario, 'exitoso');
             session_regenerate_id(true); // Prevenir session fixation
 
-            $nombre = trim(($usuarioDB['Nombres'] ?? '') . ' ' . ($usuarioDB['ApellidoPat'] ?? ''). ' ' . ($usuarioDB['ApellidoMat'] ?? ''));
+            $nombre = trim(($usuarioDB['Nombres'] ?? '') . ' ' . ($usuarioDB['ApellidoPat'] ?? '') . ' ' . ($usuarioDB['ApellidoMat'] ?? ''));
 
             $_SESSION['dg_usuario'] = $usuarioDB['Usuario'];
             $_SESSION['dg_area'] = $usuarioDB['nombre_area'];
@@ -297,6 +297,8 @@ if (rand(1, 100) === 1) {
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="../Backend/css/login.css">
     <link rel="stylesheet" href="../Backend/css/login-responsive.css">
+
+    <link rel="icon" type="image/png" href="../backend/img/logoPisco.png" />
 </head>
 
 <body>

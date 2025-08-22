@@ -67,6 +67,8 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
     <link href="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/css/selectize.default.css" rel="stylesheet" />
     <!-- Selectize JS -->
     <script src="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/js/standalone/selectize.min.js"></script>
+    
+    <link rel="icon" type="image/png" href="../../backend/img/logoPisco.png" />
 
 </head>
 

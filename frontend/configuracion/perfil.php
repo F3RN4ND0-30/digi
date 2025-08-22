@@ -58,6 +58,8 @@ unset($_SESSION['mensaje']);
 
     <!-- CSS Principal -->
     <link rel="stylesheet" href="../../backend/css/configuracion/perfil.css" />
+    
+    <link rel="icon" type="image/png" href="../../backend/img/logoPisco.png" />
 </head>
 
 <body>

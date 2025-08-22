@@ -144,6 +144,8 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
 
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <link rel="icon" type="image/png" href="../../backend/img/logoPisco.png" />
 
 </head>
 
