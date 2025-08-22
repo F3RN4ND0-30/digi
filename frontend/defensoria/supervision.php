@@ -86,10 +86,10 @@ foreach ($resultado as $doc) {
     $doc['DiasTranscurridos'] = calcularDiasHabiles($doc['FechaIngreso']);
 
     // Determinar color del semáforo
-    if ($doc['DiasTranscurridos'] <= 2) {
+    if ($doc['DiasTranscurridos'] <= 3) {
         $doc['SemaforoColor'] = 'verde';
         $doc['SemaforoTexto'] = 'En tiempo';
-    } elseif ($doc['DiasTranscurridos'] <= 5) {
+    } elseif ($doc['DiasTranscurridos'] <= 6) {
         $doc['SemaforoColor'] = 'amarillo';
         $doc['SemaforoTexto'] = 'Atención';
     } else {
@@ -144,6 +144,7 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
 
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 </head>
 
 <body>
@@ -162,15 +163,15 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
                     <div class="header-legend">
                         <div class="legend-item">
                             <span class="semaforo verde"></span>
-                            <span>1-2 días (En tiempo)</span>
+                            <span>1-3 días (En tiempo)</span>
                         </div>
                         <div class="legend-item">
                             <span class="semaforo amarillo"></span>
-                            <span>3-5 días (Atención)</span>
+                            <span>4-6 días (Atención)</span>
                         </div>
                         <div class="legend-item">
                             <span class="semaforo rojo"></span>
-                            <span>6+ días (Urgente)</span>
+                            <span>7+ días (Urgente)</span>
                         </div>
                     </div>
                 </div>
@@ -340,280 +341,12 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
         </main>
     </div>
 
-    <!-- JavaScript del módulo -->
-    <script src="../../backend/js/defensoria/supervision.js"></script>
     <!-- Ahora sí cargamos el JS de notificaciones normalmente -->
     <script src="../../backend/js/notificaciones.js"></script>
+    <!-- JavaScript del módulo -->
+    <script src="../../backend/js/defensoria/supervision.js"></script>
+    <script src="../../backend/js/defensoria/exportar-supervision.js"></script>
 
-    <!-- JavaScript adicional -->
-    <script>
-        // Función para ver observación completa
-        function verObservacionCompleta(observacion, fecha) {
-            Swal.fire({
-                title: 'Observación del Documento',
-                html: `
-                    <div style="text-align: left;">
-                        <p style="margin-bottom: 1rem; color: #666; font-size: 0.9rem;">
-                            <i class="fas fa-calendar"></i> Fecha: ${fecha}
-                        </p>
-                        <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; border-left: 4px solid #6c5ce7;">
-                            <p style="margin: 0; line-height: 1.5;">${observacion}</p>
-                        </div>
-                    </div>
-                `,
-                confirmButtonText: 'Cerrar',
-                confirmButtonColor: '#6c5ce7',
-                width: '500px'
-            });
-        }
-
-        // Función de exportación FUNCIONAL
-        function exportarSupervision() {
-            Swal.fire({
-                title: 'Exportar Reporte de Supervisión',
-                html: `
-                    <div style="text-align: left; padding: 1rem;">
-                        <p style="margin-bottom: 1rem; color: #666;">Seleccione el formato de exportación:</p>
-                        <div style="margin: 1.5rem 0;">
-                            <label style="display: flex; align-items: center; margin-bottom: 1rem; cursor: pointer; padding: 0.5rem; border-radius: 8px; transition: background 0.2s;">
-                                <input type="radio" name="formato" value="excel" checked style="margin-right: 1rem;"> 
-                                <i class="fas fa-file-excel" style="color: #10B981; margin-right: 0.5rem; width: 20px;"></i>
-                                Excel (.xlsx) - Recomendado
-                            </label>
-                            <label style="display: flex; align-items: center; margin-bottom: 1rem; cursor: pointer; padding: 0.5rem; border-radius: 8px; transition: background 0.2s;">
-                                <input type="radio" name="formato" value="pdf" style="margin-right: 1rem;"> 
-                                <i class="fas fa-file-pdf" style="color: #EF4444; margin-right: 0.5rem; width: 20px;"></i>
-                                PDF - Para impresión
-                            </label>
-                            <label style="display: flex; align-items: center; cursor: pointer; padding: 0.5rem; border-radius: 8px; transition: background 0.2s;">
-                                <input type="radio" name="formato" value="csv" style="margin-right: 1rem;"> 
-                                <i class="fas fa-file-csv" style="color: #3B82F6; margin-right: 0.5rem; width: 20px;"></i>
-                                CSV - Datos básicos
-                            </label>
-                        </div>
-                        <hr style="margin: 1rem 0; border: none; border-top: 1px solid #e9ecef;">
-                        <label style="display: flex; align-items: center; margin-top: 1rem; cursor: pointer;">
-                            <input type="checkbox" id="incluirFiltros" checked style="margin-right: 0.75rem;">
-                            <span>Incluir solo documentos filtrados actualmente</span>
-                        </label>
-                    </div>
-                `,
-                showCancelButton: true,
-                confirmButtonText: '<i class="fas fa-download"></i> Generar Reporte',
-                cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
-                confirmButtonColor: '#6c5ce7',
-                cancelButtonColor: '#6c757d',
-                width: '450px',
-                allowOutsideClick: false,
-                allowEscapeKey: false,
-                preConfirm: () => {
-                    const formato = document.querySelector('input[name="formato"]:checked').value;
-                    const incluirFiltros = document.getElementById('incluirFiltros').checked;
-                    return {
-                        formato,
-                        incluirFiltros
-                    };
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    procesarExportacionReal(result.value);
-                }
-            });
-        }
-
-        // Procesamiento REAL de exportación
-        function procesarExportacionReal(opciones) {
-            let progreso = 0;
-            const timer = setInterval(() => {
-                progreso += 10;
-                Swal.update({
-                    html: `
-                        <div style="text-align: center; padding: 1rem;">
-                            <i class="fas fa-file-${opciones.formato === 'excel' ? 'excel' : opciones.formato === 'pdf' ? 'pdf' : 'csv'}" style="font-size: 3rem; color: #6c5ce7; margin-bottom: 1rem;"></i>
-                            <p style="margin-bottom: 1rem;">Generando archivo <strong>${opciones.formato.toUpperCase()}</strong>...</p>
-                            <div style="background: #f0f0f0; border-radius: 10px; overflow: hidden; margin: 1rem 0; height: 25px;">
-                                <div style="background: linear-gradient(90deg, #6c5ce7, #74b9ff); height: 100%; width: ${progreso}%; transition: width 0.3s ease; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.8rem; font-weight: 600;">
-                                    ${progreso}%
-                                </div>
-                            </div>
-                            <p style="color: #666; font-size: 0.9rem;">Recopilando datos de documentos...</p>
-                        </div>
-                    `
-                });
-
-                if (progreso >= 100) {
-                    clearInterval(timer);
-
-                    setTimeout(() => {
-                        generarArchivoReal(opciones);
-
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Archivo generado',
-                            html: `El archivo <strong>${opciones.formato.toUpperCase()}</strong> se ha generado correctamente.<br><br><small style="color: #666;">El archivo se está descargando...</small>`,
-                            timer: 3000,
-                            showConfirmButton: false
-                        });
-                    }, 500);
-                }
-            }, 200);
-
-            Swal.fire({
-                title: 'Procesando exportación...',
-                html: `
-                    <div style="text-align: center; padding: 1rem;">
-                        <i class="fas fa-cog fa-spin" style="font-size: 3rem; color: #6c5ce7; margin-bottom: 1rem;"></i>
-                        <p>Preparando datos para exportación...</p>
-                    </div>
-                `,
-                allowOutsideClick: false,
-                allowEscapeKey: false,
-                showConfirmButton: false
-            });
-        }
-
-        // Generar archivo REAL
-        function generarArchivoReal(opciones) {
-            const filas = document.querySelectorAll('.fila-documento:not([style*="display: none"])');
-            const datos = [];
-
-            filas.forEach((fila, index) => {
-                const celdas = fila.querySelectorAll('td');
-                datos.push({
-                    numero: index + 1,
-                    documento: celdas[1].textContent.trim(),
-                    asunto: celdas[2].textContent.trim(),
-                    estado: celdas[3].textContent.trim(),
-                    fecha: celdas[4].textContent.trim(),
-                    area: celdas[5].textContent.trim(),
-                    dias: celdas[6].textContent.trim(),
-                    observacion: celdas[7].textContent.trim(),
-                    recibido: celdas[8].textContent.trim()
-                });
-            });
-
-            if (opciones.formato === 'csv') {
-                descargarCSV(datos);
-            } else {
-                simularDescargaBackend(opciones.formato, datos);
-            }
-        }
-
-        // Descargar CSV (funcional en frontend)
-        function descargarCSV(datos) {
-            const headers = ['N°', 'Documento', 'Asunto', 'Estado', 'Fecha', 'Área', 'Días', 'Observación', 'Recibido'];
-            const csvContent = [headers.join(',')];
-
-            datos.forEach(row => {
-                const fila = [
-                    row.numero,
-                    `"${row.documento.replace(/"/g, '""')}"`,
-                    `"${row.asunto.replace(/"/g, '""')}"`,
-                    `"${row.estado.replace(/"/g, '""')}"`,
-                    row.fecha,
-                    `"${row.area.replace(/"/g, '""')}"`,
-                    `"${row.dias.replace(/"/g, '""')}"`,
-                    `"${row.observacion.replace(/"/g, '""')}"`,
-                    `"${row.recibido.replace(/"/g, '""')}"`
-                ];
-                csvContent.push(fila.join(','));
-            });
-
-            const blob = new Blob([csvContent.join('\n')], {
-                type: 'text/csv;charset=utf-8;'
-            });
-            const link = document.createElement('a');
-            const fecha = new Date().toISOString().split('T')[0];
-
-            link.href = URL.createObjectURL(blob);
-            link.download = `supervision_documentos_${fecha}.csv`;
-            link.style.display = 'none';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        // Backend para Excel y PDF
-        function simularDescargaBackend(formato, datos) {
-            fetch('../../backend/php/exportar-supervision.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: JSON.stringify({
-                        formato: formato,
-                        datos: datos
-                    })
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Error en el servidor: ' + response.status);
-                    }
-
-                    const contentType = response.headers.get('content-type');
-                    if (contentType && (contentType.includes('application/') || contentType.includes('text/csv'))) {
-                        return response.blob();
-                    } else {
-                        return response.json();
-                    }
-                })
-                .then(blob => {
-                    if (blob instanceof Blob) {
-                        const fecha = new Date().toISOString().split('T')[0];
-                        const extension = formato === 'excel' ? 'xlsx' : formato === 'pdf' ? 'pdf' : 'csv';
-                        const nombreArchivo = `supervision_documentos_${fecha}.${extension}`;
-
-                        const link = document.createElement('a');
-                        link.href = URL.createObjectURL(blob);
-                        link.download = nombreArchivo;
-                        link.style.display = 'none';
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-
-                        setTimeout(() => URL.revokeObjectURL(link.href), 100);
-                    } else {
-                        throw new Error(blob.error || 'Error desconocido');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error en exportación:', error);
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error en la exportación',
-                        text: 'No se pudo generar el archivo. ' + error.message,
-                        confirmButtonColor: '#6c5ce7'
-                    });
-                });
-        }
-
-        // Búsqueda con contador
-        document.addEventListener('DOMContentLoaded', function() {
-            const campoBusqueda = document.getElementById('buscarDocumento');
-            const contador = document.getElementById('contadorResultados');
-
-            if (campoBusqueda && contador) {
-                campoBusqueda.addEventListener('input', function() {
-                    const busqueda = this.value.toLowerCase().trim();
-                    const filas = document.querySelectorAll('.fila-documento');
-                    let visible = 0;
-
-                    filas.forEach(fila => {
-                        const texto = fila.textContent.toLowerCase();
-                        if (texto.includes(busqueda)) {
-                            fila.style.display = '';
-                            visible++;
-                        } else {
-                            fila.style.display = 'none';
-                        }
-                    });
-
-                    contador.textContent = `${visible} documento${visible !== 1 ? 's' : ''}`;
-                });
-            }
-        });
-    </script>
     <script>
         $(document).ready(function() {
             // 1. Mostrar/Ocultar el menú móvil completo
@@ -654,6 +387,7 @@ $urgentes = count(array_filter($documentos, fn($d) => $d['SemaforoColor'] === 'r
             });
         });
     </script>
+
 </body>
 
 </html>

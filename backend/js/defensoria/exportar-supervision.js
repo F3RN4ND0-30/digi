@@ -154,7 +154,7 @@ function procesarExportacion(formato, cantidad) {
         const stats = calcularStats(datos);
 
         // ENVIAR AL BACKEND PARA USAR LAS LIBRERÍAS REALES
-        fetch('/digi/backend/defensoria/exportar-supervision.php', {
+        fetch('../../backend/php/exportar-supervision.php', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
