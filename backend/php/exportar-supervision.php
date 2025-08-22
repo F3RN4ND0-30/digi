@@ -2,7 +2,7 @@
 
 /**
  * Backend para exportación de reportes de supervisión
- * exportar-supervision.php - VERSIÓN COMPLETA CON LIBRERÍAS
+ * exportar-supervision.php - VERSIÓN COMPACTA FINAL
  */
 
 // Verificar que sea POST
@@ -27,33 +27,54 @@ if (($_SESSION['dg_rol'] ?? 999) != 1 && ($_SESSION['dg_rol'] ?? 999) != 4) {
     exit;
 }
 
+// Buscar y cargar Composer autoloader
+$autoloadPaths = [
+    __DIR__ . '/../../../vendor/autoload.php',
+    __DIR__ . '/../../vendor/autoload.php',
+    __DIR__ . '/../vendor/autoload.php',
+    __DIR__ . '/vendor/autoload.php',
+    dirname(__DIR__, 3) . '/vendor/autoload.php',
+    dirname(__DIR__, 2) . '/vendor/autoload.php'
+];
+
+$autoloadLoaded = false;
+foreach ($autoloadPaths as $path) {
+    if (file_exists($path)) {
+        require_once $path;
+        $autoloadLoaded = true;
+        break;
+    }
+}
+
 try {
     // Obtener datos del request
     $input = json_decode(file_get_contents('php://input'), true);
 
     if (!$input || !isset($input['formato'])) {
-        throw new Exception('Datos inválidos');
+        throw new Exception('Datos inválidos recibidos');
     }
 
     $formato = $input['formato'];
+    $datos = $input['datos'] ?? [];
+    $stats = $input['stats'] ?? [];
 
-    // Obtener datos actualizados de la base de datos
-    require '../db/conexion.php';
-    $datosReales = obtenerDatosSupervision($pdo);
+    if (empty($datos)) {
+        throw new Exception('No hay datos para exportar');
+    }
 
     // Generar archivo según formato
     switch ($formato) {
         case 'excel':
-            generarExcelReal($datosReales);
+            generarExcelReal($datos, $stats, $autoloadLoaded);
             break;
         case 'pdf':
-            generarPDFReal($datosReales);
+            generarPDFReal($datos, $stats, $autoloadLoaded);
             break;
         case 'csv':
-            generarCSV($datosReales);
+            generarCSV($datos, $stats);
             break;
         default:
-            throw new Exception('Formato no soportado');
+            throw new Exception('Formato no soportado: ' . $formato);
     }
 } catch (Exception $e) {
     http_response_code(500);
@@ -62,328 +83,335 @@ try {
 }
 
 /**
- * Obtener datos actualizados de supervisión
+ * Generar Excel usando PhpSpreadsheet
  */
-function obtenerDatosSupervision($pdo)
+function generarExcelReal($datos, $stats, $autoloadLoaded)
 {
-    $stmt = $pdo->query("
-        SELECT 
-            d.IdDocumentos,
-            d.NumeroDocumento,
-            d.Asunto,
-            d.FechaIngreso,
-            d.IdEstadoDocumento,
-            a.Nombre as AreaDestino,
-            u.Nombres as NombreUsuario,
-            u.ApellidoPat as ApellidoUsuario,
-            md.Observacion as UltimaObservacion,
-            md.FechaMovimiento as FechaUltimaObservacion,
-            CASE 
-                WHEN d.IdEstadoDocumento = 1 THEN 'PENDIENTE'
-                WHEN d.IdEstadoDocumento = 2 THEN 'EN PROCESO'
-                WHEN d.IdEstadoDocumento = 3 THEN 'REVISADO'
-                WHEN d.IdEstadoDocumento = 4 THEN 'FINALIZADO'
-                ELSE 'SIN ESTADO'
-            END as EstadoTexto
-        FROM documentos d
-        LEFT JOIN areas a ON d.IdAreaFinal = a.IdAreas
-        LEFT JOIN usuarios u ON d.IdUsuarios = u.IdUsuarios
-        LEFT JOIN (
-            SELECT 
-                IdDocumentos,
-                Observacion,
-                FechaMovimiento,
-                ROW_NUMBER() OVER (PARTITION BY IdDocumentos ORDER BY FechaMovimiento DESC) as rn
-            FROM movimientodocumento 
-            WHERE Observacion IS NOT NULL AND Observacion != ''
-        ) md ON d.IdDocumentos = md.IdDocumentos AND md.rn = 1
-        WHERE d.Exterior = 1
-        ORDER BY d.FechaIngreso DESC
-    ");
-
-    $documentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    // Calcular días transcurridos
-    foreach ($documentos as &$doc) {
-        $inicio = new DateTime($doc['FechaIngreso']);
-        $hoy = new DateTime();
-        $inicio->setTime(0, 0, 0);
-        $hoy->setTime(0, 0, 0);
-        $diferencia = $hoy->diff($inicio);
-        $doc['DiasTranscurridos'] = $diferencia->days;
-
-        // Determinar semáforo
-        if ($doc['DiasTranscurridos'] <= 2) {
-            $doc['SemaforoTexto'] = 'En tiempo';
-        } elseif ($doc['DiasTranscurridos'] <= 5) {
-            $doc['SemaforoTexto'] = 'Atención';
-        } else {
-            $doc['SemaforoTexto'] = 'Urgente';
-        }
-    }
-
-    return $documentos;
-}
-
-/**
- * Generar Excel REAL usando PhpSpreadsheet
- */
-function generarExcelReal($datos)
-{
-    // Buscar autoloader de Composer en diferentes ubicaciones
-    $autoloadPaths = [
-        __DIR__ . '/../../../vendor/autoload.php',
-        __DIR__ . '/../../vendor/autoload.php',
-        __DIR__ . '/../vendor/autoload.php',
-        __DIR__ . '/vendor/autoload.php'
-    ];
-
-    $autoloadFound = false;
-    foreach ($autoloadPaths as $path) {
-        if (file_exists($path)) {
-            require_once $path;
-            $autoloadFound = true;
-            break;
-        }
-    }
-
-    if (!$autoloadFound || !class_exists('PhpOffice\PhpSpreadsheet\Spreadsheet')) {
-        // Fallback a CSV si no se encuentra PhpSpreadsheet
-        generarCSV($datos);
+    if (!$autoloadLoaded || !class_exists('PhpOffice\PhpSpreadsheet\Spreadsheet')) {
+        generarCSV($datos, $stats);
         return;
     }
 
-    $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
-    $sheet = $spreadsheet->getActiveSheet();
+    try {
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Supervisión Documentos');
 
-    // Configurar título
-    $sheet->setCellValue('A1', 'REPORTE DE SUPERVISIÓN - DOCUMENTOS EXTERNOS');
-    $sheet->mergeCells('A1:J1');
-    $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16);
-    $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        // Configurar anchos de columna optimizados
+        $sheet->getColumnDimension('A')->setWidth(6);   // N°
+        $sheet->getColumnDimension('B')->setWidth(20);  // Documento
+        $sheet->getColumnDimension('C')->setWidth(45);  // Asunto
+        $sheet->getColumnDimension('D')->setWidth(15);  // Estado
+        $sheet->getColumnDimension('E')->setWidth(12);  // Fecha
+        $sheet->getColumnDimension('F')->setWidth(25);  // Área
+        $sheet->getColumnDimension('G')->setWidth(15);  // Días
+        $sheet->getColumnDimension('H')->setWidth(30);  // Observación
+        $sheet->getColumnDimension('I')->setWidth(20);  // Recibido
 
-    // Información adicional
-    $sheet->setCellValue('A2', 'Defensoría del Pueblo - Municipalidad Provincial de Pisco');
-    $sheet->mergeCells('A2:J2');
-    $sheet->getStyle('A2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        // TÍTULO PRINCIPAL
+        $sheet->mergeCells('A1:I1');
+        $sheet->setCellValue('A1', 'REPORTE DE SUPERVISIÓN - DOCUMENTOS EXTERNOS');
+        $sheet->getStyle('A1')->applyFromArray([
+            'font' => [
+                'bold' => true,
+                'size' => 16,
+                'color' => ['rgb' => '4472C4']
+            ],
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER
+            ]
+        ]);
+        $sheet->getRowDimension(1)->setRowHeight(25);
 
-    $sheet->setCellValue('A3', 'Generado el: ' . date('d/m/Y H:i:s'));
-    $sheet->mergeCells('A3:J3');
-    $sheet->getStyle('A3')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        // SUBTÍTULO
+        $sheet->mergeCells('A2:I2');
+        $sheet->setCellValue('A2', 'Defensoría del Pueblo - Municipalidad Provincial de Pisco');
+        $sheet->getStyle('A2')->applyFromArray([
+            'font' => [
+                'bold' => true,
+                'size' => 14,
+                'color' => ['rgb' => '333333']
+            ],
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER
+            ]
+        ]);
 
-    // Estadísticas
-    $total = count($datos);
-    $enTiempo = count(array_filter($datos, fn($d) => $d['DiasTranscurridos'] <= 2));
-    $atencion = count(array_filter($datos, fn($d) => $d['DiasTranscurridos'] > 2 && $d['DiasTranscurridos'] <= 5));
-    $urgentes = count(array_filter($datos, fn($d) => $d['DiasTranscurridos'] > 5));
+        // FECHA
+        $sheet->mergeCells('A3:I3');
+        $sheet->setCellValue('A3', 'Generado: ' . date('d/m/Y H:i:s'));
+        $sheet->getStyle('A3')->applyFromArray([
+            'font' => ['bold' => true, 'size' => 12],
+            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER]
+        ]);
 
-    $sheet->setCellValue('A5', 'ESTADÍSTICAS:');
-    $sheet->getStyle('A5')->getFont()->setBold(true);
-    $sheet->setCellValue('A6', 'Total de documentos:');
-    $sheet->setCellValue('B6', $total);
-    $sheet->setCellValue('A7', 'En tiempo (1-2 días):');
-    $sheet->setCellValue('B7', $enTiempo);
-    $sheet->setCellValue('A8', 'Requieren atención (3-5 días):');
-    $sheet->setCellValue('B8', $atencion);
-    $sheet->setCellValue('A9', 'Urgentes (6+ días):');
-    $sheet->setCellValue('B9', $urgentes);
+        // ESTADÍSTICAS
+        $sheet->setCellValue('A5', 'ESTADÍSTICAS:');
+        $sheet->getStyle('A5')->applyFromArray([
+            'font' => ['bold' => true, 'size' => 12, 'color' => ['rgb' => '4472C4']],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'color' => ['rgb' => 'E8F4FD']
+            ]
+        ]);
 
-    // Headers de la tabla
-    $headers = ['N°', 'Número Documento', 'Asunto', 'Estado', 'Fecha Ingreso', 'Área Destino', 'Días Transcurridos', 'Estado Tiempo', 'Observación', 'Recibido Por'];
-    $col = 'A';
-    $row = 11;
+        $sheet->setCellValue('A6', 'Total de documentos:');
+        $sheet->setCellValue('B6', $stats['total']);
+        $sheet->setCellValue('A7', 'En tiempo (1-3 días):');
+        $sheet->setCellValue('B7', $stats['enTiempo']);
+        $sheet->setCellValue('A8', 'Requieren atención (4-6 días):');
+        $sheet->setCellValue('B8', $stats['atencion']);
+        $sheet->setCellValue('A9', 'Urgentes (7+ días):');
+        $sheet->setCellValue('B9', $stats['urgentes']);
 
-    foreach ($headers as $header) {
-        $sheet->setCellValue($col . $row, $header);
-        $sheet->getStyle($col . $row)->getFont()->setBold(true);
-        $sheet->getStyle($col . $row)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FF6c5ce7');
-        $sheet->getStyle($col . $row)->getFont()->getColor()->setARGB('FFFFFFFF');
-        $col++;
+        // Estilos para estadísticas
+        $sheet->getStyle('A6:B9')->applyFromArray([
+            'font' => ['bold' => true],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'color' => ['rgb' => 'F8F9FA']
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    'color' => ['rgb' => '4472C4']
+                ]
+            ]
+        ]);
+
+        // ENCABEZADOS DE TABLA
+        $headers = ['N°', 'Documento', 'Asunto', 'Estado', 'Fecha', 'Área', 'Días', 'Observación', 'Recibido'];
+        $col = 'A';
+        $row = 11;
+
+        foreach ($headers as $header) {
+            $sheet->setCellValue($col . $row, $header);
+            $col++;
+        }
+
+        // Estilo para encabezados
+        $sheet->getStyle('A11:I11')->applyFromArray([
+            'font' => [
+                'bold' => true,
+                'color' => ['rgb' => 'FFFFFF'],
+                'size' => 12
+            ],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'color' => ['rgb' => '4472C4']
+            ],
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    'color' => ['rgb' => '2C5AA0']
+                ]
+            ]
+        ]);
+        $sheet->getRowDimension(11)->setRowHeight(25);
+
+        // DATOS
+        $row = 12;
+        foreach ($datos as $item) {
+            $sheet->setCellValue('A' . $row, $item['numero']);
+            $sheet->setCellValue('B' . $row, $item['documento']);
+            $sheet->setCellValue('C' . $row, $item['asunto']);
+            $sheet->setCellValue('D' . $row, $item['estado']);
+            $sheet->setCellValue('E' . $row, $item['fecha']);
+            $sheet->setCellValue('F' . $row, $item['area']);
+            $sheet->setCellValue('G' . $row, $item['dias']);
+            $sheet->setCellValue('H' . $row, $item['observacion']);
+            $sheet->setCellValue('I' . $row, $item['recibido']);
+
+            // Estilos para datos
+            $sheet->getStyle('A' . $row . ':I' . $row)->applyFromArray([
+                'alignment' => [
+                    'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                    'wrapText' => true
+                ],
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                        'color' => ['rgb' => 'DDDDDD']
+                    ]
+                ]
+            ]);
+
+            // Centrar columnas específicas
+            $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('D' . $row)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('E' . $row)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('G' . $row)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+            $sheet->getRowDimension($row)->setRowHeight(30);
+
+            // Color alternado
+            if ($row % 2 == 0) {
+                $sheet->getStyle('A' . $row . ':I' . $row)->applyFromArray([
+                    'fill' => [
+                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                        'color' => ['rgb' => 'F8F9FA']
+                    ]
+                ]);
+            }
+
+            $row++;
+        }
+
+        // Enviar archivo
+        $fecha = date('Y-m-d');
+        $hora = date('H-i');
+        $filename = "supervision_documentos_{$fecha}_{$hora}.xlsx";
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+        header('Pragma: public');
+
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $writer->save('php://output');
+        exit;
+    } catch (Exception $e) {
+        generarCSV($datos, $stats);
     }
-
-    // Datos
-    $row = 12;
-    foreach ($datos as $index => $doc) {
-        $sheet->setCellValue('A' . $row, $index + 1);
-        $sheet->setCellValue('B' . $row, $doc['NumeroDocumento']);
-        $sheet->setCellValue('C' . $row, $doc['Asunto']);
-        $sheet->setCellValue('D' . $row, $doc['EstadoTexto']);
-        $sheet->setCellValue('E' . $row, date('d/m/Y', strtotime($doc['FechaIngreso'])));
-        $sheet->setCellValue('F' . $row, $doc['AreaDestino'] ?? 'No asignada');
-        $sheet->setCellValue('G' . $row, $doc['DiasTranscurridos']);
-        $sheet->setCellValue('H' . $row, $doc['SemaforoTexto']);
-        $sheet->setCellValue('I' . $row, $doc['UltimaObservacion'] ?? 'Sin observaciones');
-        $sheet->setCellValue('J' . $row, $doc['NombreUsuario'] . ' ' . $doc['ApellidoUsuario']);
-        $row++;
-    }
-
-    // Ajustar anchos de columna
-    foreach (range('A', 'J') as $col) {
-        $sheet->getColumnDimension($col)->setAutoSize(true);
-    }
-
-    // Aplicar bordes a la tabla
-    $sheet->getStyle('A11:J' . ($row - 1))->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
-
-    // Enviar archivo
-    $fecha = date('Y-m-d_H-i-s');
-    $filename = "supervision_documentos_{$fecha}.xlsx";
-
-    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    header('Content-Disposition: attachment;filename="' . $filename . '"');
-    header('Cache-Control: max-age=0');
-    header('Pragma: public');
-
-    $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
-    $writer->save('php://output');
-    exit;
 }
 
 /**
- * Generar PDF REAL usando TCPDF
+ * Generar PDF COMPACTO - Solo columnas esenciales
  */
-function generarPDFReal($datos)
+function generarPDFReal($datos, $stats, $autoloadLoaded)
 {
-    // Buscar autoloader de Composer en diferentes ubicaciones
-    $autoloadPaths = [
-        __DIR__ . '/../../../vendor/autoload.php',
-        __DIR__ . '/../../vendor/autoload.php',
-        __DIR__ . '/../vendor/autoload.php',
-        __DIR__ . '/vendor/autoload.php'
-    ];
-
-    $autoloadFound = false;
-    foreach ($autoloadPaths as $path) {
-        if (file_exists($path)) {
-            require_once $path;
-            $autoloadFound = true;
-            break;
-        }
-    }
-
-    if (!$autoloadFound || !class_exists('TCPDF')) {
-        // Fallback a CSV si no se encuentra TCPDF
-        generarCSV($datos);
+    if (!$autoloadLoaded || !class_exists('TCPDF')) {
+        generarCSV($datos, $stats);
         return;
     }
 
-    $pdf = new \TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+    try {
+        $pdf = new \TCPDF('L', PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
 
-    // Configurar documento
-    $pdf->SetCreator('DIGI - Sistema de Supervisión');
-    $pdf->SetAuthor('Defensoría del Pueblo');
-    $pdf->SetTitle('Reporte de Supervisión - Documentos Externos');
-    $pdf->SetSubject('Monitoreo de documentos externos');
+        // Configurar documento
+        $pdf->SetCreator('DIGI - Sistema de Supervisión');
+        $pdf->SetAuthor('Defensoría del Pueblo');
+        $pdf->SetTitle('Reporte de Supervisión - Documentos Externos');
 
-    // Quitar header y footer por defecto
-    $pdf->setPrintHeader(false);
-    $pdf->setPrintFooter(false);
+        $pdf->setPrintHeader(false);
+        $pdf->setPrintFooter(false);
+        $pdf->SetMargins(8, 15, 8); // Márgenes mínimos
+        $pdf->SetAutoPageBreak(TRUE, 15);
 
-    // Configurar página
-    $pdf->SetDefaultMonospacedFont(PDF_FONT_MONOSPACED);
-    $pdf->SetMargins(15, 15, 15);
-    $pdf->SetAutoPageBreak(TRUE, 20);
-    $pdf->setImageScale(PDF_IMAGE_SCALE_RATIO);
+        $pdf->AddPage();
 
-    // Agregar página
-    $pdf->AddPage();
+        // Título
+        $pdf->SetFont('helvetica', 'B', 14);
+        $pdf->SetTextColor(68, 114, 196);
+        $pdf->Cell(0, 6, 'REPORTE DE SUPERVISIÓN - DOCUMENTOS EXTERNOS', 0, 1, 'C');
 
-    // Título
-    $pdf->SetFont('helvetica', 'B', 18);
-    $pdf->Cell(0, 10, 'REPORTE DE SUPERVISIÓN', 0, 1, 'C');
-    $pdf->Cell(0, 8, 'DOCUMENTOS EXTERNOS', 0, 1, 'C');
+        $pdf->SetFont('helvetica', 'B', 10);
+        $pdf->SetTextColor(0, 0, 0);
+        $pdf->Cell(0, 5, 'Defensoría del Pueblo - Municipalidad Provincial de Pisco', 0, 1, 'C');
 
-    $pdf->SetFont('helvetica', '', 12);
-    $pdf->Cell(0, 8, 'Defensoría del Pueblo - Municipalidad Provincial de Pisco', 0, 1, 'C');
-    $pdf->Cell(0, 8, 'Generado el: ' . date('d/m/Y H:i:s'), 0, 1, 'C');
-    $pdf->Ln(10);
+        $pdf->SetFont('helvetica', '', 8);
+        $pdf->Cell(0, 5, 'Generado: ' . date('d/m/Y H:i:s'), 0, 1, 'C');
+        $pdf->Ln(5);
 
-    // Estadísticas
-    $total = count($datos);
-    $enTiempo = count(array_filter($datos, fn($d) => $d['DiasTranscurridos'] <= 2));
-    $atencion = count(array_filter($datos, fn($d) => $d['DiasTranscurridos'] > 2 && $d['DiasTranscurridos'] <= 5));
-    $urgentes = count(array_filter($datos, fn($d) => $d['DiasTranscurridos'] > 5));
+        // Estadísticas en una línea
+        $pdf->SetFont('helvetica', 'B', 9);
+        $pdf->SetTextColor(68, 114, 196);
+        $pdf->Cell(0, 5, "ESTADÍSTICAS: Total: {$stats['total']} | En tiempo: {$stats['enTiempo']} | Atención: {$stats['atencion']} | Urgentes: {$stats['urgentes']}", 0, 1, 'L');
+        $pdf->Ln(5);
 
-    $pdf->SetFont('helvetica', 'B', 14);
-    $pdf->Cell(0, 8, 'RESUMEN ESTADÍSTICO:', 0, 1, 'L');
-    $pdf->SetFont('helvetica', '', 11);
-    $pdf->Cell(0, 6, "Total de documentos externos: {$total}", 0, 1, 'L');
-    $pdf->Cell(0, 6, "En tiempo (1-2 días): {$enTiempo} (" . round(($enTiempo / $total) * 100, 1) . "%)", 0, 1, 'L');
-    $pdf->Cell(0, 6, "Requieren atención (3-5 días): {$atencion} (" . round(($atencion / $total) * 100, 1) . "%)", 0, 1, 'L');
-    $pdf->Cell(0, 6, "Urgentes (6+ días): {$urgentes} (" . round(($urgentes / $total) * 100, 1) . "%)", 0, 1, 'L');
-    $pdf->Ln(10);
+        // Tabla COMPACTA - Solo 6 columnas esenciales
+        $pdf->SetFont('helvetica', 'B', 8);
+        $pdf->SetFillColor(68, 114, 196);
+        $pdf->SetTextColor(255, 255, 255);
 
-    // Tabla de documentos
-    $pdf->SetFont('helvetica', 'B', 12);
-    $pdf->Cell(0, 8, 'DETALLE DE DOCUMENTOS:', 0, 1, 'L');
+        // Headers compactos - Total: 265 puntos
+        $pdf->Cell(15, 7, 'N°', 1, 0, 'C', 1);
+        $pdf->Cell(45, 7, 'Documento', 1, 0, 'C', 1);
+        $pdf->Cell(90, 7, 'Asunto', 1, 0, 'C', 1);
+        $pdf->Cell(30, 7, 'Estado', 1, 0, 'C', 1);
+        $pdf->Cell(25, 7, 'Fecha', 1, 0, 'C', 1);
+        $pdf->Cell(30, 7, 'Días', 1, 0, 'C', 1);
+        $pdf->Cell(30, 7, 'Área', 1, 1, 'C', 1);
 
-    $pdf->SetFont('helvetica', 'B', 8);
-    $pdf->SetFillColor(108, 92, 231);
-    $pdf->SetTextColor(255, 255, 255);
+        // Datos
+        $pdf->SetFont('helvetica', '', 6); // Fuente más pequeña
+        $pdf->SetTextColor(0, 0, 0);
+        $pdf->SetFillColor(248, 249, 250);
 
-    // Headers
-    $pdf->Cell(15, 8, 'N°', 1, 0, 'C', 1);
-    $pdf->Cell(35, 8, 'Documento', 1, 0, 'C', 1);
-    $pdf->Cell(50, 8, 'Asunto', 1, 0, 'C', 1);
-    $pdf->Cell(25, 8, 'Estado', 1, 0, 'C', 1);
-    $pdf->Cell(25, 8, 'Fecha', 1, 0, 'C', 1);
-    $pdf->Cell(30, 8, 'Días', 1, 1, 'C', 1);
+        foreach ($datos as $index => $item) {
+            // Verificar si necesita nueva página
+            if ($pdf->GetY() > 180) {
+                $pdf->AddPage();
 
-    // Datos
-    $pdf->SetFont('helvetica', '', 7);
-    $pdf->SetTextColor(0, 0, 0);
-    $pdf->SetFillColor(248, 249, 250);
+                // Repetir headers
+                $pdf->SetFont('helvetica', 'B', 8);
+                $pdf->SetFillColor(68, 114, 196);
+                $pdf->SetTextColor(255, 255, 255);
 
-    foreach ($datos as $index => $doc) {
-        // Verificar si necesita nueva página
-        if ($pdf->GetY() > 250) {
-            $pdf->AddPage();
+                $pdf->Cell(15, 7, 'N°', 1, 0, 'C', 1);
+                $pdf->Cell(45, 7, 'Documento', 1, 0, 'C', 1);
+                $pdf->Cell(90, 7, 'Asunto', 1, 0, 'C', 1);
+                $pdf->Cell(30, 7, 'Estado', 1, 0, 'C', 1);
+                $pdf->Cell(25, 7, 'Fecha', 1, 0, 'C', 1);
+                $pdf->Cell(30, 7, 'Días', 1, 0, 'C', 1);
+                $pdf->Cell(30, 7, 'Área', 1, 1, 'C', 1);
 
-            // Repetir headers
-            $pdf->SetFont('helvetica', 'B', 8);
-            $pdf->SetFillColor(108, 92, 231);
-            $pdf->SetTextColor(255, 255, 255);
+                $pdf->SetFont('helvetica', '', 6);
+                $pdf->SetTextColor(0, 0, 0);
+            }
 
-            $pdf->Cell(15, 8, 'N°', 1, 0, 'C', 1);
-            $pdf->Cell(35, 8, 'Documento', 1, 0, 'C', 1);
-            $pdf->Cell(50, 8, 'Asunto', 1, 0, 'C', 1);
-            $pdf->Cell(25, 8, 'Estado', 1, 0, 'C', 1);
-            $pdf->Cell(25, 8, 'Fecha', 1, 0, 'C', 1);
-            $pdf->Cell(30, 8, 'Días', 1, 1, 'C', 1);
+            $fill = ($index % 2 == 0) ? 1 : 0;
 
-            $pdf->SetFont('helvetica', '', 7);
-            $pdf->SetTextColor(0, 0, 0);
+            // Extraer solo el número de días para mostrar de forma compacta
+            $diasTexto = $item['dias'];
+            preg_match('/(\d+)/', $diasTexto, $matches);
+            $soloNumero = isset($matches[1]) ? $matches[1] . 'd' : '0d';
+
+            // Celdas de datos - mismas dimensiones que headers
+            $pdf->Cell(15, 6, $item['numero'], 1, 0, 'C', $fill);
+            $pdf->Cell(45, 6, substr($item['documento'], 0, 22), 1, 0, 'L', $fill);
+            $pdf->Cell(90, 6, substr($item['asunto'], 0, 55), 1, 0, 'L', $fill);
+            $pdf->Cell(30, 6, substr($item['estado'], 0, 12), 1, 0, 'C', $fill);
+            $pdf->Cell(25, 6, $item['fecha'], 1, 0, 'C', $fill);
+            $pdf->Cell(30, 6, $soloNumero, 1, 0, 'C', $fill); // Solo número + 'd'
+            $pdf->Cell(30, 6, substr($item['area'], 0, 15), 1, 1, 'L', $fill);
         }
 
-        $fill = ($index % 2 == 0) ? 1 : 0;
+        // Enviar archivo
+        $fecha = date('Y-m-d');
+        $hora = date('H-i');
+        $filename = "supervision_documentos_{$fecha}_{$hora}.pdf";
 
-        $pdf->Cell(15, 6, $index + 1, 1, 0, 'C', $fill);
-        $pdf->Cell(35, 6, substr($doc['NumeroDocumento'], 0, 20), 1, 0, 'L', $fill);
-        $pdf->Cell(50, 6, substr($doc['Asunto'], 0, 35) . '...', 1, 0, 'L', $fill);
-        $pdf->Cell(25, 6, substr($doc['EstadoTexto'], 0, 12), 1, 0, 'C', $fill);
-        $pdf->Cell(25, 6, date('d/m/Y', strtotime($doc['FechaIngreso'])), 1, 0, 'C', $fill);
-        $pdf->Cell(30, 6, $doc['DiasTranscurridos'] . ' días (' . $doc['SemaforoTexto'] . ')', 1, 1, 'C', $fill);
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+        header('Pragma: public');
+
+        $pdf->Output($filename, 'D');
+        exit;
+    } catch (Exception $e) {
+        generarCSV($datos, $stats);
     }
-
-    // Enviar archivo
-    $fecha = date('Y-m-d_H-i-s');
-    $filename = "supervision_documentos_{$fecha}.pdf";
-
-    $pdf->Output($filename, 'D');
-    exit;
 }
 
 /**
  * Generar CSV
  */
-function generarCSV($datos)
+function generarCSV($datos, $stats)
 {
-    $fecha = date('Y-m-d_H-i-s');
-    $filename = "supervision_documentos_{$fecha}.csv";
+    $fecha = date('Y-m-d');
+    $hora = date('H-i');
+    $filename = "supervision_documentos_{$fecha}_{$hora}.csv";
 
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename="' . $filename . '"');
     header('Cache-Control: max-age=0');
+    header('Pragma: public');
 
     $output = fopen('php://output', 'w');
 
@@ -393,30 +421,28 @@ function generarCSV($datos)
     // Headers
     fputcsv($output, [
         'N°',
-        'Número Documento',
+        'Documento',
         'Asunto',
         'Estado',
-        'Fecha Ingreso',
-        'Área Destino',
-        'Días Transcurridos',
-        'Estado Tiempo',
+        'Fecha',
+        'Área',
+        'Días',
         'Observación',
-        'Recibido Por'
+        'Recibido'
     ]);
 
     // Datos
-    foreach ($datos as $index => $doc) {
+    foreach ($datos as $item) {
         fputcsv($output, [
-            $index + 1,
-            $doc['NumeroDocumento'],
-            $doc['Asunto'],
-            $doc['EstadoTexto'],
-            date('d/m/Y', strtotime($doc['FechaIngreso'])),
-            $doc['AreaDestino'] ?? 'No asignada',
-            $doc['DiasTranscurridos'],
-            $doc['SemaforoTexto'],
-            $doc['UltimaObservacion'] ?? 'Sin observaciones',
-            $doc['NombreUsuario'] . ' ' . $doc['ApellidoUsuario']
+            $item['numero'],
+            $item['documento'],
+            $item['asunto'],
+            $item['estado'],
+            $item['fecha'],
+            $item['area'],
+            $item['dias'],
+            $item['observacion'],
+            $item['recibido']
         ]);
     }
 
