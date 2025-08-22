@@ -7,6 +7,17 @@ if (!isset($_SESSION['dg_id'])) {
 }
 
 require '../../backend/db/conexion.php';
+
+// Detectar si es móvil para cargar navbar y css correspondientes
+$isMobile = false;
+if (isset($_SERVER['HTTP_USER_AGENT'])) {
+    $isMobile = preg_match('/Mobile|Android|iP(hone|od|ad)/i', $_SERVER['HTTP_USER_AGENT']);
+}
+
+// Definir qué archivo de navbar y CSS se va a usar
+$navbarFile = $isMobile ? 'navbar_mobil.php' : 'navbar.php';
+$navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
+
 ?>
 
 <!DOCTYPE html>
@@ -14,6 +25,7 @@ require '../../backend/db/conexion.php';
 
 <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Buscar Documentos Enviados</title>
 
     <!-- Google Fonts -->
@@ -22,22 +34,21 @@ require '../../backend/db/conexion.php';
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- CSS del Navbar -->
-    <link rel="stylesheet" href="../../backend/css/navbar/navbar.css" />
+    <!-- CSS del Navbar (dinámico) -->
+    <link rel="stylesheet" href="../../backend/css/navbar/<?= $navbarCss ?>" />
 
     <!-- CSS Principal del Escritorio -->
     <link rel="stylesheet" href="../../backend/css/seguimiento/busqueda.css" />
 
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
-
-    <script src="../../backend/js/notificaciones.js"></script>
 </head>
 
 <body>
     <div class="layout-escritorio">
 
-        <?php include '../navbar/navbar.php'; ?>
+        <!-- Incluir el navbar correcto -->
+        <?php include "../navbar/$navbarFile"; ?>
 
         <main class="contenido-principal">
             <div class="container">
@@ -77,12 +88,20 @@ require '../../backend/db/conexion.php';
         </div>
     </div>
 
+    <!-- Ahora sí cargamos el JS de notificaciones normalmente -->
+    <script src="../../backend/js/notificaciones.js"></script>
+
     <!-- jQuery (obligatorio para DataTables y scripts con $) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <!-- DataTables JS -->
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+    <!-- DataTables Responsive JS -->
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+
 
     <script>
         $(document).ready(function() {
@@ -110,6 +129,7 @@ require '../../backend/db/conexion.php';
 
         $(document).ready(function() {
             var tabla = $('#tablaResultados').DataTable({
+                responsive: true,
                 ajax: {
                     url: '../../backend/php/ajax/buscar_documentos_ajax.php',
                     dataSrc: '',

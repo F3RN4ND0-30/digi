@@ -5,149 +5,115 @@ if (!isset($_SESSION['dg_id'])) {
     exit;
 }
 
-// Detectar página actual para navegación activa
 $current_page = basename($_SERVER['PHP_SELF'], '.php');
 $user_name = htmlspecialchars($_SESSION['dg_nombre'] ?? 'Usuario');
 $user_role = $_SESSION['dg_rol'] ?? 999;
 ?>
 
-<!-- Navbar Horizontal Moderna -->
-<nav class="navbar-horizontal">
-    <div class="navbar-container">
-        <!-- Logo -->
-        <div class="navbar-brand">
-            <span class="logo-icon">⚡</span>
-            <span class="logo-text">DIGI - MPP</span>
+<script src="../../backend/js/notificaciones.js"></script>
+
+<nav class="navbar-movil">
+    <div class="navbar-movil-top">
+        <div class="navbar-title">DIGI - MPP</div>
+
+        <div class="navbar-icons">
+            <!-- Notificaciones -->
+            <div id="notificaciones" style="position: relative;">
+                <i class="fas fa-bell"></i>
+                <span id="contador" style="color: yellow; font-weight: bold; font-size: 14px;"></span>
+            </div>
+
+            <!-- Botón hamburguesa -->
+            <i class="fas fa-bars" onclick="toggleMobileMenu()"></i>
         </div>
+    </div>
 
-        <!-- Navegación Principal -->
-        <div class="navbar-nav">
-            <!-- Inicio -->
-            <a href="../sisvis/escritorio.php" class="nav-link <?= ($current_page === 'escritorio') ? 'active' : '' ?>">
-                <i class="fas fa-home"></i>
-                <span>Inicio</span>
+    <!-- Menú desplegable -->
+    <div id="mobileMenu">
+        <div style="text-align: center; margin-bottom: 15px;">
+            <strong><?= $user_name ?></strong>
+        </div>
+        <a href="../sisvis/escritorio.php"><i class="fas fa-home"></i> Inicio</a>
+        <div class="nav-dropdown">
+            <a href="#" class="nav-link dropdown-toggle">
+                <i class="fas fa-th-large"></i>
+                <span>Módulos</span>
+                <i class="fas fa-chevron-down dropdown-arrow"></i>
             </a>
+            <div class="dropdown-menu dropdown-grid">
 
-            <!-- Dropdown Módulos -->
-            <div class="nav-dropdown">
-                <a href="#" class="nav-link dropdown-toggle">
-                    <i class="fas fa-th-large"></i>
-                    <span>Módulos</span>
-                    <i class="fas fa-chevron-down dropdown-arrow"></i>
-                </a>
-                <div class="dropdown-menu dropdown-grid">
+                <!-- Columna 1: Gestión Documental -->
+                <div class="module-column">
+                    <h6 class="column-header">
+                        <i class="fas fa-folder-open"></i>
+                        GESTIÓN DOCUMENTAL
+                    </h6>
+                    <div class="column-items">
+                        <a href="../archivos/registrar.php" class="module-item <?= ($current_page === 'registrar') ? 'active' : '' ?>">
+                            <i class="fas fa-plus-circle"></i>
+                            <span>Registrar</span>
+                        </a>
+                        <a href="../archivos/recepcion.php" class="module-item <?= ($current_page === 'recepcion') ? 'active' : '' ?>">
+                            <i class="fas fa-inbox"></i>
+                            <span>Recepción</span>
+                        </a>
+                        <a href="../archivos/enviados.php" class="module-item <?= ($current_page === 'enviados') ? 'active' : '' ?>">
+                            <i class="fas fa-paper-plane"></i>
+                            <span>Enviados</span>
+                        </a>
+                        <a href="../archivos/reenviar.php" class="module-item <?= ($current_page === 'reenviar') ? 'active' : '' ?>">
+                            <i class="fas fa-share"></i>
+                            <span>Reenviar</span>
+                        </a>
+                        <a href="../seguimiento/busqueda.php" class="module-item <?= ($current_page === 'busqueda') ? 'active' : '' ?>">
+                            <i class="fas fa-route"></i>
+                            <span>Seguimiento</span>
+                        </a>
+                    </div>
+                </div>
 
-                    <!-- Columna 1: Gestión Documental -->
+                <!-- Columna 2: Administración (Solo admin) -->
+                <?php if ($user_role == 1): ?>
                     <div class="module-column">
                         <h6 class="column-header">
-                            <i class="fas fa-folder-open"></i>
-                            GESTIÓN DOCUMENTAL
+                            <i class="fas fa-shield-alt"></i>
+                            ADMINISTRACIÓN
                         </h6>
                         <div class="column-items">
-                            <a href="../archivos/registrar.php" class="module-item <?= ($current_page === 'registrar') ? 'active' : '' ?>">
-                                <i class="fas fa-plus-circle"></i>
-                                <span>Registrar</span>
-                            </a>
-                            <a href="../archivos/recepcion.php" class="module-item <?= ($current_page === 'recepcion') ? 'active' : '' ?>">
-                                <i class="fas fa-inbox"></i>
-                                <span>Recepción</span>
-                            </a>
-                            <a href="../archivos/enviados.php" class="module-item <?= ($current_page === 'enviados') ? 'active' : '' ?>">
-                                <i class="fas fa-paper-plane"></i>
-                                <span>Enviados</span>
-                            </a>
-                            <a href="../archivos/reenviar.php" class="module-item <?= ($current_page === 'reenviar') ? 'active' : '' ?>">
-                                <i class="fas fa-share"></i>
-                                <span>Reenviar</span>
-                            </a>
-                            <a href="../seguimiento/busqueda.php" class="module-item <?= ($current_page === 'busqueda') ? 'active' : '' ?>">
-                                <i class="fas fa-route"></i>
-                                <span>Seguimiento</span>
+                            <a href="../gestusuarios/usuarios.php" class="module-item <?= ($current_page === 'usuarios') ? 'active' : '' ?>">
+                                <i class="fas fa-users"></i>
+                                <span>Usuarios</span>
                             </a>
                         </div>
                     </div>
+                <?php endif; ?>
 
-                    <!-- Columna 2: Administración (Solo admin) -->
-                    <?php if ($user_role == 1): ?>
-                        <div class="module-column">
-                            <h6 class="column-header">
-                                <i class="fas fa-shield-alt"></i>
-                                ADMINISTRACIÓN
-                            </h6>
-                            <div class="column-items">
-                                <a href="../gestusuarios/usuarios.php" class="module-item <?= ($current_page === 'usuarios') ? 'active' : '' ?>">
-                                    <i class="fas fa-users"></i>
-                                    <span>Usuarios</span>
-                                </a>
-                            </div>
+                <?php if ($user_role === 1 || $user_role === 4): ?>
+                    <!-- Columna 3: Supervisión -->
+                    <div class="module-column">
+                        <h6 class="column-header">
+                            <i class="fas fa-eye"></i>
+                            SUPERVISIÓN
+                        </h6>
+                        <div class="column-items">
+                            <a href="../defensoria/supervision.php" class="module-item <?= ($current_page === 'supervision') ? 'active' : '' ?>">
+                                <i class="fas fa-shield"></i>
+                                <span>Supervisión</span>
+                            </a>
                         </div>
-                    <?php endif; ?>
+                    </div>
+                <?php endif; ?>
 
-                    <?php if ($user_role === 1 || $user_role === 4): ?>
-                        <!-- Columna 3: Supervisión -->
-                        <div class="module-column">
-                            <h6 class="column-header">
-                                <i class="fas fa-eye"></i>
-                                SUPERVISIÓN
-                            </h6>
-                            <div class="column-items">
-                                <a href="../defensoria/supervision.php" class="module-item <?= ($current_page === 'supervision') ? 'active' : '' ?>">
-                                    <i class="fas fa-shield"></i>
-                                    <span>Supervisión</span>
-                                </a>
-                            </div>
-                        </div>
-                    <?php endif; ?>
-
-                </div>
             </div>
-
-            <!-- Configuración -->
-            <a href="../configuracion/perfil.php" class="nav-link <?= ($current_page === 'configuracion' || $current_page === 'perfil') ? 'active' : '' ?>">
-                <i class="fas fa-cog"></i>
-                <span>Configuración</span>
-            </a>
         </div>
+        <a href="../configuracion/perfil.php"><i class="fas fa-cog"></i> Configuración</a>
+        <a href="../logout.php" onclick="return confirm('¿Está seguro que desea cerrar sesión?')"><i class="fas fa-sign-out-alt"></i> Salir</a>
+    </div>
 
-        <script src="../../backend/js/notificaciones.js"></script>
-
-        <!-- Usuario y Logout -->
-        <div class="navbar-user">
-            <!-- Sistema de Notificaciones -->
-            <div class="notificaciones">
-                <div id="notificaciones" style="position: relative; cursor: pointer;">
-                    <i class="fas fa-bell"></i>
-                    <span id="contador" style="color: yellow; font-weight: bold; font-size: 18px; font-family: Arial, sans-serif;"></span>
-                </div>
-
-                <!-- Lista de Notificaciones -->
-                <div id="listaNotificaciones" style="display: none; position: absolute; border-radius:7px; top:73px; right: none; background: #bb99f1ff; color:white; border: 1px solid #ccc; max-height: 300px; overflow-y: auto; padding: 10px; width: 300px; z-index: 100;">
-                    <strong>Notificaciones:</strong>
-                    <ul id="contenedorNotificaciones" style="list-style: none; padding-left: 0;"></ul>
-                </div>
-            </div>
-
-            <!-- Información del Usuario -->
-            <div class="user-info">
-                <div class="user-avatar">
-                    <i class="fas fa-user"></i>
-                </div>
-                <div class="user-details">
-                    <span class="user-name"><?= $user_name ?></span>
-                </div>
-            </div>
-
-            <!-- Botón de Salir -->
-            <a href="../logout.php" class="nav-link logout-btn" onclick="return confirm('¿Está seguro que desea cerrar sesión?')">
-                <i class="fas fa-sign-out-alt"></i>
-                <span>Salir</span>
-            </a>
-        </div>
-
-        <!-- Toggle para Mobile -->
-        <button class="mobile-toggle" onclick="toggleMobileNav()">
-            <i class="fas fa-bars"></i>
-        </button>
+    <!-- Lista Notificaciones -->
+    <div id="listaNotificaciones" style="display:none; background: #bb99f1; padding:10px; border-radius:5px; margin-top:10px; color: white;">
+        <strong>Notificaciones:</strong>
+        <ul id="contenedorNotificaciones" style="list-style:none; padding-left:0;"></ul>
     </div>
 </nav>
 
@@ -197,11 +163,11 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
 
                 // Si no estaba abierto, abrirlo
                 if (!isCurrentlyOpen) {
-                    menu.style.display = 'block';
+                    menu.style.maxHeight = menu.scrollHeight + "px";
                     parentDropdown.classList.add('active');
-
-                    // Log para debug
-                    console.log('Dropdown abierto:', menu.classList.contains('dropdown-grid') ? 'Grid Mode' : 'Normal Mode');
+                } else {
+                    menu.style.maxHeight = "0";
+                    parentDropdown.classList.remove('active');
                 }
             });
         });
@@ -311,4 +277,10 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
 
         console.log('Navbar inicializado correctamente');
     });
+</script>
+<script>
+    function toggleMobileMenu() {
+        const menu = document.getElementById("mobileMenu");
+        menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
+    }
 </script>

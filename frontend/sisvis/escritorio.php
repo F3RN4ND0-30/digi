@@ -1,5 +1,4 @@
 <?php
-// escritorio.php
 session_start();
 if (!isset($_SESSION['dg_id'])) {
     header('Location: ../login.php');
@@ -8,8 +7,19 @@ if (!isset($_SESSION['dg_id'])) {
 
 require '../../backend/db/conexion.php';
 
+// Detectar si es móvil para cargar navbar y css correspondientes
+$isMobile = false;
+if (isset($_SERVER['HTTP_USER_AGENT'])) {
+    $isMobile = preg_match('/Mobile|Android|iP(hone|od|ad)/i', $_SERVER['HTTP_USER_AGENT']);
+}
+
+// Definir qué archivo de navbar y CSS se va a usar
+$navbarFile = $isMobile ? 'navbar_mobil.php' : 'navbar.php';
+$navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
+
 // Área del usuario (para excluirla en el select, si aplica)
 $area_id = $_SESSION['dg_area_id'] ?? null;
+
 // Obtener estados desde la tabla estadodocumento
 $estados = $pdo->query("SELECT IdEstadoDocumento, Estado FROM estadodocumento")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -34,27 +44,25 @@ unset($_SESSION['mensaje']);
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- CSS del Navbar -->
-    <link rel="stylesheet" href="../../backend/css/navbar/navbar.css" />
+    <!-- CSS del Navbar (dinámico) -->
+    <link rel="stylesheet" href="../../backend/css/navbar/<?= $navbarCss ?>" />
 
     <!-- CSS Principal del Escritorio -->
     <link rel="stylesheet" href="../../backend/css/sisvis/escritorio.css" />
     <link rel="stylesheet" href="../../backend/css/sisvis/asistente.css" />
 
-    <!-- jQuery (requerido por Selectize) -->
+    <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-    <script src="../../backend/js/notificaciones.js"></script>
 </head>
 
 <body>
     <div class="layout-escritorio">
-
-        <?php include '../navbar/navbar.php'; ?>
+        <!-- Incluir el navbar correcto -->
+        <?php include "../navbar/$navbarFile"; ?>
 
         <main class="contenido-principal">
             <div class="tarjeta bienvenida">
-                <h3>BIENVENID@, <?php echo htmlspecialchars($_SESSION['dg_nombre']); ?>!</h3>
+                <h3>BIENVENID@, <?= htmlspecialchars($_SESSION['dg_nombre']); ?>!</h3>
                 <p>Nos alegra tenerte aquí en DIGI, el sistema avanzado para el seguimiento y gestión de tus documentos. Aquí podrás revisar tus reportes, gestionar usuarios, y mantener un control eficiente de tus tareas diarias.</p>
                 <p>Explora el panel y sácale el máximo provecho a nuestras herramientas para optimizar tu trabajo.</p>
             </div>
@@ -73,18 +81,21 @@ unset($_SESSION['mensaje']);
             ?>
             <div class="seccion-asistente">
                 <div class="asistente-gif">
-                    <img src="../../backend/img/asistentes/<?php echo $gifAleatorio; ?>" alt="Asistente animado">
+                    <img src="../../backend/img/asistentes/<?= $gifAleatorio ?>" alt="Asistente animado">
                 </div>
                 <div class="asistente-mensaje">
-                    <h4>HOLA, <?php echo htmlspecialchars($_SESSION['dg_nombre']); ?></h4>
+                    <h4>HOLA, <?= htmlspecialchars($_SESSION['dg_nombre']); ?></h4>
                     <p>Yo soy <strong>PenguBot</strong>, tu asistente digital. Estaré aquí para traer notificaciones importantes, recordatorios de documentos y mucho más. ¡No te preocupes, te ayudaré a mantenerte al día!</p>
                 </div>
             </div>
         </main>
     </div>
 
+    <!-- JS de notificaciones -->
+    <script src="../../backend/js/notificaciones.js"></script>
+
+    <!-- JS para controlar el dropdown del navbar -->
     <script>
-        // Esperar a que todo esté cargado
         $(document).ready(function() {
             // Mobile toggle
             window.toggleMobileNav = function() {
@@ -110,6 +121,7 @@ unset($_SESSION['mensaje']);
             });
         });
     </script>
+
 </body>
 
 </html>

@@ -33,9 +33,11 @@ body:not(.navbar-horizontal) {
   0% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
+
   100% {
     background-position: 0% 50%;
   }
@@ -56,7 +58,8 @@ body:not(.navbar-horizontal) {
   backdrop-filter: blur(10px);
   /* IMPORTANTE: Sin overflow hidden */
   position: relative;
-  z-index: 1; /* Z-index bajo para no interferir */
+  z-index: 1;
+  /* Z-index bajo para no interferir */
 }
 
 /* Tarjeta principal - SIN OVERFLOW HIDDEN */
@@ -71,7 +74,8 @@ body:not(.navbar-horizontal) {
   border: 1px solid var(--enviados-border);
   animation: fadeInUp 0.6s ease forwards;
   position: relative;
-  z-index: 1; /* Z-index bajo */
+  z-index: 1;
+  /* Z-index bajo */
 }
 
 @keyframes fadeInUp {
@@ -79,6 +83,7 @@ body:not(.navbar-horizontal) {
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -87,16 +92,15 @@ body:not(.navbar-horizontal) {
 
 /* Header de la tarjeta */
 .tarjeta-header {
-  background: linear-gradient(
-    135deg,
-    var(--enviados-primary),
-    var(--enviados-primary-dark)
-  );
+  background: linear-gradient(135deg,
+      var(--enviados-primary),
+      var(--enviados-primary-dark));
   color: var(--enviados-white);
   padding: 1.5rem 2rem;
   margin: 0;
   position: relative;
-  overflow: hidden; /* Solo el header puede tener overflow hidden */
+  overflow: hidden;
+  /* Solo el header puede tener overflow hidden */
   z-index: 2;
 }
 
@@ -107,12 +111,10 @@ body:not(.navbar-horizontal) {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.2),
-    transparent
-  );
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(255, 255, 255, 0.2),
+      transparent);
   animation: shimmer 4s infinite;
 }
 
@@ -120,6 +122,7 @@ body:not(.navbar-horizontal) {
   0% {
     left: -100%;
   }
+
   100% {
     left: 100%;
   }
@@ -132,11 +135,9 @@ body:not(.navbar-horizontal) {
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(
-    90deg,
-    var(--enviados-accent),
-    var(--enviados-success)
-  );
+  background: linear-gradient(90deg,
+      var(--enviados-accent),
+      var(--enviados-success));
 }
 
 .tarjeta-header h2 {
@@ -160,8 +161,10 @@ body:not(.navbar-horizontal) {
 /* Tabla con overflow específico */
 .table-responsive {
   border-radius: var(--enviados-radius);
-  overflow-x: auto; /* Solo horizontal scroll */
-  overflow-y: visible; /* Vertical visible para no cortar elementos */
+  overflow-x: auto;
+  /* Solo horizontal scroll */
+  overflow-y: visible;
+  /* Vertical visible para no cortar elementos */
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   position: relative;
   z-index: 2;
@@ -178,11 +181,9 @@ body:not(.navbar-horizontal) {
 }
 
 .tarjeta table thead {
-  background: linear-gradient(
-    135deg,
-    var(--enviados-primary),
-    var(--enviados-primary-dark)
-  );
+  background: linear-gradient(135deg,
+      var(--enviados-primary),
+      var(--enviados-primary-dark));
   color: var(--enviados-white);
   position: relative;
   z-index: 3;
@@ -195,11 +196,9 @@ body:not(.navbar-horizontal) {
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(
-    90deg,
-    var(--enviados-accent),
-    var(--enviados-success)
-  );
+  background: linear-gradient(90deg,
+      var(--enviados-accent),
+      var(--enviados-success));
 }
 
 .tarjeta table th {
@@ -230,30 +229,37 @@ body:not(.navbar-horizontal) {
 .tarjeta table td:nth-child(1) {
   width: 8%;
 }
+
 .tarjeta table th:nth-child(2),
 .tarjeta table td:nth-child(2) {
   width: 20%;
 }
+
 .tarjeta table th:nth-child(3),
 .tarjeta table td:nth-child(3) {
   width: 25%;
 }
+
 .tarjeta table th:nth-child(4),
 .tarjeta table td:nth-child(4) {
   width: 12%;
 }
+
 .tarjeta table th:nth-child(5),
 .tarjeta table td:nth-child(5) {
   width: 15%;
 }
+
 .tarjeta table th:nth-child(6),
 .tarjeta table td:nth-child(6) {
   width: 15%;
 }
+
 .tarjeta table th:nth-child(7),
 .tarjeta table td:nth-child(7) {
   width: 15%;
 }
+
 .tarjeta table th:nth-child(8),
 .tarjeta table td:nth-child(8) {
   width: 10%;
@@ -306,11 +312,9 @@ body:not(.navbar-horizontal) {
 }
 
 .badge.bg-primary {
-  background: linear-gradient(
-    135deg,
-    var(--enviados-primary),
-    var(--enviados-primary-dark)
-  );
+  background: linear-gradient(135deg,
+      var(--enviados-primary),
+      var(--enviados-primary-dark));
   color: var(--enviados-white);
   border-color: rgba(108, 92, 231, 0.3);
 }
@@ -347,12 +351,10 @@ body:not(.navbar-horizontal) {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.3),
-    transparent
-  );
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(255, 255, 255, 0.3),
+      transparent);
   transition: left 0.6s;
 }
 
@@ -449,31 +451,6 @@ body:not(.navbar-horizontal) {
   color: var(--enviados-text-light);
 }
 
-/* Responsive improvements */
-@media (max-width: 768px) {
-  .contenido-principal {
-    padding: 1rem;
-  }
-
-  .tarjeta-body {
-    padding: 1rem;
-  }
-
-  .tarjeta table th,
-  .tarjeta table td {
-    padding: 0.75rem 0.5rem;
-    font-size: 0.875rem;
-  }
-
-  .tarjeta-header {
-    padding: 1rem 1.5rem;
-  }
-
-  .tarjeta-header h2 {
-    font-size: 1.25rem;
-  }
-}
-
 /* Loading states */
 .loading {
   position: relative;
@@ -487,12 +464,10 @@ body:not(.navbar-horizontal) {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.4),
-    transparent
-  );
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(255, 255, 255, 0.4),
+      transparent);
   animation: loading-shimmer 1.5s infinite;
 }
 
@@ -500,7 +475,67 @@ body:not(.navbar-horizontal) {
   0% {
     left: -100%;
   }
+
   100% {
     left: 100%;
+  }
+}
+
+body,
+html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .layout-escritorio {
+    width: 100%;
+    padding: 0;
+    margin: 0 auto;
+  }
+
+  .contenido-principal {
+    width: 100%;
+    padding: 1rem;
+    overflow-x: hidden;
+  }
+
+  .tarjeta {
+    width: 100%;
+    margin: 0;
+    padding: 1rem;
+  }
+
+  /* 👇 Esto asegura que tablas grandes no rompan el diseño */
+  .table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #tablaRecepcion {
+    width: 100% !important;
+    min-width: 600px;
+    /* puedes ajustarlo según columnas */
+  }
+
+  /* ✅ Elimina margen/padding lateral que cause scroll */
+  main,
+  section,
+  article,
+  .container,
+  .row {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100%;
   }
 }

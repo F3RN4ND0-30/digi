@@ -13,6 +13,16 @@ if (($_SESSION['dg_rol'] ?? 999) != 1) {
 
 require '../../backend/db/conexion.php';
 
+// Detectar si es móvil para cargar navbar y css correspondientes
+$isMobile = false;
+if (isset($_SERVER['HTTP_USER_AGENT'])) {
+    $isMobile = preg_match('/Mobile|Android|iP(hone|od|ad)/i', $_SERVER['HTTP_USER_AGENT']);
+}
+
+// Definir qué archivo de navbar y CSS se va a usar
+$navbarFile = $isMobile ? 'navbar_mobil.php' : 'navbar.php';
+$navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
+
 $stmt_usuarios = $pdo->query("SELECT u.*, a.Nombre as NombreArea 
                               FROM usuarios u 
                               LEFT JOIN areas a ON u.IdAreas = a.IdAreas 
@@ -48,8 +58,8 @@ $administradores = count(array_filter($usuarios, fn($u) => $u['IdRol'] == 1));
     <!-- Selectize CSS y JS - Versión moderna con tema Bootstrap -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.15.2/css/selectize.bootstrap5.min.css">
 
-    <!-- CSS del sistema -->
-    <link rel="stylesheet" href="../../backend/css/navbar/navbar.css">
+    <!-- CSS del Navbar (dinámico) -->
+    <link rel="stylesheet" href="../../backend/css/navbar/<?= $navbarCss ?>" />
     <link rel="stylesheet" href="../../backend/css/sisvis/escritorio.css">
     <link rel="stylesheet" href="../../backend/css/gestusuarios/gestusuarios.css">
 
@@ -58,14 +68,12 @@ $administradores = count(array_filter($usuarios, fn($u) => $u['IdRol'] == 1));
 
     <!-- Selectize JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.15.2/js/selectize.min.js"></script>
-
-    <!-- Scripts del sistema -->
-    <script src="../../backend/js/notificaciones.js"></script>
 </head>
 
 <body>
     <div class="layout-escritorio">
-        <?php include '../navbar/navbar.php'; ?>
+        <!-- Incluir el navbar correcto -->
+        <?php include "../navbar/$navbarFile"; ?>
 
         <main class="contenido-principal">
             <!-- Estadísticas -->
@@ -318,6 +326,36 @@ $administradores = count(array_filter($usuarios, fn($u) => $u['IdRol'] == 1));
             </div>
         </div>
     </div>
+
+    <!-- Ahora sí cargamos el JS de notificaciones normalmente -->
+    <script src="../../backend/js/notificaciones.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // Mobile toggle
+            window.toggleMobileNav = function() {
+                $('.navbar-nav').toggleClass('active');
+            };
+
+            // Dropdown functionality
+            $('.nav-dropdown .dropdown-toggle').on('click', function(e) {
+                e.preventDefault();
+
+                // Cerrar otros dropdowns
+                $('.nav-dropdown').not($(this).parent()).removeClass('active');
+
+                // Toggle este dropdown
+                $(this).parent().toggleClass('active');
+            });
+
+            // Cerrar dropdown al hacer clic fuera
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('.nav-dropdown').length) {
+                    $('.nav-dropdown').removeClass('active');
+                }
+            });
+        });
+    </script>
 
     <!-- JavaScript del módulo -->
     <script src="../../backend/js/gestusuarios/gestusuarios.js"></script>

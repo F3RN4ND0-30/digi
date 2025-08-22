@@ -8,6 +8,16 @@ if (!isset($_SESSION['dg_id'])) {
 
 require '../../backend/db/conexion.php';
 
+// Detectar si es móvil para cargar navbar y css correspondientes
+$isMobile = false;
+if (isset($_SERVER['HTTP_USER_AGENT'])) {
+    $isMobile = preg_match('/Mobile|Android|iP(hone|od|ad)/i', $_SERVER['HTTP_USER_AGENT']);
+}
+
+// Definir qué archivo de navbar y CSS se va a usar
+$navbarFile = $isMobile ? 'navbar_mobil.php' : 'navbar.php';
+$navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
+
 $usuario_id = $_SESSION['dg_id'] ?? null;
 $area_id = $_SESSION['dg_area_id'] ?? null;
 
@@ -36,18 +46,19 @@ unset($_SESSION['mensaje']);
 
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="../../backend/css/navbar/navbar.css" />
+    <!-- CSS del Navbar (dinámico) -->
+    <link rel="stylesheet" href="../../backend/css/navbar/<?= $navbarCss ?>" />
     <link rel="stylesheet" href="../../backend/css/sisvis/escritorio.css" />
     <link rel="stylesheet" href="../../backend/css/archivos/modal_exterior.css" />
     <link href="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/css/selectize.default.css" rel="stylesheet" />
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/js/standalone/selectize.min.js"></script>
-    <script src="../../backend/js/notificaciones.js"></script>
 </head>
 
 <body>
     <div class="layout-escritorio">
-        <?php include '../navbar/navbar.php'; ?>
+        <!-- Incluir el navbar correcto -->
+        <?php include "../navbar/$navbarFile"; ?>
 
         <main class="contenido-principal">
             <div class="tarjeta tarjeta-formulario">
@@ -141,6 +152,8 @@ unset($_SESSION['mensaje']);
         </div>
     <?php endif; ?>
 
+    <!-- Ahora sí cargamos el JS de notificaciones normalmente -->
+    <script src="../../backend/js/notificaciones.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const inputs = document.querySelectorAll('input[type="text"], textarea');
@@ -189,16 +202,23 @@ unset($_SESSION['mensaje']);
 
         // Funciones del navbar y dropdowns
         $(document).ready(function() {
+            // Mobile toggle
             window.toggleMobileNav = function() {
                 $('.navbar-nav').toggleClass('active');
             };
 
+            // Dropdown functionality
             $('.nav-dropdown .dropdown-toggle').on('click', function(e) {
                 e.preventDefault();
+
+                // Cerrar otros dropdowns
                 $('.nav-dropdown').not($(this).parent()).removeClass('active');
+
+                // Toggle este dropdown
                 $(this).parent().toggleClass('active');
             });
 
+            // Cerrar dropdown al hacer clic fuera
             $(document).on('click', function(e) {
                 if (!$(e.target).closest('.nav-dropdown').length) {
                     $('.nav-dropdown').removeClass('active');

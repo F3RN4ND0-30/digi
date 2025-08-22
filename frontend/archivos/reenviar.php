@@ -7,6 +7,16 @@ if (!isset($_SESSION['dg_id'])) {
 
 require '../../backend/db/conexion.php';
 
+// Detectar si es móvil para cargar navbar y css correspondientes
+$isMobile = false;
+if (isset($_SERVER['HTTP_USER_AGENT'])) {
+    $isMobile = preg_match('/Mobile|Android|iP(hone|od|ad)/i', $_SERVER['HTTP_USER_AGENT']);
+}
+
+// Definir qué archivo de navbar y CSS se va a usar
+$navbarFile = $isMobile ? 'navbar_mobil.php' : 'navbar.php';
+$navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
+
 $area_id = $_SESSION['dg_area_id'] ?? null;
 
 $sql = "SELECT m.IdMovimientoDocumento, m.IdDocumentos, d.NumeroDocumento, d.Asunto, d.IdUsuarios, d.IdAreaFinal,
@@ -42,8 +52,8 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- CSS del Navbar -->
-    <link rel="stylesheet" href="../../backend/css/navbar/navbar.css" />
+    <!-- CSS del Navbar (dinámico) -->
+    <link rel="stylesheet" href="../../backend/css/navbar/<?= $navbarCss ?>" />
 
     <!-- CSS de Reenvío -->
     <link rel="stylesheet" href="../../backend/css/archivos/reenviados.css" />
@@ -57,14 +67,13 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
     <link href="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/css/selectize.default.css" rel="stylesheet" />
     <!-- Selectize JS -->
     <script src="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/js/standalone/selectize.min.js"></script>
-
-    <script src="../../backend/js/notificaciones.js"></script>
 </head>
 
 <body>
     <div class="layout-escritorio">
 
-        <?php include '../navbar/navbar.php'; ?>
+        <!-- Incluir el navbar correcto -->
+        <?php include "../navbar/$navbarFile"; ?>
 
         <main class="contenido-principal">
             <div class="tarjeta">
@@ -157,8 +166,10 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
         </main>
     </div>
 
-    <!-- Scripts -->
+    <!-- Ahora sí cargamos el JS de notificaciones normalmente -->
+    <script src="../../backend/js/notificaciones.js"></script>
 
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>

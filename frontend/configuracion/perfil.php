@@ -7,6 +7,17 @@ if (!isset($_SESSION['dg_id'])) {
 
 require '../../backend/db/conexion.php';
 
+
+// Detectar si es móvil para cargar navbar y css correspondientes
+$isMobile = false;
+if (isset($_SERVER['HTTP_USER_AGENT'])) {
+    $isMobile = preg_match('/Mobile|Android|iP(hone|od|ad)/i', $_SERVER['HTTP_USER_AGENT']);
+}
+
+// Definir qué archivo de navbar y CSS se va a usar
+$navbarFile = $isMobile ? 'navbar_mobil.php' : 'navbar.php';
+$navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
+
 $id_usuario = $_SESSION['dg_id'];
 
 // Obtener datos del usuario
@@ -33,6 +44,7 @@ unset($_SESSION['mensaje']);
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Perfil de Usuario - DIGI MPP</title>
 
     <!-- Google Fonts -->
@@ -41,18 +53,17 @@ unset($_SESSION['mensaje']);
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
-    <!-- CSS del Navbar -->
-    <link rel="stylesheet" href="../../backend/css/navbar/navbar.css" />
+    <!-- CSS del Navbar (dinámico) -->
+    <link rel="stylesheet" href="../../backend/css/navbar/<?= $navbarCss ?>" />
 
     <!-- CSS Principal -->
     <link rel="stylesheet" href="../../backend/css/configuracion/perfil.css" />
-
-    <script src="../../backend/js/notificaciones.js"></script>
 </head>
 
 <body>
     <div class="layout-perfil">
-        <?php include '../navbar/navbar.php'; ?>
+        <!-- Incluir el navbar correcto -->
+        <?php include "../navbar/$navbarFile"; ?>
 
         <main class="contenido-principal">
             <div class="tarjeta tarjeta-formulario">
@@ -111,6 +122,8 @@ unset($_SESSION['mensaje']);
         </main>
     </div>
 
+    <!-- Ahora sí cargamos el JS de notificaciones normalmente -->
+    <script src="../../backend/js/notificaciones.js"></script>
     <!-- Scripts -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/selectize@0.15.2/dist/js/selectize.min.js"></script>

@@ -8,6 +8,16 @@ if (!isset($_SESSION['dg_id'])) {
 
 require '../../backend/db/conexion.php';
 
+// Detectar si es móvil para cargar navbar y css correspondientes
+$isMobile = false;
+if (isset($_SERVER['HTTP_USER_AGENT'])) {
+    $isMobile = preg_match('/Mobile|Android|iP(hone|od|ad)/i', $_SERVER['HTTP_USER_AGENT']);
+}
+
+// Definir qué archivo de navbar y CSS se va a usar
+$navbarFile = $isMobile ? 'navbar_mobil.php' : 'navbar.php';
+$navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
+
 $area_id = $_SESSION['dg_area_id'] ?? null;
 
 if (!$area_id) {
@@ -48,22 +58,21 @@ $documentos_pendientes = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- CSS del Navbar -->
-    <link rel="stylesheet" href="../../backend/css/navbar/navbar.css" />
+    <!-- CSS del Navbar (dinámico) -->
+    <link rel="stylesheet" href="../../backend/css/navbar/<?= $navbarCss ?>" />
 
     <!-- CSS Principal del Escritorio -->
     <link rel="stylesheet" href="../../backend/css/archivos/recepcion.css" />
 
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
-
-    <script src="../../backend/js/notificaciones.js"></script>
 </head>
 
 <body>
     <div class="layout-escritorio">
 
-        <?php include '../navbar/navbar.php'; ?>
+        <!-- Incluir el navbar correcto -->
+        <?php include "../navbar/$navbarFile"; ?>
 
         <main class="contenido-principal">
             <div class="tarjeta">
@@ -146,6 +155,9 @@ $documentos_pendientes = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </main>
     </div>
 
+    <!-- Ahora sí cargamos el JS de notificaciones normalmente -->
+    <script src="../../backend/js/notificaciones.js"></script>
+
     <!-- Scripts -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -154,21 +166,23 @@ $documentos_pendientes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     <script>
         $(document).ready(function() {
-            // Botón de menú móvil
+            // Mobile toggle
             window.toggleMobileNav = function() {
                 $('.navbar-nav').toggleClass('active');
             };
 
-            // Dropdown
+            // Dropdown functionality
             $('.nav-dropdown .dropdown-toggle').on('click', function(e) {
                 e.preventDefault();
 
-                // Cerrar otros
+                // Cerrar otros dropdowns
                 $('.nav-dropdown').not($(this).parent()).removeClass('active');
+
+                // Toggle este dropdown
                 $(this).parent().toggleClass('active');
             });
 
-            // Cerrar dropdown si se hace clic afuera
+            // Cerrar dropdown al hacer clic fuera
             $(document).on('click', function(e) {
                 if (!$(e.target).closest('.nav-dropdown').length) {
                     $('.nav-dropdown').removeClass('active');

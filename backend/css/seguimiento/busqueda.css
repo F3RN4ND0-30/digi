@@ -101,20 +101,24 @@ h2 {
 }
 
 /* Tabla */
+#tablaResultados_wrapper {
+  overflow-x: auto;
+  width: 100%;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.95rem;
-  min-width: 900px;
   background: var(--busqueda-white);
+  min-width: 600px;
+  /* Ajustable según las columnas */
 }
 
 table thead {
-  background: linear-gradient(
-    135deg,
-    var(--busqueda-primary),
-    var(--busqueda-primary-dark)
-  );
+  background: linear-gradient(135deg,
+      var(--busqueda-primary),
+      var(--busqueda-primary-dark));
   color: var(--busqueda-white);
 }
 
@@ -139,11 +143,9 @@ table tbody tr:hover {
 
 /* Botón de seguimiento */
 .btn-seguimiento {
-  background: linear-gradient(
-    135deg,
-    var(--busqueda-primary),
-    var(--busqueda-primary-dark)
-  );
+  background: linear-gradient(135deg,
+      var(--busqueda-primary),
+      var(--busqueda-primary-dark));
   color: var(--busqueda-white);
   padding: 0.5rem 1rem;
   border-radius: 8px;
@@ -223,6 +225,7 @@ table tbody tr:hover {
     opacity: 0;
     transform: translateY(-50px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -230,11 +233,9 @@ table tbody tr:hover {
 }
 
 .modal-header-seguimiento {
-  background: linear-gradient(
-    135deg,
-    var(--busqueda-primary),
-    var(--busqueda-primary-dark)
-  );
+  background: linear-gradient(135deg,
+      var(--busqueda-primary),
+      var(--busqueda-primary-dark));
   color: var(--busqueda-white);
   padding: 20px;
   display: flex;
@@ -299,11 +300,9 @@ table tbody tr:hover {
 }
 
 .tabla-seguimiento th {
-  background: linear-gradient(
-    135deg,
-    var(--busqueda-primary),
-    var(--busqueda-primary-dark)
-  );
+  background: linear-gradient(135deg,
+      var(--busqueda-primary),
+      var(--busqueda-primary-dark));
   color: var(--busqueda-white);
   font-weight: 600;
   font-size: 0.9rem;
@@ -350,18 +349,71 @@ table tbody tr:hover {
   color: var(--busqueda-text);
 }
 
+
+body,
+html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 @media (max-width: 768px) {
-  .modal-content-seguimiento {
-    width: 95%;
-    margin: 5% auto;
+  .contenido-principal {
+    padding: 1rem;
   }
 
-  .tabla-seguimiento {
-    font-size: 0.8rem;
+  .container {
+    padding: 1.25rem;
+  }
+
+  #inputBusqueda {
+    width: 100%;
+    font-size: 0.95rem;
+  }
+
+  h2 {
+    font-size: 1.2rem;
+    text-align: center;
+  }
+
+  .btn-seguimiento {
+    width: 100%;
+    text-align: center;
+    font-size: 0.85rem;
+    padding: 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+  }
+
+  table {
+    font-size: 0.85rem;
+    min-width: 600px;
+  }
+
+  table th,
+  table td {
+    padding: 0.6rem 0.5rem;
+  }
+
+  .modal-content-seguimiento {
+    width: 95%;
+    margin: 0 auto;
   }
 
   .tabla-seguimiento th,
   .tabla-seguimiento td {
-    padding: 10px 8px;
+    padding: 10px;
+    font-size: 0.8rem;
   }
 }
