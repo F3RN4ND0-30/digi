@@ -151,11 +151,11 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
 
                 const parentDropdown = this.closest('.nav-dropdown');
                 const menu = parentDropdown.querySelector('.dropdown-menu');
-                const isCurrentlyOpen = menu.style.display === 'block';
+                const isCurrentlyOpen = parentDropdown.classList.contains('active');
 
                 // Cerrar todos los dropdowns primero
                 document.querySelectorAll('.dropdown-menu').forEach(otherMenu => {
-                    otherMenu.style.display = 'none';
+                    otherMenu.style.maxHeight = "0";
                 });
                 document.querySelectorAll('.nav-dropdown').forEach(otherDropdown => {
                     otherDropdown.classList.remove('active');
