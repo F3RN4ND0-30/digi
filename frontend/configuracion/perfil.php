@@ -79,12 +79,12 @@ unset($_SESSION['mensaje']);
                     <div class="form-grid">
                         <div class="form-group">
                             <label for="dni"><i class="fas fa-id-card"></i> DNI:</label>
-                            <input type="text" id="dni" value="<?= htmlspecialchars($usuario['Dni']) ?>" readonly>
+                            <input type="text" id="dni" value="<?= htmlspecialchars($usuario['Dni']) ?>" readonly style="background-color: #a19f9fff; color: #555;">
                         </div>
 
                         <div class="form-group">
                             <label for="area"><i class="fas fa-building"></i> Área:</label>
-                            <input type="text" id="area" value="<?= htmlspecialchars($usuario['AreaNombre']) ?>" readonly>
+                            <input type="text" id="area" value="<?= htmlspecialchars($usuario['AreaNombre']) ?>" readonly style="background-color: #a19f9fff; color: #555;">
                         </div>
 
                         <div class="form-group">

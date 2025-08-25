@@ -364,20 +364,24 @@ body::before {
 
 /* ===== MENSAJES ===== */
 .tarjeta-formulario p {
-  background: rgba(0, 184, 148, 0.1);
-  color: var(--color-exito);
-  border: 1px solid rgba(0, 184, 148, 0.2);
   padding: 1rem;
   border-radius: var(--radio-borde);
   margin-bottom: 1.5rem;
   font-weight: 600;
-  animation: fadeInUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  animation: fadeInUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.tarjeta-formulario p::before {
+/* Éxito */
+.tarjeta-formulario p.exito {
+  background: rgba(0, 184, 148, 0.1);
+  color: var(--color-exito);
+  border: 1px solid rgba(0, 184, 148, 0.2);
+}
+
+.tarjeta-formulario p.exito::before {
   content: "✓";
   background: var(--color-exito);
   color: var(--texto-blanco);
@@ -390,6 +394,28 @@ body::before {
   font-weight: bold;
   font-size: 0.875rem;
 }
+
+/* Error */
+.tarjeta-formulario p.error {
+  background: rgba(231, 76, 60, 0.1);
+  color: #e74c3c;
+  border: 1px solid rgba(231, 76, 60, 0.2);
+}
+
+.tarjeta-formulario p.error::before {
+  content: "✗";
+  background: #e74c3c;
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 0.875rem;
+}
+
 
 /* ===== SELECTIZE PERSONALIZADO ===== */
 .selectize-input {

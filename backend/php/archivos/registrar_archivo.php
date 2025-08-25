@@ -75,8 +75,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Insertar nuevo documento
     $stmt = $pdo->prepare("INSERT INTO documentos 
-        (NumeroDocumento, Asunto, IdEstadoDocumento, IdUsuarios, IdAreas, Exterior, IdAreaFinal) 
-        VALUES (?, ?, ?, ?, ?, ?, ?)");
+    (NumeroDocumento, Asunto, IdEstadoDocumento, IdUsuarios, IdAreas, Exterior, IdAreaFinal, Finalizado) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
 
     $insert_ok = $stmt->execute([
         $numero,
@@ -85,8 +85,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $usuario_id,
         $area_id,
         $exterior_bool,
-        $area_final
+        $area_final,
+        0 // Finalizado
     ]);
+
 
     if ($insert_ok) {
         $idDocumentoNuevo = $pdo->lastInsertId();

@@ -54,7 +54,7 @@ unset($_SESSION['mensaje']);
     <link href="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/css/selectize.default.css" rel="stylesheet" />
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/js/standalone/selectize.min.js"></script>
-    
+
     <link rel="icon" type="image/png" href="../../backend/img/logoPisco.png" />
 </head>
 
@@ -68,7 +68,10 @@ unset($_SESSION['mensaje']);
                 <h2><i class="fas fa-plus-circle"></i> Registrar nuevo documento</h2>
 
                 <?php if (!empty($mensaje)) : ?>
-                    <p><strong><?= htmlspecialchars($mensaje) ?></strong></p>
+                    <?php
+                    $claseMensaje = strpos($mensaje, '✅') === 0 ? 'exito' : 'error';
+                    ?>
+                    <p class="<?= $claseMensaje ?>"><strong><?= htmlspecialchars($mensaje) ?></strong></p>
                 <?php endif; ?>
 
                 <form method="POST" action="../../backend/php/archivos/registrar_archivo.php">
@@ -80,7 +83,7 @@ unset($_SESSION['mensaje']);
 
                         <div class="form-group">
                             <label><i class="fas fa-flag"></i> Estado:</label>
-                            <input type="text" value="Nuevo" readonly disabled>
+                            <input type="text" value="Nuevo" readonly disabled style="background-color: #a19f9fff; color: #555;">
                             <input type="hidden" name="estado" value="1"> <!-- ID del estado "Nuevo" -->
                         </div>
 
@@ -100,7 +103,7 @@ unset($_SESSION['mensaje']);
                             <div class="form-group">
                                 <label><i class="fas fa-external-link-alt"></i> ¿Es exterior?</label>
                                 <?php if ($rol_id === 1 || $rol_id === 3): ?>
-                                    <input type="text" id="campoExterior" name="exterior" readonly required placeholder="Seleccione en el modal..." />
+                                    <input type="text" id="campoExterior" name="exterior" readonly required placeholder="Seleccione en el modal..." style="background-color: #a19f9fff; color: #555;" />
                                 <?php else: ?>
                                     <select name="exterior" required>
                                         <option value="">Seleccione una opción</option>
