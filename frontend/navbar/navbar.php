@@ -103,9 +103,9 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
             </div>
 
             <!-- Configuración -->
-            <a href="../configuracion/perfil.php" class="nav-link <?= ($current_page === 'configuracion' || $current_page === 'perfil') ? 'active' : '' ?>">
-                <i class="fas fa-cog"></i>
-                <span>Configuración</span>
+            <a href="../reportes/reporte.php" class="nav-link <?= ($current_page === 'reporte' ) ? 'active' : '' ?>">
+                <i class="fas fa-file-alt"></i>
+                <span>reportes</span>
             </a>
         </div>
 
@@ -137,10 +137,14 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
                 </div>
             </div>
 
+            <!-- Configuración -->
+            <a href="../configuracion/perfil.php" class="nav-link <?= ($current_page === 'configuracion' || $current_page === 'perfil') ? 'active' : '' ?>">
+                <i class="fas fa-cog"></i>
+            </a>
+
             <!-- Botón de Salir -->
             <a href="../logout.php" class="nav-link logout-btn" onclick="return confirm('¿Está seguro que desea cerrar sesión?')">
                 <i class="fas fa-sign-out-alt"></i>
-                <span>Salir</span>
             </a>
         </div>
 

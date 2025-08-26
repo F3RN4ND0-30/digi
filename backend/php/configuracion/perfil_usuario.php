@@ -10,14 +10,11 @@ require '../../db/conexion.php';
 $id_usuario = $_SESSION['dg_id'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $nombres = trim($_POST['nombres'] ?? '');
-    $apellidoPat = trim($_POST['apellidoPat'] ?? '');
-    $apellidoMat = trim($_POST['apellidoMat'] ?? '');
     $usuarioNombre = trim($_POST['usuario'] ?? '');
     $clave = trim($_POST['clave'] ?? '');
     $repetir_clave = trim($_POST['repetir_clave'] ?? '');
 
-    if ($nombres === '' || $apellidoPat === '' || $apellidoMat === '' || $usuarioNombre === '') {
+    if ($usuarioNombre === '') {
         $_SESSION['mensaje'] = "❌ Por favor, complete todos los campos obligatorios.";
         header("Location: ../../../frontend/configuracion/perfil.php");
         exit;
@@ -34,14 +31,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!empty($clave)) {
         $claveHasheada = password_hash($clave, PASSWORD_DEFAULT);
         $sql = "UPDATE usuarios 
-                SET Nombres = ?, ApellidoPat = ?, ApellidoMat = ?, Usuario = ?, Clave = ? 
+                SET Usuario = ?, Clave = ? 
                 WHERE IdUsuarios = ?";
-        $params = [$nombres, $apellidoPat, $apellidoMat, $usuarioNombre, $claveHasheada, $id_usuario];
+        $params = [$usuarioNombre, $claveHasheada, $id_usuario];
     } else {
         $sql = "UPDATE usuarios 
-                SET Nombres = ?, ApellidoPat = ?, ApellidoMat = ?, Usuario = ? 
+                SET Usuario = ? 
                 WHERE IdUsuarios = ?";
-        $params = [$nombres, $apellidoPat, $apellidoMat, $usuarioNombre, $id_usuario];
+        $params = [$usuarioNombre, $id_usuario];
     }
 
     $stmt = $pdo->prepare($sql);

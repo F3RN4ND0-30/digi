@@ -89,17 +89,17 @@ unset($_SESSION['mensaje']);
 
                         <div class="form-group">
                             <label for="nombres"><i class="fas fa-user"></i> Nombres:</label>
-                            <input type="text" name="nombres" id="nombres" value="<?= htmlspecialchars($usuario['Nombres']) ?>" required>
+                            <input type="text" name="nombres" id="nombres" value="<?= htmlspecialchars($usuario['Nombres']) ?>" readonly style="background-color: #a19f9fff; color: #555;">
                         </div>
 
                         <div class="form-group">
                             <label for="apellidoPat"><i class="fas fa-user"></i> Apellido Paterno:</label>
-                            <input type="text" name="apellidoPat" id="apellidoPat" value="<?= htmlspecialchars($usuario['ApellidoPat']) ?>" required>
+                            <input type="text" name="apellidoPat" id="apellidoPat" value="<?= htmlspecialchars($usuario['ApellidoPat']) ?>" readonly style="background-color: #a19f9fff; color: #555;">
                         </div>
 
                         <div class="form-group">
                             <label for="apellidoMat"><i class="fas fa-user"></i> Apellido Materno:</label>
-                            <input type="text" name="apellidoMat" id="apellidoMat" value="<?= htmlspecialchars($usuario['ApellidoMat']) ?>" required>
+                            <input type="text" name="apellidoMat" id="apellidoMat" value="<?= htmlspecialchars($usuario['ApellidoMat']) ?>" readonly style="background-color: #a19f9fff; color: #555;">
                         </div>
 
                         <div class="form-group">

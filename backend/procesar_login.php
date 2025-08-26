@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['nombre'] = $usuarioDB['Nombres'];
         $_SESSION['rol'] = $usuarioDB['IdRol'];
         $_SESSION['id'] = $usuarioDB['IdUsuarios'];
-        header('Location: /digi/frontend/sisvis/escritorio.php');
+        header('Location: /frontend/sisvis/escritorio.php');
     } else {
         header('Location: login.php?error=Usuario o contraseña incorrectos');
     }

@@ -87,7 +87,7 @@ unset($_SESSION['mensaje']);
                 </div>
                 <div class="asistente-mensaje">
                     <h4>HOLA, <?= htmlspecialchars($_SESSION['dg_nombre']); ?></h4>
-                    <p>Yo soy <strong>PenguBot</strong>, tu asistente digital. Estaré aquí para traer notificaciones importantes, recordatorios de documentos y mucho más. ¡No te preocupes, te ayudaré a mantenerte al día!</p>
+                    <p>Yo soy <strong>Pengu</strong>, tu asistente digital. Estaré aquí para traer notificaciones importantes, recordatorios de documentos y mucho más. ¡No te preocupes, te ayudaré a mantenerte al día!</p>
                 </div>
             </div>
         </main>

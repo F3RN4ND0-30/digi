@@ -116,9 +116,59 @@ unset($_SESSION['mensaje']);
                             <input type="hidden" name="exterior" value="NO" />
                         <?php endif; ?>
 
+                        <?php if ($rol_id === 1 || $rol_id === 3): ?>
+                            <div class="form-group">
+                                <label><i class="fas fa-id-card"></i> DNI o RUC del contribuyente:</label>
+                                <input
+                                    type="text"
+                                    name="dni_ruc"
+                                    id="dni_ruc"
+                                    placeholder="Ingrese DNI, RUC o Extranjería(MANUAL)"
+                                    pattern="\d{8}|\d{11}|\d{12,}"
+                                    title="Debe ser DNI (8), RUC (11) o código especial (12 dígitos o más)">
+                            </div>
+
+                            <div class="form-group">
+                                <label><i class="fas fa-user"></i> Nombre del contribuyente:</label>
+                                <input
+                                    type="text"
+                                    name="nombre_contribuyente"
+                                    id="nombre_contribuyente"
+                                    placeholder="Ingrese nombres y apellidos o razón social"
+                                    readonly
+                                    style="background-color: #a19f9fff; color: #555;">
+                            </div>
+
+                            <script>
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    const dniInput = document.getElementById('dni_ruc');
+                                    const nombreInput = document.getElementById('nombre_contribuyente');
+
+                                    dniInput.addEventListener('input', function() {
+                                        const value = this.value.trim();
+
+                                        if (value.length === 8 || value.length === 11) {
+                                            nombreInput.readOnly = true;
+                                            nombreInput.style.backgroundColor = '#a19f9fff';
+                                            nombreInput.style.color = '#555';
+                                        } else if (value.length >= 12) {
+                                            nombreInput.readOnly = false;
+                                            nombreInput.style.backgroundColor = '';
+                                            nombreInput.style.color = '';
+                                        } else {
+                                            nombreInput.readOnly = true;
+                                            nombreInput.style.backgroundColor = '#a19f9fff';
+                                            nombreInput.style.color = '#555';
+                                            nombreInput.value = '';
+                                        }
+                                    });
+                                });
+                            </script>
+                        <?php endif; ?>
+
                         <div class="form-group">
-                            <label><i class="fas fa-align-left"></i> Asunto:</label>
-                            <textarea name="asunto" required placeholder="Describa el asunto del documento..." rows="4"></textarea>
+                            <label><i class="fas fa-copy"></i> Número de folios:</label>
+                            <input type="number" name="numero_folios" min="1" placeholder="Ej: 3">
                         </div>
 
                         <?php if ($rol_id === 1 || $rol_id === 3): ?>
@@ -134,6 +184,11 @@ unset($_SESSION['mensaje']);
                                 </select>
                             </div>
                         <?php endif; ?>
+
+                        <div class="form-group full-width">
+                            <label><i class="fas fa-align-left"></i> Asunto:</label>
+                            <textarea name="asunto" required placeholder="Describa el asunto del documento..." rows="4"></textarea>
+                        </div>
                     </div>
 
                     <button type="submit">
@@ -159,6 +214,7 @@ unset($_SESSION['mensaje']);
     <?php endif; ?>
 
     <!-- Ahora sí cargamos el JS de notificaciones normalmente -->
+    <script src="../../backend/js/archivos/buscar_contribuyente.js"></script>
     <script src="../../backend/js/notificaciones.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
