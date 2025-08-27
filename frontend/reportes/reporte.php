@@ -65,135 +65,120 @@ if ($areaFiltro !== '') {
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <link href="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/css/selectize.default.css" rel="stylesheet" />
+
     <script src="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/js/standalone/selectize.min.js"></script>
 
     <link rel="stylesheet" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <link rel="icon" type="image/png" href="../../backend/img/logoPisco.png" />
     <style>
-        .selectize-dropdown {
-            z-index: 9999 !important;
-            position: absolute !important;
-        }
-
-        .tarjeta-header form {
-            position: relative;
-            z-index: 9999;
-        }
-
-        .tarjeta-body,
-        .table-responsive {
-            position: relative;
-            z-index: 1;
-            overflow: visible !important;
-        }
+        .selectize-dropdown { z-index: 9999 !important; position: absolute !important; }
+        .tarjeta-header form { position: relative; z-index: 9999; }
+        .tarjeta-body, .table-responsive { position: relative; z-index: 1; overflow: visible !important; }
+        .btn-custom-excel { background-color: #28a745; color: #fff; padding: 5px 12px; border-radius: 5px; text-decoration: none; display: inline-flex; align-items: center; }
+        .btn-custom-excel i { margin-right: 5px; }
+        .btn-custom-pdf { background-color: #d9534f; color: #fff; padding: 5px 12px; border-radius: 5px; text-decoration: none; display: inline-flex; align-items: center; }
+        .btn-custom-pdf i { margin-right: 5px; }
     </style>
 </head>
 
 <body class="p-4">
-    <div class="layout-escritorio">
-        <?php include "../navbar/$navbarFile"; ?>
+<div class="layout-escritorio">
+    <?php include "../navbar/$navbarFile"; ?>
 
-        <main class="contenido-principal">
-            <div class="tarjeta">
-                <div class="tarjeta-header">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <h1>Reportes de Documentos</h1>
-                        <?php if ($areaFiltro !== ''): ?>
-                            <div>
-                                <a href="exportar_excel.php?area=<?= urlencode($areaFiltro) ?>" class="btn btn-success me-2" target="_blank">
-                                    <i class="fa-solid fa-file-excel"></i> Excel
-                                </a>
-                                <a href="exportar_pdf.php?area=<?= urlencode($areaFiltro) ?>" class="btn btn-danger" target="_blank">
-                                    <i class="fa-solid fa-file-pdf"></i> PDF
-                                </a>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-
-                    <form method="GET" class="mb-3">
-                        <label for="area" class="form-label">Filtrar por Área:</label>
-                        <select name="area" id="area">
-                            <option value="" selected disabled hidden>-- SELECCIONE UN AREA --</option>
-                            <?php foreach ($areas as $area): ?>
-                                <option value="<?= htmlspecialchars($area['IdAreas']) ?>" <?= ($areaFiltro == $area['IdAreas']) ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($area['Nombre']) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </form>
+    <main class="contenido-principal">
+        <div class="tarjeta">
+            <div class="tarjeta-header">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h1>Reportes de Documentos</h1>
+                    <?php if ($areaFiltro !== ''): ?>
+                        <div>
+                            <a href="exportar_excel.php?area=<?= urlencode($areaFiltro) ?>" class="btn-custom-excel" target="_blank">
+                                <i class="fa-solid fa-file-excel"></i> Excel
+                            </a>
+                            <a href="exportar_pdf.php?area=<?= urlencode($areaFiltro) ?>" class="btn-custom-pdf" target="_blank">
+                                <i class="fa-solid fa-file-pdf"></i> PDF
+                            </a>
+                        </div>
+                    <?php endif; ?>
                 </div>
 
-                <div class="tarjeta-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-striped" id="tablaReporte">
-                            <thead>
+                <form method="GET" class="mb-3">
+                    <label for="area" class="form-label">Filtrar por Área:</label>
+                    <select name="area" id="area">
+                        <option value="" selected disabled hidden>-- SELECCIONE UN AREA --</option>
+                        <?php foreach ($areas as $area): ?>
+                            <option value="<?= htmlspecialchars($area['IdAreas']) ?>" <?= ($areaFiltro == $area['IdAreas']) ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($area['Nombre']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </form>
+            </div>
+
+            <div class="tarjeta-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped" id="tablaReporte">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Fecha</th>
+                                <th>Hora</th>
+                                <th>Razón Social</th>
+                                <th>Asunto</th>
+                                <th>Área</th>
+                                <th>Para</th>
+                                <th>Folios</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($documentos as $doc): ?>
                                 <tr>
-                                    <th>Código</th>
-                                    <th>Fecha</th>
-                                    <th>Hora</th>
-                                    <th>Razón Social</th>
-                                    <th>Asunto</th>
-                                    <th>Área</th>
-                                    <th>Para</th>
-                                    <th>Folios</th>
+                                    <td><?= htmlspecialchars($doc['NumeroDocumento']) ?></td>
+                                    <td><?= htmlspecialchars($doc['Fecha']) ?></td>
+                                    <td><?= htmlspecialchars($doc['Hora']) ?></td>
+                                    <td><?= htmlspecialchars($doc['NombreContribuyente']) ?></td>
+                                    <td><?= htmlspecialchars($doc['Asunto']) ?></td>
+                                    <td><?= htmlspecialchars($doc['AreaOrigen']) ?></td>
+                                    <td><?= htmlspecialchars($doc['AreaDestino']) ?></td>
+                                    <td><?= htmlspecialchars($doc['NumeroFolios']) ?></td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($documentos as $doc): ?>
-                                    <tr>
-                                        <td><?= htmlspecialchars($doc['NumeroDocumento']) ?></td>
-                                        <td><?= htmlspecialchars($doc['Fecha']) ?></td>
-                                        <td><?= htmlspecialchars($doc['Hora']) ?></td>
-                                        <td><?= htmlspecialchars($doc['NombreContribuyente']) ?></td>
-                                        <td><?= htmlspecialchars($doc['Asunto']) ?></td>
-                                        <td><?= htmlspecialchars($doc['AreaOrigen']) ?></td>
-                                        <td><?= htmlspecialchars($doc['AreaDestino']) ?></td>
-                                        <td><?= htmlspecialchars($doc['NumeroFolios']) ?></td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
                 </div>
             </div>
-        </main>
-    </div>
+        </div>
+    </main>
+</div>
 
-    <script src="../../backend/js/notificaciones.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const inputs = document.querySelectorAll('input[type="text"], textarea');
-            inputs.forEach(function(element) {
-                element.addEventListener('input', function() {
-                    this.value = this.value.toUpperCase();
-                });
-            });
+<script src="../../backend/js/notificaciones.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const inputs = document.querySelectorAll('input[type="text"], textarea');
+        inputs.forEach(function(element) {
+            element.addEventListener('input', function() { this.value = this.value.toUpperCase(); });
         });
+    });
 
-        $('#area').selectize({
-            allowEmptyOption: false,
-            create: false,
-            sortField: 'text',
-            dropdownParent: 'body',
-            onChange: function(value) {
-                if (value !== null && value !== "") {
-                    this.$input.closest('form').submit();
-                }
-            }
-        });
+    $('#area').selectize({
+        allowEmptyOption: false,
+        create: false,
+        sortField: 'text',
+        dropdownParent: 'body',
+        onChange: function(value) { if (value) { this.$input.closest('form').submit(); } }
+    });
 
-        $(document).ready(function() {
-            $('#tablaReporte').DataTable({
-                language: {
-                    url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json',
-                    emptyTable: "Seleccione un área para mostrar documentos."
-                }
-            });
+    $(document).ready(function() {
+        $('#tablaReporte').DataTable({
+            language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json', emptyTable: "Seleccione un área para mostrar documentos." }
         });
-    </script>
+    });
+</script>
 </body>
 
 </html>
