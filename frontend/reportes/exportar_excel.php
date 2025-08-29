@@ -1,5 +1,5 @@
 <?php
-// exportar_excel.php
+
 session_start();
 if (!isset($_SESSION['dg_id'])) {
     header("Location: ../login.php");
@@ -13,6 +13,8 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Color;
 
 $area = $_GET['area'] ?? '';
 if ($area == '') {
@@ -36,60 +38,89 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute([$area]);
 $documentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Crear Excel
 $spreadsheet = new Spreadsheet();
 $sheet = $spreadsheet->getActiveSheet();
 
-// Título centrado
+// ================= TITULOS ================= //
 $sheet->mergeCells('A1:H1');
-$sheet->setCellValue('A1', 'REPORTES - DOCUMENTOS EXTERNOS');
-$sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
-$sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
-
-// Subtítulo
-$sheet->mergeCells('A2:H2');
-$sheet->setCellValue('A2', 'Municipalidad Provincial de Pisco');
-$sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-$sheet->getStyle('A2')->getFont()->setSize(12);
-
-$sheet->mergeCells('A3:H3');
+$sheet->setCellValue('A1', 'REPORTES - DOCUMENTOS EXTERNOS'); $sheet->mergeCells('A2:H2');
+$sheet->setCellValue('A2', 'Municipalidad Provincial de Pisco'); $sheet->mergeCells('A3:H3');
 $sheet->setCellValue('A3', 'Generado: '.date("d/m/Y H:i:s"));
-$sheet->getStyle('A3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-$sheet->getStyle('A3')->getFont()->setSize(10);
 
-// Encabezado de la tabla
-$headers = ['Código','Fecha','Hora','Razón Social','Asunto','Área','Para','Folios'];
-$sheet->fromArray($headers, null, 'A5');
+// Estilos generales de los 3 títulos (centrado + borde abajo)
+$sheet->getStyle('A1:A3')->applyFromArray([
+    'alignment' => [
+        'horizontal' => Alignment::HORIZONTAL_CENTER,
+        'vertical'   => Alignment::VERTICAL_CENTER
+    ],
+    'borders' => [
+        'bottom' => [
+            'borderStyle' => Border::BORDER_THIN,
+            'color' => ['rgb' => '000000']
+        ]
+    ]
+]);
 
-// Estilo encabezado
-$sheet->getStyle('A5:H5')->getFont()->setBold(true);
-$sheet->getStyle('A5:H5')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('D9D9D9');
-$sheet->getStyle('A5:H5')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+// Solo el primer título en azul y negrita
+$sheet->getStyle('A1')->applyFromArray([
+    'font' => [
+        'bold' => true,
+        'color' => ['rgb' => '1976D2'],
+        'size' => 14
+    ]
+]);
 
-// Llenar datos
-$rowNum = 6;
-foreach ($documentos as $doc) {
-    $sheet->setCellValue('A'.$rowNum, $doc['NumeroDocumento']);
-    $sheet->setCellValue('B'.$rowNum, $doc['Fecha']);
-    $sheet->setCellValue('C'.$rowNum, $doc['Hora']);
-    $sheet->setCellValue('D'.$rowNum, $doc['NombreContribuyente']);
-    $sheet->setCellValue('E'.$rowNum, $doc['Asunto']);
-    $sheet->setCellValue('F'.$rowNum, $doc['AreaOrigen']);
-    $sheet->setCellValue('G'.$rowNum, $doc['AreaDestino']);
-    $sheet->setCellValue('H'.$rowNum, $doc['NumeroFolios']);
-    $rowNum++;
-}
+// ================= ENCABEZADOS DE TABLA ================= //
+$headers = ['Código', 'Fecha', 'Hora', 'Razón Social', 'Asunto', 'Área', 'Para', 'Folios'];
+$sheet->fromArray($headers, NULL, 'A5');
 
-// Ajustar ancho de columnas
+$sheet->getStyle('A5:H5')->applyFromArray([
+    'fill' => [
+        'fillType' => Fill::FILL_SOLID,
+        'startColor' => ['rgb' => '1976D2']
+    ],
+    'font' => [
+        'bold' => true,
+        'color' => ['rgb' => 'FFFFFF']
+    ],
+    'alignment' => [
+        'horizontal' => Alignment::HORIZONTAL_CENTER,
+        'vertical'   => Alignment::VERTICAL_CENTER
+    ],
+    'borders' => [
+        'allBorders' => [
+            'borderStyle' => Border::BORDER_THIN,
+            'color' => ['rgb' => '000000']
+        ]
+    ]
+]);
+
+// ================= CONTENIDO ================= //
+$sheet->fromArray($documentos, NULL, 'A6');
+$lastRow = 6 + count($documentos) - 1;
+$sheet->getStyle("A6:H$lastRow")->applyFromArray([
+    'alignment' => [
+        'horizontal' => Alignment::HORIZONTAL_CENTER,
+        'vertical'   => Alignment::VERTICAL_CENTER
+    ],
+    'borders' => [
+        'allBorders' => [
+            'borderStyle' => Border::BORDER_THIN,
+            'color' => ['rgb' => '000000']
+        ]
+    ]
+]);
+
+// Ajustar ancho automático
 foreach (range('A','H') as $col) {
     $sheet->getColumnDimension($col)->setAutoSize(true);
 }
 
-// Descargar archivo
+// Descargar
 $filename = "reportes_" . date("Y-m-d_H-i") . ".xlsx";
 header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-header('Content-Disposition: attachment;filename="'.$filename.'"');
-header('Cache-Control: max-age=0');
-
+header("Content-Disposition: attachment; filename=\"$filename\"");
 $writer = new Xlsx($spreadsheet);
-$writer->save('php://output');
+$writer->save("php://output");
 exit;

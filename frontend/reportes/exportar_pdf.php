@@ -1,5 +1,5 @@
 <?php
-// exportar_pdf.php
+
 session_start();
 if (!isset($_SESSION['dg_id'])) {
     header("Location: ../login.php");
@@ -10,13 +10,14 @@ require '../../backend/db/conexion.php';
 require '../../vendor/autoload.php'; // Dompdf
 
 use Dompdf\Dompdf;
+use Dompdf\Options;
 
 $area = $_GET['area'] ?? '';
 if ($area == '') {
     die("Área no especificada.");
 }
 
-// Obtener documentos del área seleccionada
+// Obtener documentos
 $sql = "SELECT d.NumeroDocumento, DATE(d.FechaIngreso) as Fecha, TIME(d.FechaIngreso) as Hora, d.NombreContribuyente, d.Asunto,
         a.Nombre AS AreaOrigen, ad.Nombre AS AreaDestino, d.NumeroFolios
         FROM documentos d
@@ -33,59 +34,68 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute([$area]);
 $documentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Generar HTML
+// HTML PDF
 $html = '
-<style>
-    body { font-family: Arial, sans-serif; font-size: 10pt; }
-    h2, p { text-align: center; margin: 0; }
-    table { border-collapse: collapse; width: 100%; margin-top: 10px; font-size: 9pt; }
-    th, td { border: 1px solid #000; padding: 4px; text-align: center; }
-    th { background-color: #d9d9d9; }
-</style>
-
-<h2>REPORTES - DOCUMENTOS EXTERNOS</h2>
-<p>Municipalidad Provincial de Pisco</p>
-<p>Generado: '.date("d/m/Y H:i:s").'</p>
-
-<table>
-    <thead>
-        <tr>
-            <th>Código</th>
-            <th>Fecha</th>
-            <th>Hora</th>
-            <th>Razón Social</th>
-            <th>Asunto</th>
-            <th>Área</th>
-            <th>Para</th>
-            <th>Folios</th>
-        </tr>
-    </thead>
-    <tbody>';
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 12px; }
+        h2, h3, h4 { text-align: center; margin: 0; }
+        table { border-collapse: collapse; width: 100%; margin-top: 15px; }
+        th, td { border: 1px solid #000; padding: 6px; text-align: center; }
+        th {
+            background-color: #1976D2; /* Azul */
+            color: #fff; /* Letras blancas */
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h2>REPORTES - DOCUMENTOS EXTERNOS</h2>
+    <h3>Municipalidad Provincial de Pisco</h3>
+    <h4>Generado: '.date("d/m/Y H:i:s").'</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>Código</th>
+                <th>Fecha</th>
+                <th>Hora</th>
+                <th>Razón Social</th>
+                <th>Asunto</th>
+                <th>Área</th>
+                <th>Para</th>
+                <th>Folios</th>
+            </tr>
+        </thead>
+        <tbody>';
 
 foreach ($documentos as $doc) {
     $html .= '<tr>
-        <td>'.htmlspecialchars($doc['NumeroDocumento']).'</td>
-        <td>'.htmlspecialchars($doc['Fecha']).'</td>
-        <td>'.htmlspecialchars($doc['Hora']).'</td>
-        <td>'.htmlspecialchars($doc['NombreContribuyente']).'</td>
-        <td>'.htmlspecialchars($doc['Asunto']).'</td>
-        <td>'.htmlspecialchars($doc['AreaOrigen']).'</td>
-        <td>'.htmlspecialchars($doc['AreaDestino']).'</td>
-        <td>'.htmlspecialchars($doc['NumeroFolios']).'</td>
+        <td>'.$doc['NumeroDocumento'].'</td>
+        <td>'.$doc['Fecha'].'</td>
+        <td>'.$doc['Hora'].'</td>
+        <td>'.$doc['NombreContribuyente'].'</td>
+        <td>'.$doc['Asunto'].'</td>
+        <td>'.$doc['AreaOrigen'].'</td>
+        <td>'.$doc['AreaDestino'].'</td>
+        <td>'.$doc['NumeroFolios'].'</td>
     </tr>';
 }
 
-$html .= '</tbody></table>';
+$html .= '
+        </tbody>
+    </table>
+</body>
+</html>';
 
-// Crear PDF
-$dompdf = new Dompdf();
+// Configuración Dompdf
+$options = new Options();
+$options->set('isRemoteEnabled', true);
+$dompdf = new Dompdf($options);
 $dompdf->loadHtml($html);
-$dompdf->setPaper('A4', 'portrait'); // vertical
+$dompdf->setPaper('A4', 'landscape');
 $dompdf->render();
 
-// Nombre de archivo
 $filename = "reportes_" . date("Y-m-d_H-i") . ".pdf";
-
-// Forzar descarga
-$dompdf->stream($filename, array("Attachment" => true));
+$dompdf->stream($filename, ["Attachment" => true]);
 exit;
