@@ -35,6 +35,9 @@ $stmt->execute([$area]);
 $documentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // HTML PDF
+
+date_default_timezone_set('America/Lima');
+
 $html = '
 <html>
 <head>

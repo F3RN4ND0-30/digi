@@ -5,6 +5,8 @@ if (!isset($_SESSION['dg_id'])) {
     header("Location: ../login.php");
     exit();
 }
+// ✅ Establecer zona horaria de Lima
+date_default_timezone_set('America/Lima');
 
 require '../../backend/db/conexion.php';
 require '../../vendor/autoload.php'; // PhpSpreadsheet
