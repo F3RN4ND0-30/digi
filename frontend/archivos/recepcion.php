@@ -1,6 +1,17 @@
 <?php
 session_start();
 
+if (isset($_SESSION['mensaje'])) {
+    $mensaje = addslashes($_SESSION['mensaje']);
+    echo "
+    <script>
+        window.onload = function() {
+            alert('$mensaje');
+        };
+    </script>";
+    unset($_SESSION['mensaje']);
+}
+
 if (!isset($_SESSION['dg_id'])) {
     header('Location: ../login.php');
     exit;
@@ -44,6 +55,7 @@ $stmt->execute([$area_id]);
 $documentos_pendientes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
+
 <!DOCTYPE html>
 <html lang="es">
 
@@ -66,7 +78,7 @@ $documentos_pendientes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css">
-    
+
     <link rel="icon" type="image/png" href="../../backend/img/logoPisco.png" />
 </head>
 

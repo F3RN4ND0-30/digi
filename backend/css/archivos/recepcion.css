@@ -314,6 +314,12 @@ body:not(.navbar-horizontal) {
     border-color: rgba(253, 203, 110, 0.3);
 }
 
+.badge.bg-danger {
+    background: linear-gradient(135deg, var(--enviados-danger), #e84393);
+    color: var(--enviados-white);
+    border-color: rgba(253, 203, 110, 0.3);
+}
+
 .badge.bg-primary {
     background: linear-gradient(135deg,
             var(--enviados-primary),
