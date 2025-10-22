@@ -788,6 +788,46 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
+window.desbloquearDocumento = function (idDoc) {
+  Swal.fire({
+    title: "¿Desbloquear documento?",
+    text: "El estado pasará a SEGUIMIENTO.",
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonText: "Sí, desbloquear",
+    cancelButtonText: "Cancelar",
+    confirmButtonColor: "#6c5ce7",
+    cancelButtonColor: "#6c757d",
+  }).then((r) => {
+    if (!r.isConfirmed) return;
+
+    const fd = new FormData();
+    fd.append("id", idDoc);
+
+    fetch("../../backend/php/desbloquear_documento.php", {
+      method: "POST",
+      body: fd,
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          Swal.fire({
+            icon: "success",
+            title: "OK",
+            text: data.message,
+            timer: 1800,
+            showConfirmButton: false,
+          }).then(() => location.reload());
+        } else {
+          Swal.fire("Error", data.message || "No se pudo desbloquear", "error");
+        }
+      })
+      .catch(() =>
+        Swal.fire("Error", "Falla de conexión con el servidor", "error")
+      );
+  });
+};
+
 /* console.log(
   `Módulo de supervisión cargado - Observaciones: ${
     HABILITAR_OBSERVACIONES ? "HABILITADAS" : "DESHABILITADAS"
