@@ -79,10 +79,10 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute();
 $resultado = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Procesar los datos directamente
+// Procesar los datos
 $documentos = [];
 foreach ($resultado as $doc) {
-    // Calcular días hábiles transcurridos
+    // Días hábiles
     $doc['DiasTranscurridos'] = calcularDiasHabiles($doc['FechaIngreso']);
 
     // Semáforo
@@ -99,13 +99,12 @@ foreach ($resultado as $doc) {
 
     // Auto–BLOQUEO si pasan 7 días hábiles
     if ($doc['DiasTranscurridos'] >= 7 && (int)$doc['IdEstadoDocumento'] !== 4) {
-        // Persistir en BD para mantener consistencia
         $upd = $pdo->prepare("UPDATE documentos SET IdEstadoDocumento = 4 WHERE IdDocumentos = ?");
         $upd->execute([$doc['IdDocumentos']]);
         $doc['IdEstadoDocumento'] = 4;
     }
 
-    // Estado como texto (alineado a tu tabla)
+    // Estado (según tu tabla estadodocumento)
     switch ((int)$doc['IdEstadoDocumento']) {
         case 1:
             $doc['EstadoTexto'] = 'NUEVO';
@@ -152,7 +151,6 @@ $puedeDesbloquear = in_array($rolActual, [1, 4], true);
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="icon" type="image/png" href="../../backend/img/logoPisco.png" />
     <style>
-        /* Estilitos mínimos para el botón y fila bloqueada (puedes moverlos a tu CSS) */
         .btn-desbloquear {
             background: #0984e3;
             color: #fff;
@@ -185,18 +183,9 @@ $puedeDesbloquear = in_array($rolActual, [1, 4], true);
                         <p>Monitoreo de documentos externos - Defensoría del Pueblo</p>
                     </div>
                     <div class="header-legend">
-                        <div class="legend-item">
-                            <span class="semaforo verde"></span>
-                            <span>1-3 días (En tiempo)</span>
-                        </div>
-                        <div class="legend-item">
-                            <span class="semaforo amarillo"></span>
-                            <span>4-6 días (Atención)</span>
-                        </div>
-                        <div class="legend-item">
-                            <span class="semaforo rojo"></span>
-                            <span>7+ días (Urgente)</span>
-                        </div>
+                        <div class="legend-item"><span class="semaforo verde"></span><span>1-3 días (En tiempo)</span></div>
+                        <div class="legend-item"><span class="semaforo amarillo"></span><span>4-6 días (Atención)</span></div>
+                        <div class="legend-item"><span class="semaforo rojo"></span><span>7+ días (Urgente)</span></div>
                     </div>
                 </div>
             </div>
@@ -211,27 +200,21 @@ $puedeDesbloquear = in_array($rolActual, [1, 4], true);
                     </div>
                 </div>
                 <div class="stat-card" data-filtro="verde">
-                    <div class="stat-icon" style="background: linear-gradient(135deg, #00b894, #55efc4);">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #00b894, #55efc4);"><i class="fas fa-check-circle"></i></div>
                     <div class="stat-content">
                         <h3><?= $en_tiempo ?></h3>
                         <p>En Tiempo</p>
                     </div>
                 </div>
                 <div class="stat-card" data-filtro="amarillo">
-                    <div class="stat-icon" style="background: linear-gradient(135deg, #fdcb6e, #e17055);">
-                        <i class="fas fa-exclamation-triangle"></i>
-                    </div>
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #fdcb6e, #e17055);"><i class="fas fa-exclamation-triangle"></i></div>
                     <div class="stat-content">
                         <h3><?= $atencion ?></h3>
                         <p>Requieren Atención</p>
                     </div>
                 </div>
                 <div class="stat-card" data-filtro="rojo">
-                    <div class="stat-icon" style="background: linear-gradient(135deg, #e17055, #d63031);">
-                        <i class="fas fa-fire"></i>
-                    </div>
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #e17055, #d63031);"><i class="fas fa-fire"></i></div>
                     <div class="stat-content">
                         <h3><?= $urgentes ?></h3>
                         <p>Urgentes</p>
@@ -277,7 +260,7 @@ $puedeDesbloquear = in_array($rolActual, [1, 4], true);
                                 <th>DÍAS TRANSCURRIDOS</th>
                                 <th>OBSERVACIÓN</th>
                                 <th>RECIBIDO</th>
-                                <th>ACCIONES</th> <!-- NUEVO -->
+                                <th>ACCIONES</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -298,19 +281,13 @@ $puedeDesbloquear = in_array($rolActual, [1, 4], true);
                                                 <?= htmlspecialchars(substr($doc['Asunto'], 0, 60)) ?><?= strlen($doc['Asunto']) > 60 ? '...' : '' ?>
                                             </div>
                                         </td>
-                                        <td>
-                                            <span class="estado-badge estado-<?= (int)$doc['IdEstadoDocumento'] ?>">
-                                                <?= htmlspecialchars($doc['EstadoTexto']) ?>
-                                            </span>
-                                        </td>
+                                        <td><span class="estado-badge estado-<?= (int)$doc['IdEstadoDocumento'] ?>"><?= htmlspecialchars($doc['EstadoTexto']) ?></span></td>
                                         <td><span class="fecha-cell"><?= date('d/m/Y', strtotime($doc['FechaIngreso'])) ?></span></td>
                                         <td><span class="area-cell"><?= htmlspecialchars($doc['AreaDestino']) ?></span></td>
                                         <td>
                                             <div class="dias-habiles">
                                                 <span class="semaforo <?= htmlspecialchars($doc['SemaforoColor']) ?>" title="<?= htmlspecialchars($doc['SemaforoTexto']) ?>"></span>
-                                                <span class="dias-numero">
-                                                    <?= (int)$doc['DiasTranscurridos'] ?> <?= ((int)$doc['DiasTranscurridos'] === 1 ? 'día' : 'días') ?>
-                                                </span>
+                                                <span class="dias-numero"><?= (int)$doc['DiasTranscurridos'] ?> <?= ((int)$doc['DiasTranscurridos'] === 1 ? 'día' : 'días') ?></span>
                                             </div>
                                         </td>
                                         <td>
@@ -365,7 +342,7 @@ $puedeDesbloquear = in_array($rolActual, [1, 4], true);
     <script src="../../backend/js/defensoria/exportar-supervision.js"></script>
 
     <script>
-        // Menú móvil (tal cual lo tenías)
+        // Menú móvil
         $(document).ready(function() {
             window.toggleMobileMenu = function() {
                 $('#mobileMenu').slideToggle(200);
@@ -375,8 +352,7 @@ $puedeDesbloquear = in_array($rolActual, [1, 4], true);
                 const parentDropdown = $(this).closest('.nav-dropdown');
                 const dropdownMenu = parentDropdown.find('.dropdown-menu');
                 const isOpen = parentDropdown.hasClass('active');
-                $('#mobileMenu .nav-dropdown').not(parentDropdown).removeClass('active')
-                    .find('.dropdown-menu').css('max-height', '0');
+                $('#mobileMenu .nav-dropdown').not(parentDropdown).removeClass('active').find('.dropdown-menu').css('max-height', '0');
                 if (isOpen) {
                     parentDropdown.removeClass('active');
                     dropdownMenu.css('max-height', '0');
@@ -386,38 +362,67 @@ $puedeDesbloquear = in_array($rolActual, [1, 4], true);
                 }
             });
             $(document).on('click', function(e) {
-                if (!$(e.target).closest('#mobileMenu .nav-dropdown').length &&
-                    !$(e.target).closest('.fas.fa-bars').length) {
-                    $('#mobileMenu .nav-dropdown').removeClass('active')
-                        .find('.dropdown-menu').css('max-height', '0');
+                if (!$(e.target).closest('#mobileMenu .nav-dropdown').length && !$(e.target).closest('.fas.fa-bars').length) {
+                    $('#mobileMenu .nav-dropdown').removeClass('active').find('.dropdown-menu').css('max-height', '0');
                 }
             });
         });
 
-        // Desbloquear (puedes moverlo a tu supervision.js)
+        // Desbloquear con verificación de contraseña y estado destino (1 ó 2)
         function desbloquearDocumento(idDoc) {
             Swal.fire({
-                title: '¿Desbloquear documento?',
-                text: 'El estado pasará a SEGUIMIENTO.',
-                icon: 'question',
+                title: 'Desbloquear documento',
+                html: `
+                  <div style="text-align:left">
+                    <p style="margin:.25rem 0 .75rem;color:#666">
+                      Confirma con tu contraseña para continuar.
+                    </p>
+                    <input id="swal-pass" class="swal2-input" type="password" placeholder="Tu contraseña">
+                    <label class="swal2-checkbox" style="display:flex;align-items:center;gap:.5rem;margin-top:.5rem;">
+                      <input id="swal-estado-seg" type="checkbox">
+                      <span>Restaurar a <b>SEGUIMIENTO (2)</b> en lugar de <b>NUEVO (1)</b></span>
+                    </label>
+                  </div>
+                `,
+                focusConfirm: false,
                 showCancelButton: true,
-                confirmButtonText: 'Sí, desbloquear',
-                cancelButtonText: 'Cancelar'
-            }).then((r) => {
-                if (!r.isConfirmed) return;
+                confirmButtonText: 'Desbloquear',
+                cancelButtonText: 'Cancelar',
+                preConfirm: () => {
+                    const pass = document.getElementById('swal-pass').value.trim();
+                    const seg = document.getElementById('swal-estado-seg').checked;
+                    if (!pass) {
+                        Swal.showValidationMessage('Ingresa tu contraseña');
+                        return false;
+                    }
+                    return {
+                        pass,
+                        estadoDestino: seg ? 2 : 1
+                    };
+                }
+            }).then(res => {
+                if (!res.isConfirmed) return;
 
                 const fd = new FormData();
                 fd.append('accion', 'desbloquear');
                 fd.append('id', idDoc);
+                fd.append('password', res.value.pass);
+                fd.append('estado_destino', res.value.estadoDestino); // 1 ó 2
 
                 fetch('../../backend/php/desbloquear_documento.php', {
                         method: 'POST',
                         body: fd
                     })
-                    .then(res => res.json())
+                    .then(r => r.json())
                     .then(data => {
                         if (data.success) {
-                            Swal.fire('Ok', data.message || 'Documento desbloqueado', 'success')
+                            Swal.fire({
+                                    icon: 'success',
+                                    title: 'Listo',
+                                    text: 'Documento desbloqueado',
+                                    timer: 1600,
+                                    showConfirmButton: false
+                                })
                                 .then(() => location.reload());
                         } else {
                             Swal.fire('Error', data.message || 'No se pudo desbloquear', 'error');
