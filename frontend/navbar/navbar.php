@@ -58,7 +58,7 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
                             </a>
                             <a href="../archivos/reenviar.php" class="module-item <?= ($current_page === 'reenviar') ? 'active' : '' ?>">
                                 <i class="fas fa-share"></i>
-                                <span>Reenviar</span>
+                                <span>Reenviar/Finalizar</span>
                             </a>
                             <a href="../seguimiento/busqueda.php" class="module-item <?= ($current_page === 'busqueda') ? 'active' : '' ?>">
                                 <i class="fas fa-route"></i>

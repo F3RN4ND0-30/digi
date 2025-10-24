@@ -19,18 +19,42 @@ $navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
 
 $area_id = $_SESSION['dg_area_id'] ?? null;
 
-$sql = "SELECT m.IdMovimientoDocumento, m.IdDocumentos, d.NumeroDocumento, d.Asunto, d.IdUsuarios, d.IdAreaFinal,
+$sql = "
+SELECT m.IdMovimientoDocumento, m.IdDocumentos, d.NumeroDocumento, d.Asunto, d.IdUsuarios, d.IdAreaFinal,
                u.Nombres, u.ApellidoPat
         FROM movimientodocumento m
         INNER JOIN documentos d ON m.IdDocumentos = d.IdDocumentos
         INNER JOIN usuarios u ON d.IdUsuarios = u.IdUsuarios
-        WHERE m.AreaDestino = ?
-          AND m.Recibido = 1
-          AND d.Finalizado = 0
+        WHERE m.AreaDestino = ?  -- El área que recibe el documento
+          AND m.Recibido = 1  -- Asegurarnos de que el documento ha sido recibido
+          AND d.Finalizado = 0  -- El documento no ha sido finalizado
+          AND d.IdEstadoDocumento != 5  -- Excluir los documentos reenviados
+          AND d.IdEstadoDocumento IN (1, 2, 3)  -- Solo los documentos en estado NUEVO, SEGUIMIENTO o RECIBIDO
+          
+          -- Excluir el último emisor del documento
+          AND NOT EXISTS (
+              SELECT 1
+              FROM movimientodocumento m2
+              WHERE m2.IdDocumentos = d.IdDocumentos
+              AND m2.IdMovimientoDocumento = (
+                  SELECT MAX(IdMovimientoDocumento) 
+                  FROM movimientodocumento 
+                  WHERE IdDocumentos = d.IdDocumentos
+              )
+              AND m2.AreaOrigen = ?
+          )
+          
+          -- Seleccionamos solo el último movimiento para evitar duplicados
+          AND m.IdMovimientoDocumento = (
+              SELECT MAX(IdMovimientoDocumento)
+              FROM movimientodocumento m3
+              WHERE m3.IdDocumentos = d.IdDocumentos
+          )
+          
         ORDER BY m.IdMovimientoDocumento DESC";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute([$area_id]);
+$stmt->execute([$area_id, $area_id]);  // Usamos el mismo $area_id para ambas subconsultas
 $documentos_recibidos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $areas = $pdo->prepare("SELECT IdAreas, Nombre FROM areas WHERE IdAreas != ?");
@@ -67,7 +91,7 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
     <link href="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/css/selectize.default.css" rel="stylesheet" />
     <!-- Selectize JS -->
     <script src="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/js/standalone/selectize.min.js"></script>
-    
+
     <link rel="icon" type="image/png" href="../../backend/img/logoPisco.png" />
 
 </head>
