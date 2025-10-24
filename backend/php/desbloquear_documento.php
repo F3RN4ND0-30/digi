@@ -22,7 +22,6 @@ $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $accion   = $_POST['accion'] ?? '';
 $idDoc    = isset($_POST['id']) ? (int)$_POST['id'] : 0;
 $password = $_POST['password'] ?? '';
-$estadoDestino = isset($_POST['estado_destino']) ? (int)$_POST['estado_destino'] : 1;
 
 if ($accion !== 'desbloquear' || $idDoc <= 0) {
     echo json_encode(['success' => false, 'message' => 'Parámetros inválidos.']);
@@ -66,32 +65,27 @@ try {
 
     $estadoActual = (int)$doc['IdEstadoDocumento'];
 
-    error_log("DEBUG desbloquear -> idDoc=$idDoc, estadoActual=$estadoActual, estadoDestino=$estadoDestino, usuario=" . $user['Usuario']);
-
-    if ($estadoActual !== 4) {
+    if ($estadoActual !== 4) { // Solo desbloquear si estaba BLOQUEADO
         echo json_encode(['success' => false, 'message' => "El documento no está bloqueado (estado actual: $estadoActual)."]);
         exit;
     }
 
-    // 3) Intentar actualizar estado
-    $upd = $pdo->prepare("UPDATE documentos SET IdEstadoDocumento = ? WHERE IdDocumentos = ?");
-    $ok = $upd->execute([$estadoDestino, $idDoc]);
+    // 3) Actualizar estado a DESBLOQUEADO (6) y guardar fecha de desbloqueo
+    $upd = $pdo->prepare("
+        UPDATE documentos 
+        SET IdEstadoDocumento = 6, FechaDesbloqueo = NOW()
+        WHERE IdDocumentos = ?
+    ");
+    $upd->execute([$idDoc]);
     $filas = $upd->rowCount();
 
-    error_log("DEBUG update -> ok=$ok, filas=$filas");
-
     if ($filas === 0) {
-        // Volver a consultar para confirmar si realmente cambió
+        // Confirmar si realmente cambió
         $verif = $pdo->prepare("SELECT IdEstadoDocumento FROM documentos WHERE IdDocumentos = ?");
         $verif->execute([$idDoc]);
         $nuevoEstado = (int)$verif->fetchColumn();
-
-        echo json_encode([
-            'success' => true,
-            'message' => 'Desbloqueo ejecutado (sin filas modificadas, posiblemente mismo valor).',
-            'nuevo_estado' => $nuevoEstado
-        ]);
-        exit;
+    } else {
+        $nuevoEstado = 6;
     }
 
     // 4) Registrar observación
@@ -100,7 +94,7 @@ try {
             INSERT INTO movimientodocumento (IdDocumentos, Observacion, FechaMovimiento)
             VALUES (?, ?, NOW())
         ");
-        $obs->execute([$idDoc, 'Desbloqueado por ' . $user['Usuario'] . ' (estado → ' . $estadoDestino . ')']);
+        $obs->execute([$idDoc, 'Desbloqueado por ' . $user['Usuario'] . ' (estado → 6)']);
     } catch (Exception $e) {
         error_log('Error al registrar observación: ' . $e->getMessage());
     }
@@ -108,7 +102,7 @@ try {
     echo json_encode([
         'success' => true,
         'message' => 'Documento desbloqueado correctamente.',
-        'nuevo_estado' => $estadoDestino
+        'nuevo_estado' => $nuevoEstado
     ]);
 } catch (Exception $e) {
     error_log('Desbloquear error: ' . $e->getMessage());
