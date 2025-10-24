@@ -460,6 +460,20 @@ body {
   color: #155724;
   border: 1px solid #c3e6cb;
 }
+/* 5 = REENVIADO */
+.estado-badge.estado-5 {
+  background: #ffe8cc;  
+  color: #d9480f;        
+  border: 1px solid #ffd8a8;
+}
+
+/* 6 = DESBLOQUEADO */
+.estado-badge.estado-6 {
+  background: #dbe4ff;   
+  color: #364fc7;    
+  border: 1px solid #bac8ff;
+}
+
 
 .fecha-cell {
   font-weight: 500;
