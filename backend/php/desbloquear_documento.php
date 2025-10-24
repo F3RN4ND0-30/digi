@@ -1,11 +1,10 @@
 <?php
-// backend/php/desbloquear_documento.php
 session_start();
 header('Content-Type: application/json');
 
 if (!isset($_SESSION['dg_id'])) {
     http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Sesión expirada. Vuelve a iniciar sesión.']);
+    echo json_encode(['success' => false, 'message' => 'Sesión expirada.']);
     exit;
 }
 
@@ -18,13 +17,11 @@ if (!in_array($rol, [1, 4], true)) {
 }
 
 require __DIR__ . '/../db/conexion.php';
+$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-// Input
 $accion   = $_POST['accion'] ?? '';
 $idDoc    = isset($_POST['id']) ? (int)$_POST['id'] : 0;
 $password = $_POST['password'] ?? '';
-// Por si quieres restaurar a SEGUIMIENTO (2), puedes enviar estado_destino=2 desde el JS.
-// Por defecto lo dejamos en 1 = NUEVO (pendiente).
 $estadoDestino = isset($_POST['estado_destino']) ? (int)$_POST['estado_destino'] : 1;
 
 if ($accion !== 'desbloquear' || $idDoc <= 0) {
@@ -38,8 +35,8 @@ if ($password === '') {
 }
 
 try {
-    // 1) Obtener hash de contraseña del usuario actual
-    $stmt = $pdo->prepare("SELECT Usuario, Password FROM usuarios WHERE IdUsuarios = ?");
+    // 1) Verificar usuario y contraseña
+    $stmt = $pdo->prepare("SELECT Usuario, Clave FROM usuarios WHERE IdUsuarios = ?");
     $stmt->execute([$_SESSION['dg_id']]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -48,10 +45,7 @@ try {
         exit;
     }
 
-    $hash = (string)$user['Password'];
-
-    // Compatibilidad: si está hasheado con password_hash -> password_verify;
-    // si no, comparar plano (no recomendado, pero por si ya existe así en tu BD).
+    $hash = (string)$user['Clave'];
     $isBcrypt = preg_match('/^\$2[ayb]\$/', $hash) === 1;
     $okPass = $isBcrypt ? password_verify($password, $hash) : hash_equals($hash, $password);
 
@@ -60,7 +54,7 @@ try {
         exit;
     }
 
-    // 2) Verificar documento y que esté bloqueado
+    // 2) Verificar documento
     $stmt = $pdo->prepare("SELECT IdEstadoDocumento FROM documentos WHERE IdDocumentos = ?");
     $stmt->execute([$idDoc]);
     $doc = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -70,31 +64,45 @@ try {
         exit;
     }
 
-    // Solo desbloquea si está en 4 (BLOQUEADO)
-    if ((int)$doc['IdEstadoDocumento'] !== 4) {
-        echo json_encode(['success' => false, 'message' => 'El documento no está bloqueado.']);
+    $estadoActual = (int)$doc['IdEstadoDocumento'];
+
+    error_log("DEBUG desbloquear -> idDoc=$idDoc, estadoActual=$estadoActual, estadoDestino=$estadoDestino, usuario=" . $user['Usuario']);
+
+    if ($estadoActual !== 4) {
+        echo json_encode(['success' => false, 'message' => "El documento no está bloqueado (estado actual: $estadoActual)."]);
         exit;
     }
 
-    // 3) Actualizar estado
+    // 3) Intentar actualizar estado
     $upd = $pdo->prepare("UPDATE documentos SET IdEstadoDocumento = ? WHERE IdDocumentos = ?");
-    $upd->execute([$estadoDestino, $idDoc]);
+    $ok = $upd->execute([$estadoDestino, $idDoc]);
+    $filas = $upd->rowCount();
 
-    if ($upd->rowCount() < 1) {
-        echo json_encode(['success' => false, 'message' => 'No se pudo actualizar el estado.']);
+    error_log("DEBUG update -> ok=$ok, filas=$filas");
+
+    if ($filas === 0) {
+        // Volver a consultar para confirmar si realmente cambió
+        $verif = $pdo->prepare("SELECT IdEstadoDocumento FROM documentos WHERE IdDocumentos = ?");
+        $verif->execute([$idDoc]);
+        $nuevoEstado = (int)$verif->fetchColumn();
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'Desbloqueo ejecutado (sin filas modificadas, posiblemente mismo valor).',
+            'nuevo_estado' => $nuevoEstado
+        ]);
         exit;
     }
 
-    // (Opcional) Registrar una observación del desbloqueo
-    // Solo si tu tabla permite nulos en AreaOrigen/AreaDestino; si no, comenta este bloque.
+    // 4) Registrar observación
     try {
         $obs = $pdo->prepare("
             INSERT INTO movimientodocumento (IdDocumentos, Observacion, FechaMovimiento)
             VALUES (?, ?, NOW())
         ");
-        $obs->execute([$idDoc, 'Desbloqueado por ' . $user['Usuario'] . ' (cambio a estado ' . $estadoDestino . ')']);
+        $obs->execute([$idDoc, 'Desbloqueado por ' . $user['Usuario'] . ' (estado → ' . $estadoDestino . ')']);
     } catch (Exception $e) {
-        // No interrumpir si falla el log de observación
+        error_log('Error al registrar observación: ' . $e->getMessage());
     }
 
     echo json_encode([
@@ -104,5 +112,5 @@ try {
     ]);
 } catch (Exception $e) {
     error_log('Desbloquear error: ' . $e->getMessage());
-    echo json_encode(['success' => false, 'message' => 'Error en el servidor.']);
+    echo json_encode(['success' => false, 'message' => 'Error interno en el servidor.']);
 }
