@@ -29,7 +29,7 @@ SELECT m.IdMovimientoDocumento, m.IdDocumentos, d.NumeroDocumento, d.Asunto, d.I
           AND m.Recibido = 1  -- Asegurarnos de que el documento ha sido recibido
           AND d.Finalizado = 0  -- El documento no ha sido finalizado
           AND d.IdEstadoDocumento != 5  -- Excluir los documentos reenviados
-          AND d.IdEstadoDocumento IN (1, 2, 3)  -- Solo los documentos en estado NUEVO, SEGUIMIENTO o RECIBIDO
+          AND d.IdEstadoDocumento IN (1, 2, 3, 6)  -- Solo los documentos en estado NUEVO, SEGUIMIENTO o RECIBIDO
           
           -- Excluir el último emisor del documento
           AND NOT EXISTS (

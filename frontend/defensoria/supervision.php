@@ -97,11 +97,22 @@ foreach ($resultado as $doc) {
         $doc['SemaforoTexto'] = 'Urgente';
     }
 
-    // Auto–BLOQUEO si pasan 7 días hábiles
-    if ($doc['DiasTranscurridos'] >= 7 && (int)$doc['IdEstadoDocumento'] !== 4) {
+    // Auto–BLOQUEO si pasan 7 días hábiles, solo si NO está bloqueado (4) ni desbloqueado (6)
+    if ($doc['DiasTranscurridos'] >= 7 && (int)$doc['IdEstadoDocumento'] !== 4 && (int)$doc['IdEstadoDocumento'] !== 6) {
         $upd = $pdo->prepare("UPDATE documentos SET IdEstadoDocumento = 4 WHERE IdDocumentos = ?");
         $upd->execute([$doc['IdDocumentos']]);
         $doc['IdEstadoDocumento'] = 4;
+    }
+
+    // Bloqueo automático después de 3 días hábiles si estaba DESBLOQUEADO (6) y no finalizó
+    if ((int)$doc['IdEstadoDocumento'] === 6 && !empty($doc['FechaDesbloqueo']) && (int)$doc['Finalizado'] !== 1) {
+        $diasDesdeDesbloqueo = calcularDiasHabiles($doc['FechaDesbloqueo']);
+        if ($diasDesdeDesbloqueo >= 3) {
+            $upd = $pdo->prepare("UPDATE documentos SET IdEstadoDocumento = 4, FechaDesbloqueo = NULL WHERE IdDocumentos = ?");
+            $upd->execute([$doc['IdDocumentos']]);
+            $doc['IdEstadoDocumento'] = 4;
+            $doc['FechaDesbloqueo'] = NULL;
+        }
     }
 
     // Estado (según tu tabla estadodocumento)
@@ -117,6 +128,12 @@ foreach ($resultado as $doc) {
             break;
         case 4:
             $doc['EstadoTexto'] = 'BLOQUEADO';
+            break;
+        case 5:
+            $doc['EstadoTexto'] = 'REENVIADO';
+            break;
+        case 6:
+            $doc['EstadoTexto'] = 'DESBLOQUEADO';
             break;
         default:
             $doc['EstadoTexto'] = 'SIN ESTADO';
@@ -368,36 +385,30 @@ $puedeDesbloquear = in_array($rolActual, [1, 4], true);
             });
         });
 
-        // Desbloquear con verificación de contraseña y estado destino (1 ó 2)
+        // Desbloquear con verificación de contraseña (cambia siempre a estado 6)
         function desbloquearDocumento(idDoc) {
             Swal.fire({
                 title: 'Desbloquear documento',
                 html: `
-                  <div style="text-align:left">
-                    <p style="margin:.25rem 0 .75rem;color:#666">
-                      Confirma con tu contraseña para continuar.
-                    </p>
-                    <input id="swal-pass" class="swal2-input" type="password" placeholder="Tu contraseña">
-                    <label class="swal2-checkbox" style="display:flex;align-items:center;gap:.5rem;margin-top:.5rem;">
-                      <input id="swal-estado-seg" type="checkbox">
-                      <span>Restaurar a <b>SEGUIMIENTO (2)</b> en lugar de <b>NUEVO (1)</b></span>
-                    </label>
-                  </div>
-                `,
+          <div style="text-align:left">
+            <p style="margin:.25rem 0 .75rem;color:#666">
+              Confirma con tu contraseña para continuar.
+            </p>
+            <input id="swal-pass" class="swal2-input" type="password" placeholder="Tu contraseña">
+          </div>
+        `,
                 focusConfirm: false,
                 showCancelButton: true,
                 confirmButtonText: 'Desbloquear',
                 cancelButtonText: 'Cancelar',
                 preConfirm: () => {
                     const pass = document.getElementById('swal-pass').value.trim();
-                    const seg = document.getElementById('swal-estado-seg').checked;
                     if (!pass) {
                         Swal.showValidationMessage('Ingresa tu contraseña');
                         return false;
                     }
                     return {
-                        pass,
-                        estadoDestino: seg ? 2 : 1
+                        pass
                     };
                 }
             }).then(res => {
@@ -407,7 +418,7 @@ $puedeDesbloquear = in_array($rolActual, [1, 4], true);
                 fd.append('accion', 'desbloquear');
                 fd.append('id', idDoc);
                 fd.append('password', res.value.pass);
-                fd.append('estado_destino', res.value.estadoDestino); // 1 ó 2
+                fd.append('estado_destino', 6); // 🔹 siempre DESBLOQUEADO (6)
 
                 fetch('../../backend/php/desbloquear_documento.php', {
                         method: 'POST',
@@ -417,13 +428,12 @@ $puedeDesbloquear = in_array($rolActual, [1, 4], true);
                     .then(data => {
                         if (data.success) {
                             Swal.fire({
-                                    icon: 'success',
-                                    title: 'Listo',
-                                    text: 'Documento desbloqueado',
-                                    timer: 1600,
-                                    showConfirmButton: false
-                                })
-                                .then(() => location.reload());
+                                icon: 'success',
+                                title: 'Listo',
+                                text: 'Documento desbloqueado correctamente',
+                                timer: 1600,
+                                showConfirmButton: false
+                            }).then(() => location.reload());
                         } else {
                             Swal.fire('Error', data.message || 'No se pudo desbloquear', 'error');
                         }
