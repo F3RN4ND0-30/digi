@@ -42,7 +42,7 @@ $navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
 
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css">
-    
+
     <link rel="icon" type="image/png" href="../../backend/img/logoPisco.png" />
 </head>
 
@@ -154,9 +154,14 @@ $navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
                         data: 'FechaMovimiento'
                     },
                     {
-                        data: 'Recibido',
-                        render: function(data) {
-                            return data == 1 ? '✅ Recibido' : '⏳ Pendiente';
+                        data: null,
+                        render: function(data, type, row) {
+                            // 🔸 Si el documento está finalizado, mostrar 🏁
+                            if (row.Finalizado == 1) {
+                                return '🏁 Finalizado';
+                            } else {
+                                return row.Recibido == 1 ? '✅ Recibido' : '⏳ Pendiente';
+                            }
                         }
                     },
                     {
@@ -200,33 +205,44 @@ $navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
                         return;
                     }
 
-                    let html = `
-                        <table class="tabla-seguimiento">
-                            <thead>
-                                <tr>
-                                    <th>Área Origen</th>
-                                    <th>Área Destino</th>
-                                    <th>Fecha de Movimiento</th>
-                                    <th>Estado</th>
-                                    <th>Observación</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                    `;
+                    // 🔸 Nuevo: valor del campo Finalizado (de la tabla documentos)
+                    const finalizado = data.Finalizado;
 
-                    data.movimientos.forEach(mov => {
-                        const estadoClass = mov.Recibido == 1 ? 'estado-recibido' : 'estado-pendiente';
-                        const estadoTexto = mov.Recibido == 1 ? '✅ Recibido' : '⏳ Pendiente';
+                    let html = `
+                <table class="tabla-seguimiento">
+                    <thead>
+                        <tr>
+                            <th>Área Origen</th>
+                            <th>Área Destino</th>
+                            <th>Fecha de Movimiento</th>
+                            <th>Estado</th>
+                            <th>Observación</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+                    data.movimientos.forEach((mov, index) => {
+                        let estadoClass, estadoTexto;
+
+                        // 🔸 Si el documento está finalizado y este es el último movimiento
+                        if (finalizado == 1 && index === data.movimientos.length - 1) {
+                            estadoClass = 'estado-finalizado';
+                            estadoTexto = '🏁 Finalizado';
+                        } else {
+                            estadoClass = mov.Recibido == 1 ? 'estado-recibido' : 'estado-pendiente';
+                            estadoTexto = mov.Recibido == 1 ? '✅ Recibido' : '⏳ Pendiente';
+                        }
 
                         html += `
-                            <tr>
-                                <td>${mov.OrigenNombre || mov.AreaOrigen}</td>
-                                <td>${mov.DestinoNombre || mov.AreaDestino}</td>
-                                <td class="fecha-cell">${mov.FechaMovimiento}</td>
-                                <td class="${estadoClass}">${estadoTexto}</td>
-                                <td class="observacion-cell">${mov.Observacion || '-'}</td>
-                            </tr>
-                        `;
+                    <tr>
+                        <td>${mov.OrigenNombre || mov.AreaOrigen}</td>
+                        <td>${mov.DestinoNombre || mov.AreaDestino}</td>
+                        <td class="fecha-cell">${mov.FechaMovimiento}</td>
+                        <td class="${estadoClass}">${estadoTexto}</td>
+                        <td class="observacion-cell">${mov.Observacion || '-'}</td>
+                    </tr>
+                `;
                     });
 
                     html += '</tbody></table>';

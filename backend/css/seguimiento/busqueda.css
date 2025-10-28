@@ -330,6 +330,14 @@ table tbody tr:hover {
   gap: 5px;
 }
 
+.estado-finalizado {
+  color: red;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
 .sin-movimientos {
   text-align: center;
   padding: 40px;

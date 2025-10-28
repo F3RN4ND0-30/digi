@@ -10,7 +10,7 @@ require '../../db/conexion.php';
 
 // 🧾 Obtener datos de sesión
 $area_id = $_SESSION['dg_area_id'] ?? null;
-$rol_id = $_SESSION['dg_rol'] ?? null; // ⬅️ usamos esta sesión como dijiste
+$rol_id = $_SESSION['dg_rol'] ?? null;
 if (!$rol_id) {
     echo json_encode([]);
     exit;
@@ -27,6 +27,7 @@ if ($rol_id == 1) {
             md1.IdDocumentos,
             d.NumeroDocumento,
             d.Asunto,
+            d.Finalizado,                            -- ✅ Agregado
             md1.AreaDestino,
             a.Nombre AS NombreAreaDestino,
             md1.FechaMovimiento,
@@ -46,9 +47,8 @@ if ($rol_id == 1) {
 
     $stmt = $pdo->prepare($sql);
     $stmt->bindParam(':busqueda', $like);
-
-    // 👤 Usuarios comunes: solo documentos relacionados a su área
 } else {
+    // 👤 Usuarios comunes: solo documentos relacionados a su área
     if (!$area_id) {
         echo json_encode([]);
         exit;
@@ -59,6 +59,7 @@ if ($rol_id == 1) {
             md1.IdDocumentos,
             d.NumeroDocumento,
             d.Asunto,
+            d.Finalizado,                            -- ✅ Agregado
             md1.AreaDestino,
             a.Nombre AS NombreAreaDestino,
             md1.FechaMovimiento,
@@ -86,8 +87,9 @@ if ($rol_id == 1) {
     $stmt->bindParam(':area_id', $area_id);
 }
 
-// ✅ Ejecutar y devolver resultados en JSON
+// ✅ Ejecutar y devolver resultados
 $stmt->execute();
 $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 header('Content-Type: application/json');
 echo json_encode($resultados);
