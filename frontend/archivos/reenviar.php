@@ -214,18 +214,42 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
                 ]
             });
 
-            $('select[name="nueva_area"]').selectize({
-                allowEmptyOption: true,
-                placeholder: 'Seleccione una opción',
-                sortField: 'text',
-                create: false,
-                dropdownParent: 'body', // 🔧 aquí está la clave
-                onFocus: function() {
-                    this.removeOption('');
-                    this.refreshOptions(false);
-                }
-            });
+            // Inicializar Selectize y botones por fila
+            $('select[name="nueva_area"]').each(function() {
+                const $select = $(this);
+                const row = $select.closest('tr');
+                const btnReenviar = row.find('.btn-reenviar');
+                const btnFinalizar = row.find('.btn-finalizar');
 
+                // Inicializamos Selectize
+                const selectize = $select.selectize({
+                    allowEmptyOption: true,
+                    placeholder: 'Seleccione una opción',
+                    sortField: 'text',
+                    create: false,
+                    dropdownParent: 'body',
+                    onFocus: function() {
+                        this.removeOption('');
+                        this.refreshOptions(false);
+                    }
+                })[0].selectize;
+
+                // Inicializar estado de botones
+                btnReenviar.removeClass('btn-success').addClass('btn-secondary').prop('disabled', true);
+                btnFinalizar.prop('disabled', false); // Finalizar siempre activo
+
+                // Función para habilitar/deshabilitar solo Reenviar
+                function actualizarBotonReenviar() {
+                    if (selectize.getValue()) {
+                        btnReenviar.removeClass('btn-secondary').addClass('btn-success').prop('disabled', false);
+                    } else {
+                        btnReenviar.removeClass('btn-success').addClass('btn-secondary').prop('disabled', true);
+                    }
+                }
+
+                // Escuchar solo change en Selectize
+                selectize.on('change', actualizarBotonReenviar);
+            });
 
             // Mejorar UX del formulario
             $('.reenvio-form').on('submit', function(e) {
@@ -234,52 +258,16 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
 
                 button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Enviando...');
 
-                // Si hay error, restaurar botón después de 3 segundos
+                // Restaurar botón después de 3 segundos si algo falla
                 setTimeout(() => {
                     if (button.prop('disabled')) {
                         button.prop('disabled', false).html(originalText);
                     }
                 }, 3000);
             });
-
-            // Validación en tiempo real
-            $('select[name="nueva_area"]').on('change', function() {
-                const row = $(this).closest('tr');
-                const button = row.find('button[type="submit"]');
-
-                if ($(this).val()) {
-                    button.removeClass('btn-secondary').addClass('btn-success');
-                    button.prop('disabled', false);
-                } else {
-                    button.removeClass('btn-success').addClass('btn-secondary');
-                    button.prop('disabled', true);
-                }
-            });
-
-            // Inicializar estado de botones
-            $('select[name="nueva_area"]').each(function() {
-                const row = $(this).closest('tr');
-                const btnReenviar = row.find('.btn-reenviar');
-
-                btnReenviar.removeClass('btn-success').addClass('btn-secondary');
-                btnReenviar.prop('disabled', true);
-            });
-
-            // Al cambiar el área seleccionada, activar solo el botón de reenviar
-            $('select[name="nueva_area"]').on('change', function() {
-                const row = $(this).closest('tr');
-                const btnReenviar = row.find('.btn-reenviar');
-
-                if ($(this).val()) {
-                    btnReenviar.removeClass('btn-secondary').addClass('btn-success');
-                    btnReenviar.prop('disabled', false);
-                } else {
-                    btnReenviar.removeClass('btn-success').addClass('btn-secondary');
-                    btnReenviar.prop('disabled', true);
-                }
-            });
         });
     </script>
+
 
     <!-- JavaScript del Navbar -->
     <script>
