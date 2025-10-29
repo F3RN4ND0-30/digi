@@ -190,7 +190,7 @@ $puedeDesbloquear = in_array($rolActual, [1, 4], true);
 <body>
     <div class="layout-escritorio">
         <?php include "../navbar/$navbarFile"; ?>
-
+                    
         <main class="contenido-principal">
             <!-- Header -->
             <div class="supervision-header">

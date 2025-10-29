@@ -1,4 +1,4 @@
-/* Navbar Modular CSS - navbar/navbar.css - VERSIÓN OPTIMIZADA */
+/* Navbar Modular CSS - navbar/navbar.css - VERSIÓN OPTIMIZADA CON NOTIFICACIONES */
 
 /* Variables para el navbar */
 :root {
@@ -116,29 +116,6 @@
   position: relative !important;
   z-index: 99998 !important;
   overflow: visible !important;
-}
-
-#notificaciones {
-  display: flex;
-  align-items: center;
-  position: relative;
-  margin-left: 0.5rem;
-  font-size: 1.1rem;
-  color: var(--navbar-white);
-}
-
-#notificaciones i {
-  transition: transform 0.3s ease;
-}
-
-#notificaciones:hover i {
-  transform: scale(1.2);
-  color: var(--navbar-accent);
-}
-
-#contador {
-  font-size: 0.8rem;
-  margin-left: 4px;
 }
 
 .nav-link {
@@ -420,6 +397,393 @@
   font-weight: 500 !important;
 }
 
+/* ========================================
+   NOTIFICACIONES MODERNAS
+   ======================================== */
+
+.notificaciones-modern {
+  position: relative;
+  margin-right: 1rem;
+}
+
+/* Campana de notificación */
+.notification-bell {
+  position: relative;
+  cursor: pointer;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.notification-bell:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.notification-bell i {
+  font-size: 1.2rem;
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.notification-bell:hover i {
+  animation: bellRing 0.5s ease-in-out;
+}
+
+@keyframes bellRing {
+  0%, 100% { transform: rotate(0deg); }
+  10%, 30% { transform: rotate(-10deg); }
+  20%, 40% { transform: rotate(10deg); }
+  50% { transform: rotate(0deg); }
+}
+
+/* Badge contador */
+.notification-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: linear-gradient(135deg, #ff4757, #ff6348);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  box-shadow: 0 2px 8px rgba(255, 71, 87, 0.4);
+  animation: badgePulse 2s ease-in-out infinite;
+  border: 2px solid white;
+}
+
+.notification-badge:empty {
+  display: none;
+}
+
+@keyframes badgePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+/* Efecto de ping (punto que pulsa) */
+.bell-ping {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ff4757;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.notification-badge:not(:empty) ~ .bell-ping {
+  animation: pingEffect 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes pingEffect {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* Panel de notificaciones */
+.notification-panel {
+  position: absolute;
+  top: calc(100% + 1rem);
+  right: -10px;
+  width: 380px;
+  max-height: 500px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3),
+              0 0 0 1px rgba(0, 0, 0, 0.05);
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 999999;
+  animation: slideDown 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.notification-panel[style*="block"],
+.notification-panel[style*="flex"] {
+  display: flex !important;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Flecha del panel */
+.notification-panel::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  right: 20px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 8px solid white;
+  filter: drop-shadow(0 -2px 3px rgba(0, 0, 0, 0.1));
+}
+
+/* Header del panel */
+.notification-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(135deg, #6c5ce7, #5a4bd1);
+  color: white;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.notification-header h4 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.notification-header i {
+  font-size: 1.1rem;
+}
+
+.btn-mark-all {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 500;
+}
+
+.btn-mark-all:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Body del panel */
+.notification-body {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 350px;
+}
+
+.notification-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.notification-list li {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #f0f0f0;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  position: relative;
+}
+
+.notification-list li:hover {
+  background: #f8f9fa;
+}
+
+.notification-list li:last-child {
+  border-bottom: none;
+}
+
+/* Indicador de no leída */
+.notification-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 60%;
+  background: #6c5ce7;
+  border-radius: 0 4px 4px 0;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.notification-list li.read::before {
+  opacity: 0;
+}
+
+.notification-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.notification-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6c5ce7, #74b9ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.notification-text {
+  flex: 1;
+}
+
+.notification-text p {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9rem;
+  color: #333;
+  line-height: 1.4;
+}
+
+.notification-time {
+  font-size: 0.75rem;
+  color: #999;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.notification-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.notification-actions button {
+  padding: 0.3rem 0.7rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.btn-mark-read {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.btn-mark-read:hover {
+  background: #c8e6c9;
+}
+
+.btn-delete {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.btn-delete:hover {
+  background: #ffcdd2;
+}
+
+/* Footer del panel */
+.notification-footer {
+  padding: 0.75rem 1.5rem;
+  background: #f8f9fa;
+  border-top: 1px solid #e9ecef;
+  text-align: center;
+}
+
+.view-all-link {
+  color: #6c5ce7;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.view-all-link:hover {
+  color: #5a4bd1;
+  transform: translateX(3px);
+}
+
+.view-all-link::after {
+  content: "→";
+  transition: transform 0.2s ease;
+}
+
+.view-all-link:hover::after {
+  transform: translateX(3px);
+}
+
+/* Estado vacío */
+.notification-empty {
+  padding: 3rem 2rem;
+  text-align: center;
+  color: #999;
+}
+
+.notification-empty i {
+  font-size: 3rem;
+  color: #ddd;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.notification-empty p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* Scrollbar personalizado */
+.notification-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.notification-body::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.notification-body::-webkit-scrollbar-thumb {
+  background: #6c5ce7;
+  border-radius: 3px;
+}
+
+.notification-body::-webkit-scrollbar-thumb:hover {
+  background: #5a4bd1;
+}
+
 /* Usuario */
 .navbar-user {
   display: flex !important;
@@ -559,6 +923,12 @@
     padding: 0.5rem 0.75rem !important;
     font-size: 0.8rem !important;
   }
+
+  /* Notificaciones responsive */
+  .notification-panel {
+    width: 320px;
+    right: -50px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -577,24 +947,23 @@
   .user-name {
     font-size: 0.8rem !important;
   }
-}
 
-/* OVERRIDE PARA CUALQUIER CONFLICTO EXTERNO */
-body .navbar-horizontal {
-  z-index: 99999 !important;
-  overflow: visible !important;
-}
+  /* Notificaciones mobile */
+  .notification-panel {
+    width: 300px;
+    right: -20px;
+  }
 
-body .navbar-horizontal .nav-dropdown {
-  overflow: visible !important;
-}
+  .notification-header {
+    padding: 1rem;
+  }
 
-body .navbar-horizontal .dropdown-menu {
-  z-index: 999999 !important;
-  position: absolute !important;
-}
+  .notification-header h4 {
+    font-size: 0.9rem;
+  }
 
-/* Evitar que otros elementos interfieran */
-.navbar-horizontal~* {
-  z-index: 1 !important;
+  .btn-mark-all {
+    font-size: 0.7rem;
+    padding: 0.3rem 0.6rem;
+  }
 }
