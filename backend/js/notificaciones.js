@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const contenedor = document.getElementById('contenedorNotificaciones');
     const contador = document.getElementById('contador');
 
-    function cargarNotificaciones() {
+    /* function cargarNotificaciones() {
         fetch('../../backend/php/notificaciones/cargar_notificaciones.php')
             .then(res => res.json())
             .then(data => {
@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 contador.textContent = data.length;
             });
-    }
+    } */
 
     // Función para actualizar estado
     window.actualizarNotificacion = function (id, accion) {

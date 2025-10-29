@@ -16,10 +16,9 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
     <div class="navbar-container">
         <!-- Logo -->
         <div class="navbar-brand">
-            <span class="logo-icon">⚡</span>
+            <span class="logo-icon"><i class="fas fa-stamp"></i></span>
             <span class="logo-text">DIGI - MPP</span>
         </div>
-
         <!-- Navegación Principal -->
         <div class="navbar-nav">
             <!-- Inicio -->
@@ -103,9 +102,9 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
             </div>
 
             <!-- Configuración -->
-            <a href="../reportes/reporte.php" class="nav-link <?= ($current_page === 'reporte' ) ? 'active' : '' ?>">
+            <a href="../reportes/reporte.php" class="nav-link <?= ($current_page === 'reporte') ? 'active' : '' ?>">
                 <i class="fas fa-file-alt"></i>
-                <span>reportes</span>
+                <span>Reportes</span>
             </a>
         </div>
 
@@ -113,20 +112,30 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
 
         <!-- Usuario y Logout -->
         <div class="navbar-user">
-            <!-- Sistema de Notificaciones -->
-            <div class="notificaciones">
-                <div id="notificaciones" style="position: relative; cursor: pointer;">
+            <!-- Sistema de Notificaciones  -->
+            <div class="notificaciones-modern">
+                <div id="notificaciones" class="notification-bell">
                     <i class="fas fa-bell"></i>
-                    <span id="contador" style="color: yellow; font-weight: bold; font-size: 18px; font-family: Arial, sans-serif;"></span>
+                    <span id="contador" class="notification-badge"></span>
+                    <span class="bell-ping"></span>
                 </div>
 
-                <!-- Lista de Notificaciones -->
-                <div id="listaNotificaciones" style="display: none; position: absolute; border-radius:7px; top:73px; right: none; background: #bb99f1ff; color:white; border: 1px solid #ccc; max-height: 300px; overflow-y: auto; padding: 10px; width: 300px; z-index: 100;">
-                    <strong>Notificaciones:</strong>
-                    <ul id="contenedorNotificaciones" style="list-style: none; padding-left: 0;"></ul>
+                <!-- Lista de Notificaciones Mejorada -->
+                <div id="listaNotificaciones" class="notification-panel">
+                    <div class="notification-header">
+                        <h4><i class="fas fa-bell"></i> Notificaciones</h4>
+<!--                         <button onclick="marcarTodasVistas()" class="btn-mark-all">
+                            <i class="fas fa-check-double"></i> Marcar todas
+                        </button> -->
+                    </div>
+                    <div class="notification-body">
+                        <ul id="contenedorNotificaciones" class="notification-list"></ul>
+                    </div>
+                    <!-- <div class="notification-footer">
+                        <a href="#" class="view-all-link">Ver todas las notificaciones</a>
+                    </div> -->
                 </div>
             </div>
-
             <!-- Información del Usuario -->
             <div class="user-info">
                 <div class="user-avatar">
@@ -250,21 +259,42 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
                 .then(res => res.json())
                 .then(data => {
                     contenedor.innerHTML = '';
+
                     if (data.length === 0) {
-                        contenedor.innerHTML = '<li style="padding: 5px;">No hay notificaciones.</li>';
+                        contenedor.innerHTML = `
+                    <div class="notification-empty">
+                        <i class="fas fa-bell-slash"></i>
+                        <p>No tienes notificaciones nuevas</p>
+                    </div>
+                `;
                         contador.textContent = '';
                         return;
                     }
 
                     data.forEach(n => {
                         const li = document.createElement('li');
-                        li.style.padding = '10px';
-                        li.style.borderBottom = '1px solid #eee';
                         li.innerHTML = `
-                            <div>${n.Mensaje}<br><small style="color: gray;">${n.FechaVisto}</small></div>
-                            <button onclick="actualizarNotificacion(${n.IdNotificacion}, 'vista')" style="margin:4px; background: transparent; border: none; cursor: pointer;">Marcar como vista</button>
-                            <button onclick="actualizarNotificacion(${n.IdNotificacion}, 'eliminar')" style="margin:4px; background: transparent; border: none; cursor: pointer; float: right;">X</button>
-                        `;
+                    <div class="notification-content">
+                        <div class="notification-icon">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <div class="notification-text">
+                            <p>${n.Mensaje}</p>
+                            <span class="notification-time">
+                                <i class="far fa-clock"></i>
+                                ${n.FechaVisto}
+                            </span>
+                            <div class="notification-actions">
+                                <button class="btn-mark-read" onclick="actualizarNotificacion(${n.IdNotificacion}, 'vista')">
+                                    <i class="fas fa-check"></i> Marcar como leída
+                                </button>
+                                /* <button class="btn-delete" onclick="actualizarNotificacion(${n.IdNotificacion}, 'eliminar')">
+                                    <i class="fas fa-trash"></i>
+                                </button> */
+                            </div>
+                        </div>
+                    </div>
+                `;
                         contenedor.appendChild(li);
                     });
 
@@ -290,25 +320,27 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
         if (btnCampana) {
             btnCampana.addEventListener('click', function(e) {
                 e.stopPropagation();
-                const visible = lista.style.display === 'block';
+                const visible = lista.style.display === 'flex';
 
                 // Cerrar dropdowns si están abiertos
                 document.querySelectorAll('.dropdown-menu').forEach(menu => {
                     menu.style.display = 'none';
                 });
 
-                lista.style.display = visible ? 'none' : 'block';
-                if (!visible) contador.textContent = '';
+                lista.style.display = visible ? 'none' : 'flex';
+                if (!visible) {
+                    cargarNotificaciones();
+                }
             });
 
-            // Cargar notificaciones al inicio y cada 30s
+            // Cargar al inicio y cada 30s
             cargarNotificaciones();
             setInterval(cargarNotificaciones, 30000);
         }
 
-        // Cerrar notificaciones al hacer click fuera
+        // Cerrar al hacer click fuera
         document.addEventListener('click', function(e) {
-            if (!e.target.closest('.notificaciones')) {
+            if (!e.target.closest('.notificaciones-modern')) {
                 if (lista) lista.style.display = 'none';
             }
         });
