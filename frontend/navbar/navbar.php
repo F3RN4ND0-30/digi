@@ -124,7 +124,7 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
                 <div id="listaNotificaciones" class="notification-panel">
                     <div class="notification-header">
                         <h4><i class="fas fa-bell"></i> Notificaciones</h4>
-<!--                         <button onclick="marcarTodasVistas()" class="btn-mark-all">
+                        <!--                         <button onclick="marcarTodasVistas()" class="btn-mark-all">
                             <i class="fas fa-check-double"></i> Marcar todas
                         </button> -->
                     </div>
@@ -165,8 +165,9 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
 </nav>
 
 <script>
+    // === NAVBAR CORE (sin notificaciones) ===
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('Navbar JavaScript cargado');
+        console.log('Navbar core cargado');
 
         // Toggle Mobile Nav
         const navbarNav = document.querySelector('.navbar-nav');
@@ -177,10 +178,9 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
             mobileToggle.classList.toggle('active');
         };
 
-        // Dropdown Menús Mejorado - ESPECÍFICO PARA DROPDOWN GRID
+        // Cerrar dropdowns al hacer click fuera de .nav-dropdown
         document.addEventListener('click', function(e) {
             if (!e.target.closest('.nav-dropdown')) {
-                // Cerrar todos los dropdowns
                 document.querySelectorAll('.dropdown-menu').forEach(menu => {
                     menu.style.display = 'none';
                 });
@@ -190,7 +190,7 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
             }
         });
 
-        // Manejar clicks en dropdown toggles
+        // Manejar clics en toggles de dropdown
         document.querySelectorAll('.dropdown-toggle').forEach(toggle => {
             toggle.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -200,7 +200,7 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
                 const menu = parentDropdown.querySelector('.dropdown-menu');
                 const isCurrentlyOpen = menu.style.display === 'block';
 
-                // Cerrar todos los dropdowns primero
+                // Cerrar todos y abrir solo el actual (si no estaba abierto)
                 document.querySelectorAll('.dropdown-menu').forEach(otherMenu => {
                     otherMenu.style.display = 'none';
                 });
@@ -208,25 +208,25 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
                     otherDropdown.classList.remove('active');
                 });
 
-                // Si no estaba abierto, abrirlo
                 if (!isCurrentlyOpen) {
                     menu.style.display = 'block';
                     parentDropdown.classList.add('active');
-
-                    // Log para debug
-                    console.log('Dropdown abierto:', menu.classList.contains('dropdown-grid') ? 'Grid Mode' : 'Normal Mode');
+                    console.log(
+                        'Dropdown abierto:',
+                        menu.classList.contains('dropdown-grid') ? 'Grid Mode' : 'Normal Mode'
+                    );
                 }
             });
         });
 
-        // Prevenir que clicks dentro del dropdown lo cierren
+        // Evitar que clicks dentro del dropdown lo cierren
         document.querySelectorAll('.dropdown-menu').forEach(menu => {
             menu.addEventListener('click', function(e) {
                 e.stopPropagation();
             });
         });
 
-        // Validar sesión cada 5 min
+        // === Validación de sesión (cada 5 minutos) ===
         setInterval(validarSesion, 300000);
 
         function validarSesion() {
@@ -243,108 +243,9 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
                         window.location.href = '../login.php';
                     }
                 })
-                .catch(error => {
-                    console.error('Error al validar sesión:', error);
-                });
+                .catch(err => console.error('Error al validar sesión:', err));
         }
 
-        // Sistema de Notificaciones
-        const btnCampana = document.getElementById('notificaciones');
-        const lista = document.getElementById('listaNotificaciones');
-        const contenedor = document.getElementById('contenedorNotificaciones');
-        const contador = document.getElementById('contador');
-
-        function cargarNotificaciones() {
-            fetch('../../backend/php/notificaciones/cargar_notificaciones.php')
-                .then(res => res.json())
-                .then(data => {
-                    contenedor.innerHTML = '';
-
-                    if (data.length === 0) {
-                        contenedor.innerHTML = `
-                    <div class="notification-empty">
-                        <i class="fas fa-bell-slash"></i>
-                        <p>No tienes notificaciones nuevas</p>
-                    </div>
-                `;
-                        contador.textContent = '';
-                        return;
-                    }
-
-                    data.forEach(n => {
-                        const li = document.createElement('li');
-                        li.innerHTML = `
-                    <div class="notification-content">
-                        <div class="notification-icon">
-                            <i class="fas fa-file-alt"></i>
-                        </div>
-                        <div class="notification-text">
-                            <p>${n.Mensaje}</p>
-                            <span class="notification-time">
-                                <i class="far fa-clock"></i>
-                                ${n.FechaVisto}
-                            </span>
-                            <div class="notification-actions">
-                                <button class="btn-mark-read" onclick="actualizarNotificacion(${n.IdNotificacion}, 'vista')">
-                                    <i class="fas fa-check"></i> Marcar como leída
-                                </button>
-                                /* <button class="btn-delete" onclick="actualizarNotificacion(${n.IdNotificacion}, 'eliminar')">
-                                    <i class="fas fa-trash"></i>
-                                </button> */
-                            </div>
-                        </div>
-                    </div>
-                `;
-                        contenedor.appendChild(li);
-                    });
-
-                    contador.textContent = data.length;
-                })
-                .catch(error => {
-                    console.error('Error cargando notificaciones:', error);
-                });
-        }
-
-        // Función global para botones de notificaciones
-        window.actualizarNotificacion = function(id, accion) {
-            fetch('../../backend/php/notificaciones/actualizar_notificacion.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: `id=${id}&accion=${accion}`
-            }).then(() => cargarNotificaciones());
-        }
-
-        // Manejar notificaciones
-        if (btnCampana) {
-            btnCampana.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const visible = lista.style.display === 'flex';
-
-                // Cerrar dropdowns si están abiertos
-                document.querySelectorAll('.dropdown-menu').forEach(menu => {
-                    menu.style.display = 'none';
-                });
-
-                lista.style.display = visible ? 'none' : 'flex';
-                if (!visible) {
-                    cargarNotificaciones();
-                }
-            });
-
-            // Cargar al inicio y cada 30s
-            cargarNotificaciones();
-            setInterval(cargarNotificaciones, 30000);
-        }
-
-        // Cerrar al hacer click fuera
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.notificaciones-modern')) {
-                if (lista) lista.style.display = 'none';
-            }
-        });
-
-        console.log('Navbar inicializado correctamente');
+        console.log('Navbar core inicializado');
     });
 </script>
