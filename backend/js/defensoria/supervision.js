@@ -311,7 +311,7 @@ function buscarEnTabla() {
 /**
  * Aplicar filtros combinados con paginación
  */
-function aplicarFiltros(textoBusqueda = "") {
+function aplicarFiltros(textoBusqueda = "") { 
   datosFiltrados = datosOriginales.filter((item) => {
     const coincideSemaforo =
       filtroActivo === "todos" || item.semaforo === filtroActivo;
@@ -331,12 +331,12 @@ function aplicarFiltros(textoBusqueda = "") {
   mostrarMensajeVacio(datosFiltrados.length === 0);
 
   // Actualizar contador de resultados
-  const contador = document.getElementById("contadorResultados");
+  const contador = document.getElementById("contadorResultados"); 
   if (contador) {
     contador.textContent = `${datosFiltrados.length} documento${
       datosFiltrados.length !== 1 ? "s" : ""
     }`;
-  }
+  } 
 }
 
 /**
@@ -590,10 +590,10 @@ function configurarEstadisticasInteractivas() {
 function configurarTooltips() {
   document.querySelectorAll(".semaforo").forEach((semaforo) => {
     const color = semaforo.classList.contains("verde")
-      ? "En tiempo (1-3 días)"
+      ? "En tiempo (1-5 días)"
       : semaforo.classList.contains("amarillo")
-      ? "Requiere atención (4-6 días)"
-      : "Urgente (7+ días)";
+      ? "Requiere atención (6-7 días)"
+      : "Urgente (8+ días)";
     semaforo.title = color;
   });
 

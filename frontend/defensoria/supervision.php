@@ -82,14 +82,14 @@ $resultado = $stmt->fetchAll(PDO::FETCH_ASSOC);
 // Procesar los datos
 $documentos = [];
 foreach ($resultado as $doc) {
-    // Días hábiles
+    // Días hábiles desde FechaIngreso
     $doc['DiasTranscurridos'] = calcularDiasHabiles($doc['FechaIngreso']);
 
-    // Semáforo
-    if ($doc['DiasTranscurridos'] <= 3) {
+    // Semáforo (1-5 verde, 6-7 amarillo, 8+ rojo)
+    if ($doc['DiasTranscurridos'] <= 5) {
         $doc['SemaforoColor'] = 'verde';
         $doc['SemaforoTexto'] = 'En tiempo';
-    } elseif ($doc['DiasTranscurridos'] <= 6) {
+    } elseif ($doc['DiasTranscurridos'] <= 7) {
         $doc['SemaforoColor'] = 'amarillo';
         $doc['SemaforoTexto'] = 'Atención';
     } else {
@@ -97,17 +97,19 @@ foreach ($resultado as $doc) {
         $doc['SemaforoTexto'] = 'Urgente';
     }
 
-    // Auto–BLOQUEO si pasan 7 días hábiles, solo si NO está bloqueado (4) ni desbloqueado (6)
-    if ($doc['DiasTranscurridos'] >= 7 && (int)$doc['IdEstadoDocumento'] !== 4 && (int)$doc['IdEstadoDocumento'] !== 6) {
+    // Auto–BLOQUEO si pasan 10 días hábiles,
+    // solo si NO está bloqueado (4) ni desbloqueado (6)
+    if ($doc['DiasTranscurridos'] >= 10 && (int)$doc['IdEstadoDocumento'] !== 4 && (int)$doc['IdEstadoDocumento'] !== 6) {
         $upd = $pdo->prepare("UPDATE documentos SET IdEstadoDocumento = 4 WHERE IdDocumentos = ?");
         $upd->execute([$doc['IdDocumentos']]);
         $doc['IdEstadoDocumento'] = 4;
     }
 
-    // Bloqueo automático después de 3 días hábiles si estaba DESBLOQUEADO (6) y no finalizó
+    // Bloqueo automático después de 5 días hábiles
+    // si estaba DESBLOQUEADO (6) y no finalizó
     if ((int)$doc['IdEstadoDocumento'] === 6 && !empty($doc['FechaDesbloqueo']) && (int)$doc['Finalizado'] !== 1) {
         $diasDesdeDesbloqueo = calcularDiasHabiles($doc['FechaDesbloqueo']);
-        if ($diasDesdeDesbloqueo >= 3) {
+        if ($diasDesdeDesbloqueo >= 5) {
             $upd = $pdo->prepare("UPDATE documentos SET IdEstadoDocumento = 4, FechaDesbloqueo = NULL WHERE IdDocumentos = ?");
             $upd->execute([$doc['IdDocumentos']]);
             $doc['IdEstadoDocumento'] = 4;
@@ -190,7 +192,7 @@ $puedeDesbloquear = in_array($rolActual, [1, 4], true);
 <body>
     <div class="layout-escritorio">
         <?php include "../navbar/$navbarFile"; ?>
-                    
+
         <main class="contenido-principal">
             <!-- Header -->
             <div class="supervision-header">
@@ -200,9 +202,9 @@ $puedeDesbloquear = in_array($rolActual, [1, 4], true);
                         <p>Monitoreo de documentos externos - Defensoría del Pueblo</p>
                     </div>
                     <div class="header-legend">
-                        <div class="legend-item"><span class="semaforo verde"></span><span>1-3 días (En tiempo)</span></div>
-                        <div class="legend-item"><span class="semaforo amarillo"></span><span>4-6 días (Atención)</span></div>
-                        <div class="legend-item"><span class="semaforo rojo"></span><span>7+ días (Urgente)</span></div>
+                        <div class="legend-item"><span class="semaforo verde"></span><span>1-5 días (En tiempo)</span></div>
+                        <div class="legend-item"><span class="semaforo amarillo"></span><span>6-7 días (Atención)</span></div>
+                        <div class="legend-item"><span class="semaforo rojo"></span><span>8+ días (Urgente)</span></div>
                     </div>
                 </div>
             </div>
@@ -418,7 +420,7 @@ $puedeDesbloquear = in_array($rolActual, [1, 4], true);
                 fd.append('accion', 'desbloquear');
                 fd.append('id', idDoc);
                 fd.append('password', res.value.pass);
-                fd.append('estado_destino', 6); // 🔹 siempre DESBLOQUEADO (6)
+                fd.append('estado_destino', 6); // siempre DESBLOQUEADO (6)
 
                 fetch('../../backend/php/desbloquear_documento.php', {
                         method: 'POST',
