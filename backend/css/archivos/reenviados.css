@@ -44,13 +44,64 @@ body {
   }
 }
 
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-contenido {
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  width: 500px;
+  max-width: 90%;
+}
+
+.modal-header h3 {
+  margin: 0;
+}
+
+.close-modal {
+  float: right;
+  font-size: 20px;
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+.resultados-lista {
+  list-style: none;
+  padding: 0;
+  margin: 5px 0 15px 0;
+  border: 1px solid #ccc;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.resultados-lista li {
+  padding: 5px;
+  cursor: pointer;
+}
+
+.resultados-lista li:hover {
+  background: #f0f0f0;
+}
+
 /* Layout general - SIN interferir con navbar */
 .layout-escritorio {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
   position: relative;
-  z-index: 1;
+  z-index: auto;
   /* Z-index bajo para no interferir con navbar */
 }
 
@@ -60,7 +111,7 @@ body {
   background: rgba(248, 250, 252, 0.95);
   backdrop-filter: blur(10px);
   position: relative;
-  z-index: 1;
+  z-index: auto;
   /* Z-index bajo para no interferir con navbar */
 }
 
@@ -75,7 +126,7 @@ body {
   border: 1px solid var(--reenviar-border);
   animation: fadeInUp 0.6s ease forwards;
   position: relative;
-  z-index: 1;
+  z-index: auto;
   /* Z-index bajo para no interferir con navbar */
   /* NO overflow: hidden - esto es lo que permite que funcione el dropdown */
 }
@@ -102,22 +153,12 @@ body {
   margin: 0;
   position: relative;
   overflow: hidden;
-  /* Solo el header tiene overflow hidden para efectos */
-  z-index: 2;
-}
+  z-index: auto;
 
-.tarjeta-header::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg,
-      transparent,
-      rgba(255, 255, 255, 0.2),
-      transparent);
-  animation: shimmer 4s infinite;
+  /* 🔸 NUEVO: flex para alinear contenido */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 @keyframes shimmer {
@@ -150,14 +191,14 @@ body {
   align-items: center;
   gap: 0.75rem;
   position: relative;
-  z-index: 2;
+  z-index: auto;
 }
 
 /* Body de la tarjeta */
 .tarjeta-body {
   padding: 2rem;
   position: relative;
-  z-index: 2;
+  z-index: auto;
 }
 
 /* Tabla con overflow específico solo horizontal */
@@ -169,7 +210,7 @@ body {
   /* Vertical visible para no cortar elementos como tooltips */
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   position: relative;
-  z-index: 2;
+  z-index: auto;
 }
 
 .tarjeta table {
@@ -180,7 +221,7 @@ body {
   margin: 0;
   min-width: 900px;
   position: relative;
-  z-index: 2;
+  z-index: auto;
 }
 
 .tarjeta table thead {
@@ -189,7 +230,7 @@ body {
       var(--reenviar-primary-dark));
   color: var(--reenviar-white);
   position: relative;
-  z-index: 3;
+  z-index: auto;
 }
 
 .tarjeta table thead::after {
@@ -214,7 +255,7 @@ body {
   letter-spacing: 0.5px;
   font-size: 0.875rem;
   position: relative;
-  z-index: 3;
+  z-index: auto;
 }
 
 .tarjeta table td {
@@ -224,14 +265,14 @@ body {
   vertical-align: middle;
   transition: var(--reenviar-transition);
   position: relative;
-  z-index: 3;
+  z-index: auto;
 }
 
 /* Hover effects mejorados */
 .tarjeta table tbody tr {
   transition: var(--reenviar-transition);
   position: relative;
-  z-index: 3;
+  z-index: auto;
 }
 
 .tarjeta table tbody tr:nth-child(even) {
@@ -336,7 +377,7 @@ body {
   border: 1px solid transparent;
   transition: var(--reenviar-transition);
   position: relative;
-  z-index: 4;
+  z-index: auto;
 }
 
 .badge.bg-primary {
@@ -369,7 +410,7 @@ body {
   letter-spacing: 0.5px;
   position: relative;
   overflow: hidden;
-  z-index: 4;
+  z-index: auto;
   min-width: 100px;
   justify-content: center;
 }
@@ -455,7 +496,7 @@ body {
   position: relative;
   overflow: hidden;
   font-weight: 500;
-  z-index: 3;
+  z-index: auto;
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -524,7 +565,7 @@ body {
 .dataTables_wrapper {
   font-family: "Inter", sans-serif;
   position: relative;
-  z-index: 2;
+  z-index: auto;
 }
 
 .dataTables_length select,

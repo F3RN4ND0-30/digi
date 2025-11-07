@@ -42,11 +42,14 @@ $sql = "SELECT
             e.Estado,
             a_origen.Nombre AS AreaOrigen,
             m.Observacion,
-            m.FechaMovimiento
+            m.FechaMovimiento,
+            d.NumeroFolios,          -- Número de folios
+            t.Descripcion AS TipoObjeto  -- Descripción del tipo de objeto
         FROM movimientodocumento m
         INNER JOIN documentos d ON m.IdDocumentos = d.IdDocumentos
         INNER JOIN estadodocumento e ON d.IdEstadoDocumento = e.IdEstadoDocumento
         INNER JOIN areas a_origen ON m.AreaOrigen = a_origen.IdAreas
+        INNER JOIN tipo_objeto t ON d.IdTipoObjeto = t.IdTipoObjeto  -- JOIN con tipo_objeto
         WHERE m.AreaDestino = ? AND m.Recibido = 0
         ORDER BY m.FechaMovimiento DESC";
 
@@ -113,6 +116,8 @@ $documentos_pendientes = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         <th>Estado</th>
                                         <th>Área de Origen</th>
                                         <th>Fecha de Envío</th>
+                                        <th>N° Folios</th>
+                                        <th>Tipo de Objeto</th>
                                         <th>Observación</th>
                                         <th>Acción</th>
                                     </tr>
@@ -144,6 +149,12 @@ $documentos_pendientes = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                     <i class="fas fa-clock me-1"></i>
                                                     <?= date('d/m/Y H:i', strtotime($doc['FechaMovimiento'])) ?>
                                                 </small>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-secondary"><?= htmlspecialchars($doc['NumeroFolios']) ?></span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-info"><?= htmlspecialchars($doc['TipoObjeto']) ?></span>
                                             </td>
                                             <td>
                                                 <div class="text-truncate" style="max-width: 150px;" title="<?= htmlspecialchars($doc['Observacion']) ?>">

@@ -32,7 +32,7 @@ if ($documento['Finalizado']) {
 }
 
 // Actualizar el campo Finalizado
-$stmt = $pdo->prepare("UPDATE documentos SET Finalizado = 1, IdEstadoDocumento = 1 WHERE IdDocumentos = ?");
+$stmt = $pdo->prepare("UPDATE documentos SET Finalizado = 1, IdEstadoDocumento = 7 WHERE IdDocumentos = ?");
 $stmt->execute([$documento_id]);
 
 header("Location: ../../../frontend/archivos/reenviar.php?msg=Documento finalizado correctamente");

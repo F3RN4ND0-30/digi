@@ -20,7 +20,7 @@ $navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
 $area_id = $_SESSION['dg_area_id'] ?? null;
 
 $sql = "
-SELECT m.IdMovimientoDocumento, m.IdDocumentos, d.NumeroDocumento, d.Asunto, d.IdUsuarios, d.IdAreaFinal,
+SELECT m.IdMovimientoDocumento, m.IdDocumentos, d.NumeroDocumento, d.NumeroFolios, d.Asunto, d.IdUsuarios, d.IdAreaFinal,
                u.Nombres, u.ApellidoPat
         FROM movimientodocumento m
         INNER JOIN documentos d ON m.IdDocumentos = d.IdDocumentos
@@ -105,7 +105,10 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
         <main class="contenido-principal">
             <div class="tarjeta">
                 <div class="tarjeta-header">
-                    <h2><i class="fas fa-share"></i> Reenviar Documentos</h2>
+                    <h2 class="mb-0"><i class="fas fa-share"></i> Reenviar Documentos</h2>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCrearInforme" onclick="abrirModalInforme()">
+                        <i class="fas fa-file-alt"></i> Crear Informe
+                    </button>
                 </div>
 
                 <div class="tarjeta-body">
@@ -123,7 +126,9 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
                                         <th><i class="fas fa-align-left"></i> Asunto</th>
                                         <th><i class="fas fa-user"></i> Remitente</th>
                                         <th><i class="fas fa-building"></i> Reenviar a</th>
+                                        <th><i class="fas fa-building"></i> N° de Folios nuevo</th>
                                         <th><i class="fas fa-sticky-note"></i> Observación</th>
+                                        <th><i class="fas fa-sticky-note"></i> Informe</th>
                                         <th><i class="fas fa-cogs"></i> Acción</th>
                                     </tr>
                                 </thead>
@@ -155,6 +160,15 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
                                                         <?php endforeach; ?>
                                                     </select>
                                                 </td>
+                                                <td class="folios-doc">
+                                                    <input
+                                                        type="number"
+                                                        name="numero_folios"
+                                                        min="<?= $doc['NumeroFolios'] ?>"
+                                                        value="<?= $doc['NumeroFolios'] ?>"
+                                                        class="form-control form-control-sm"
+                                                        required>
+                                                </td>
                                                 <td class="observacion-input">
                                                     <input type="text"
                                                         name="observacion"
@@ -162,25 +176,23 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
                                                         placeholder="Observación opcional..."
                                                         maxlength="100">
                                                 </td>
-                                                <td class="accion-btn d-flex flex-column gap-1">
-                                                    <!-- Botón Reenviar -->
-                                                    <input type="hidden" name="id_documento" value="<?= $doc['IdDocumentos'] ?>">
-                                                    <button type="submit" class="btn btn-success btn-sm w-100 btn-reenviar">
-                                                        <i class="fas fa-paper-plane"></i> Reenviar
-                                                    </button>
-                                            </form>
+                                                <td class="informe-input" data-id-documento="<?= $doc['IdDocumentos'] ?>">
+                                                    <select class="select-informes" name="id_informe">
+                                                        <option>Cargando...</option>
+                                                    </select>
+                                                </td>
+                                                <td class="accion-btn">
+                                                    <form method="POST" action="procesar_reenvio.php">
+                                                        <input type="hidden" name="id_documento" value="<?= $doc['IdDocumentos'] ?>">
+                                                        <button type="submit">Reenviar</button>
+                                                    </form>
 
-                                            <?php if ($doc['IdAreaFinal'] == $_SESSION['dg_area_id']): ?>
-                                                <!-- Botón Finalizar (solo para el creador del documento) -->
-                                                <form method="POST" action="../../backend/php/archivos/finalizar_documento.php">
-                                                    <input type="hidden" name="id_documento" value="<?= $doc['IdDocumentos'] ?>">
-                                                    <button type="submit" class="btn btn-danger btn-sm w-100 btn-finalizar"
-                                                        onclick="return confirm('¿Estás seguro de que deseas marcar este documento como finalizado?');">
-                                                        <i class="fas fa-check-circle"></i> Finalizar
-                                                    </button>
-                                                </form>
-                                            <?php endif; ?>
-                                            </td>
+                                                    <form method="POST" action="../../backend/php/archivos/finalizar_documento.php"
+                                                        onsubmit="return confirm('¿Seguro que quieres finalizar el documento? Si lo finalizas ya nadie lo podrá reenviar.')">
+                                                        <input type="hidden" name="id_documento" value="<?= $doc['IdDocumentos'] ?>">
+                                                        <button type="submit">Finalizar</button>
+                                                    </form>
+                                                </td>
                                             </form>
                                         </tr>
                                     <?php endforeach; ?>
@@ -193,6 +205,36 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
         </main>
     </div>
 
+    <!-- Modal Crear Informe -->
+    <div id="modalCrearInforme" class="modal-overlay" style="display: none;">
+        <div class="modal-contenido">
+            <div class="modal-header">
+                <h3><i class="fas fa-file-alt"></i> Crear Informe</h3>
+                <button class="close-modal" onclick="cerrarModalInforme()">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <input type="hidden" id="idDocumentoModal" name="id_documento">
+                <input type="hidden" id="idAreaModal" value="<?= $_SESSION['dg_area_id'] ?>">
+                <label for="buscarDocumento">Documento asociado:</label>
+                <input type="text" id="buscarDocumento" placeholder="Escriba número o asunto..." autocomplete="off">
+                <ul id="resultadosDocumento" class="resultados-lista"></ul>
+
+                <label for="tituloInforme">Nombre del informe:</label>
+                <input type="text" id="tituloInforme" placeholder="Ingrese el título..." autocomplete="off">
+
+                <label for="nombreFinalInforme">Nombre final:</label>
+                <input type="text" id="nombreFinalInforme" readonly>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="cerrarModalInforme()">Cancelar</button>
+                <button class="btn btn-success" onclick="guardarInforme()">Guardar Informe</button>
+            </div>
+        </div>
+    </div>
+
+
     <!-- Ahora sí cargamos el JS de notificaciones normalmente -->
     <script src="../../backend/js/notificaciones.js"></script>
 
@@ -200,6 +242,171 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
+    <script>
+        // Abrir el modal
+        function abrirModalInforme() {
+            document.getElementById('modalCrearInforme').style.display = 'flex';
+        }
+
+        // Cerrar el modal
+        function cerrarModalInforme() {
+            document.getElementById('modalCrearInforme').style.display = 'none';
+        }
+
+        // Cerrar al hacer clic fuera del contenido
+        window.addEventListener('click', function(e) {
+            const modal = document.getElementById('modalCrearInforme');
+            if (e.target === modal) {
+                cerrarModalInforme();
+            }
+        });
+    </script>
+    <script>
+        document.querySelectorAll('.informe-input').forEach(td => {
+            const idDocumento = td.dataset.idDocumento;
+            const select = td.querySelector('.select-informes');
+            if (!idDocumento || !select) return;
+
+            fetch(`../../backend/php/archivos/obtener_informes.php?id_documento=${idDocumento}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (!Array.isArray(data) || data.length === 0) {
+                        select.innerHTML = '<option>No hay informes</option>';
+                        return;
+                    }
+
+                    select.innerHTML = data.map(inf =>
+                        `<option value="${inf.IdInforme}">${inf.NombreInforme}</option>`
+                    ).join('');
+                })
+                .catch(err => {
+                    console.error('Error cargando informes:', err);
+                    select.innerHTML = '<option>Error al cargar</option>';
+                });
+        });
+    </script>
+    <script>
+        let documentoSeleccionado = null;
+        let idArea = <?= $_SESSION['dg_area_id'] ?>;
+
+        function abrirModalInforme() {
+            document.getElementById('modalCrearInforme').style.display = 'flex';
+            actualizarCorrelativo();
+        }
+
+        function cerrarModalInforme() {
+            document.getElementById('modalCrearInforme').style.display = 'none';
+            documentoSeleccionado = null;
+            document.getElementById('buscarDocumento').value = '';
+            document.getElementById('resultadosDocumento').innerHTML = '';
+            document.getElementById('tituloInforme').value = '';
+            document.getElementById('nombreFinalInforme').value = '';
+        }
+
+        // Función para actualizar correlativo y mostrar en el input de nombre final
+        function actualizarCorrelativo() {
+            fetch('../../backend/php/archivos/obtener_correlativo_informe.php?area=' + idArea)
+                .then(res => res.json())
+                .then(data => {
+                    const correlativo = data.correlativo;
+                    const año = data.año;
+                    const tituloInput = document.getElementById('tituloInforme').value;
+                    document.getElementById('nombreFinalInforme').value = `INFORME N°. ${correlativo}-${año}-${tituloInput}`;
+                });
+        }
+
+        // Buscador de documentos
+        const buscarInput = document.getElementById('buscarDocumento');
+        const resultadosLista = document.getElementById('resultadosDocumento');
+
+        buscarInput.addEventListener('input', function() {
+            const q = this.value.trim();
+            if (q.length < 2) {
+                resultadosLista.innerHTML = '';
+                return;
+            }
+
+            fetch(`../../backend/php/archivos/buscar_documentos.php?q=${encodeURIComponent(q)}`)
+                .then(res => res.json())
+                .then(data => {
+                    resultadosLista.innerHTML = '';
+                    data.forEach(doc => {
+                        const li = document.createElement('li');
+                        li.textContent = `${doc.NumeroDocumento} - ${doc.Asunto}`;
+                        li.onclick = () => {
+                            documentoSeleccionado = doc.IdDocumentos;
+                            buscarInput.value = `${doc.NumeroDocumento} - ${doc.Asunto}`;
+                            document.getElementById('idDocumentoModal').value = doc.IdDocumentos; // <--- importante
+                            resultadosLista.innerHTML = '';
+                        };
+                        resultadosLista.appendChild(li);
+                    });
+                });
+        });
+
+        // Actualizar nombre final mientras escribe el usuario
+        document.getElementById('tituloInforme').addEventListener('input', function() {
+            actualizarCorrelativo();
+        });
+
+        function seleccionarDocumento(id, texto) {
+            document.getElementById('buscarDocumento').value = texto;
+            document.getElementById('idDocumentoModal').value = id; // <--- aquí guardamos el id
+            document.getElementById('resultadosDocumento').innerHTML = '';
+        }
+
+        // Guardar informe
+        function guardarInforme() {
+            const id_documento = document.getElementById('idDocumentoModal').value;
+            const id_area = document.getElementById('idAreaModal').value;
+            const titulo = document.getElementById('tituloInforme').value.trim();
+
+            if (!id_documento || !id_area || !titulo) {
+                alert("Faltan datos para crear el informe.");
+                return;
+            }
+
+            fetch('../../backend/php/archivos/crear_informe.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `id_documento=${encodeURIComponent(id_documento)}&id_area=${encodeURIComponent(id_area)}&titulo=${encodeURIComponent(titulo)}`
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Actualizar nombre final en el modal
+                        document.getElementById('nombreFinalInforme').value = data.nombre_final;
+
+                        // Guardamos el IdInforme en un hidden (opcional)
+                        let inputIdInforme = document.getElementById('idInformeModal');
+                        if (!inputIdInforme) {
+                            inputIdInforme = document.createElement('input');
+                            inputIdInforme.type = 'hidden';
+                            inputIdInforme.id = 'idInformeModal';
+                            inputIdInforme.value = data.id_informe;
+                            document.getElementById('modalCrearInforme').appendChild(inputIdInforme);
+                        } else {
+                            inputIdInforme.value = data.id_informe;
+                        }
+
+                        // Cerrar modal
+                        cerrarModalInforme();
+
+                        // ---- NUEVO: recargar página para actualizar tabla ----
+                        location.reload();
+
+                    } else {
+                        alert("Error: " + data.message);
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert("Error al crear el informe");
+                });
+        }
+    </script>
     <script>
         $(document).ready(function() {
             // Inicializar DataTable
@@ -267,8 +474,6 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
             });
         });
     </script>
-
-
     <!-- JavaScript del Navbar -->
     <script>
         $(document).ready(function() {
@@ -347,6 +552,15 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
                 });
             });
         });
+    </script>
+    <script>
+        function incrementarFolios(button) {
+            const input = button.previousElementSibling;
+            let currentValue = parseInt(input.value);
+            if (currentValue >= 1) {
+                input.value = currentValue + 1;
+            }
+        }
     </script>
 </body>
 

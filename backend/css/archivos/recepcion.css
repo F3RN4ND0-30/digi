@@ -228,44 +228,54 @@ body:not(.navbar-horizontal) {
 }
 
 /* Column widths optimizadas */
+/*numero*/
 .tarjeta table th:nth-child(1),
 .tarjeta table td:nth-child(1) {
     width: 15%;
 }
 
+/*asunto*/
 .tarjeta table th:nth-child(2),
 .tarjeta table td:nth-child(2) {
     width: 20%;
 }
 
+/*estado*/
 .tarjeta table th:nth-child(3),
 .tarjeta table td:nth-child(3) {
     width: 10%;
 }
 
+/*area origen*/
 .tarjeta table th:nth-child(4),
 .tarjeta table td:nth-child(4) {
     width: 17%;
 }
 
+/*fecha envio*/
 .tarjeta table th:nth-child(5),
 .tarjeta table td:nth-child(5) {
     width: 15%;
 }
 
+/*numero de folios*/
 .tarjeta table th:nth-child(6),
 .tarjeta table td:nth-child(6) {
-    width: 15%;
+    width: 15%;    
+    text-align: center;
 }
 
+/*tipo objeto*/
 .tarjeta table th:nth-child(7),
 .tarjeta table td:nth-child(7) {
     width: 35%;
+    text-align: center;
 }
 
+/*observacion*/
 .tarjeta table th:nth-child(8),
 .tarjeta table td:nth-child(8) {
-    width: 10%;
+    width: 35%;
 }
 
 /* Hover effects */
