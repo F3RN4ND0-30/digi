@@ -47,6 +47,10 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
                                 <i class="fas fa-plus-circle"></i>
                                 <span>Registrar</span>
                             </a>
+                            <a href="../archivos/memorandums.php" class="module-item <?= ($current_page === 'memorandums') ? 'active' : '' ?>">
+                                <i class="fas fa-file"></i>
+                                <span>Memorandums</span>
+                            </a>
                             <a href="../archivos/recepcion.php" class="module-item <?= ($current_page === 'recepcion') ? 'active' : '' ?>">
                                 <i class="fas fa-inbox"></i>
                                 <span>Recepción</span>
