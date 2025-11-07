@@ -190,6 +190,8 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
                                                     <form method="POST" action="../../backend/php/archivos/finalizar_documento.php"
                                                         onsubmit="return confirm('¿Seguro que quieres finalizar el documento? Si lo finalizas ya nadie lo podrá reenviar.')">
                                                         <input type="hidden" name="id_documento" value="<?= $doc['IdDocumentos'] ?>">
+                                                        <input type="hidden" name="numero_folios" value="<?= $doc['NumeroFolios'] ?>">
+                                                        <input type="hidden" name="id_informe" value="<?= $idInformeSeleccionado ?>">
                                                         <button type="submit" class="btn btn-danger btn-sm">Finalizar</button>
                                                     </form>
                                                 </td>
@@ -267,6 +269,18 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
             if (e.target === modal) {
                 cerrarModalInforme();
             }
+        });
+    </script>
+    <script>
+        document.querySelectorAll('.finalizar-form').forEach(form => {
+            form.addEventListener('submit', function() {
+                const row = form.closest('tr');
+                const folios = row.querySelector('input[name="numero_folios"]').value;
+                const informe = row.querySelector('select[name="id_informe"]').value;
+
+                document.getElementById('numero_folios_finalizar').value = folios;
+                document.getElementById('id_informe_finalizar').value = informe;
+            });
         });
     </script>
     <script>

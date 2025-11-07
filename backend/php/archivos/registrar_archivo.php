@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Valores por defecto
     $exterior_bool = 0;
-    $area_final = $area_id;  // Asignamos automáticamente el área de origen como área final
+    $area_final = $area_destino;  // Asignamos automáticamente el área de origen como área final
 
     // Solo para ADMIN o MESA DE ENTRADA
     if ($rol_id === 1 || $rol_id === 3) {
