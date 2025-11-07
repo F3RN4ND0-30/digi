@@ -147,7 +147,7 @@ unset($_SESSION['mensaje_memo']);
                             <label><i class="fas fa-align-left"></i> Asunto:</label>
                             <input type="text" name="asunto" required placeholder="Asunto principal del memorándum">
                         </div>
-
+                                    
                         <!-- (SIN CUERPO: SOLO CABECERA) -->
                     </div>
 
