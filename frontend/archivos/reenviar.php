@@ -126,9 +126,9 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
                                         <th><i class="fas fa-align-left"></i> Asunto</th>
                                         <th><i class="fas fa-user"></i> Remitente</th>
                                         <th><i class="fas fa-building"></i> Reenviar a</th>
-                                        <th><i class="fas fa-building"></i> N° de Folios nuevo</th>
-                                        <th><i class="fas fa-sticky-note"></i> Observación</th>
-                                        <th><i class="fas fa-sticky-note"></i> Informe</th>
+                                        <th><i class="fas fa-copy"></i> N° de Folios</th>
+                                        <th><i class="fas fa-comment-dots"></i> Observación</th>
+                                        <th><i class="fas fa-file-alt"></i> Informe</th>
                                         <th><i class="fas fa-cogs"></i> Acción</th>
                                     </tr>
                                 </thead>
@@ -176,21 +176,21 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
                                                         placeholder="Observación opcional..."
                                                         maxlength="100">
                                                 </td>
-                                                <td class="informe-input" data-id-documento="<?= $doc['IdDocumentos'] ?>">
-                                                    <select class="select-informes" name="id_informe">
+                                                <td class="informe-input area-select" data-id-documento="<?= $doc['IdDocumentos'] ?>">
+                                                    <select class="select-informes area-pequena" name="id_informe">
                                                         <option>Cargando...</option>
                                                     </select>
                                                 </td>
                                                 <td class="accion-btn">
                                                     <form method="POST" action="procesar_reenvio.php">
                                                         <input type="hidden" name="id_documento" value="<?= $doc['IdDocumentos'] ?>">
-                                                        <button type="submit">Reenviar</button>
+                                                        <button type="submit" class="btn btn-success btn-sm">Reenviar</button>
                                                     </form>
 
                                                     <form method="POST" action="../../backend/php/archivos/finalizar_documento.php"
                                                         onsubmit="return confirm('¿Seguro que quieres finalizar el documento? Si lo finalizas ya nadie lo podrá reenviar.')">
                                                         <input type="hidden" name="id_documento" value="<?= $doc['IdDocumentos'] ?>">
-                                                        <button type="submit">Finalizar</button>
+                                                        <button type="submit" class="btn btn-danger btn-sm">Finalizar</button>
                                                     </form>
                                                 </td>
                                             </form>
@@ -207,24 +207,31 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
 
     <!-- Modal Crear Informe -->
     <div id="modalCrearInforme" class="modal-overlay" style="display: none;">
-        <div class="modal-contenido">
-            <div class="modal-header">
+        <div class="modal-contenido tarjeta-modal animar-entrada">
+            <div class="modal-header tarjeta-header">
                 <h3><i class="fas fa-file-alt"></i> Crear Informe</h3>
                 <button class="close-modal" onclick="cerrarModalInforme()">&times;</button>
             </div>
 
-            <div class="modal-body">
+            <div class="modal-body tarjeta-body">
                 <input type="hidden" id="idDocumentoModal" name="id_documento">
                 <input type="hidden" id="idAreaModal" value="<?= $_SESSION['dg_area_id'] ?>">
-                <label for="buscarDocumento">Documento asociado:</label>
-                <input type="text" id="buscarDocumento" placeholder="Escriba número o asunto..." autocomplete="off">
-                <ul id="resultadosDocumento" class="resultados-lista"></ul>
 
-                <label for="tituloInforme">Nombre del informe:</label>
-                <input type="text" id="tituloInforme" placeholder="Ingrese el título..." autocomplete="off">
+                <div class="form-group">
+                    <label for="buscarDocumento">Documento asociado:</label>
+                    <input type="text" id="buscarDocumento" placeholder="Escriba número o asunto..." autocomplete="off">
+                    <ul id="resultadosDocumento" class="resultados-lista"></ul>
+                </div>
 
-                <label for="nombreFinalInforme">Nombre final:</label>
-                <input type="text" id="nombreFinalInforme" readonly>
+                <div class="form-group">
+                    <label for="tituloInforme">Nombre del informe:</label>
+                    <input type="text" id="tituloInforme" placeholder="Ingrese el título..." autocomplete="off">
+                </div>
+
+                <div class="form-group">
+                    <label for="nombreFinalInforme">Nombre final:</label>
+                    <input type="text" id="nombreFinalInforme" readonly>
+                </div>
             </div>
 
             <div class="modal-footer">
@@ -233,6 +240,7 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </div>
     </div>
+
 
 
     <!-- Ahora sí cargamos el JS de notificaciones normalmente -->
@@ -267,17 +275,45 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
             const select = td.querySelector('.select-informes');
             if (!idDocumento || !select) return;
 
+            // Mostrar estado de carga
+            select.innerHTML = '<option>Cargando...</option>';
+
+            // Cargar informes por documento
             fetch(`../../backend/php/archivos/obtener_informes.php?id_documento=${idDocumento}`)
                 .then(res => res.json())
                 .then(data => {
+                    let opciones = '';
+
                     if (!Array.isArray(data) || data.length === 0) {
-                        select.innerHTML = '<option>No hay informes</option>';
-                        return;
+                        opciones = '<option value="">No hay informes</option>';
+                    } else {
+                        opciones = '<option value=""></option>'; // opción vacía inicial
+                        opciones += data.map(inf =>
+                            `<option value="${inf.IdInforme}">${inf.NombreInforme}</option>`
+                        ).join('');
                     }
 
-                    select.innerHTML = data.map(inf =>
-                        `<option value="${inf.IdInforme}">${inf.NombreInforme}</option>`
-                    ).join('');
+                    select.innerHTML = opciones;
+
+                    // --- Inicializar Selectize ---
+                    const $select = $(select);
+
+                    // Destruir instancia previa si ya existe (por recargas dinámicas)
+                    if ($select[0].selectize) {
+                        $select[0].selectize.destroy();
+                    }
+
+                    $select.selectize({
+                        allowEmptyOption: true,
+                        placeholder: 'Seleccione un informe',
+                        sortField: 'text',
+                        create: false,
+                        dropdownParent: 'body',
+                        onFocus: function() {
+                            this.removeOption('');
+                            this.refreshOptions(false);
+                        }
+                    });
                 })
                 .catch(err => {
                     console.error('Error cargando informes:', err);

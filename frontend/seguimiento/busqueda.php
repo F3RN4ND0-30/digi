@@ -215,7 +215,9 @@ $navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
                             <th>Área Origen</th>
                             <th>Área Destino</th>
                             <th>Fecha de Movimiento</th>
-                            <th>Estado</th>
+                            <th>Folios</th>
+                            <th>Informes</th>
+                            <th>Estado</th>                            
                             <th>Observación</th>
                         </tr>
                     </thead>
@@ -239,6 +241,8 @@ $navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
                         <td>${mov.OrigenNombre || mov.AreaOrigen}</td>
                         <td>${mov.DestinoNombre || mov.AreaDestino}</td>
                         <td class="fecha-cell">${mov.FechaMovimiento}</td>
+                        <td>${mov.NumeroFolios || mov.NumeroFolios}</td>
+                        <td>${mov.InformeNombre || '-' }</td>
                         <td class="${estadoClass}">${estadoTexto}</td>
                         <td class="observacion-cell">${mov.Observacion || '-'}</td>
                     </tr>

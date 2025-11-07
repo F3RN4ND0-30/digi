@@ -29,7 +29,7 @@ try {
     $correlativo = intval($max_correlativo) + 1;
 
     // Generar nombre final
-    $nombre_final = "INFORME N°. {$correlativo}-{$año_actual}-{$titulo}";
+    $nombre_final = "INFORME N°.{$correlativo}-{$año_actual}-{$titulo}";
 
     // Insertar informe
     $stmt = $pdo->prepare("

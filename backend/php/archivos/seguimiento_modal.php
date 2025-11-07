@@ -11,14 +11,24 @@ if (!$id) {
 
 try {
     // 🔸 1. Obtener movimientos del documento
-    $sql = "SELECT md.IdMovimientoDocumento, md.AreaOrigen, md.AreaDestino, md.FechaMovimiento, md.Observacion, md.Recibido,
-                   ao.Nombre AS OrigenNombre,
-                   ad.Nombre AS DestinoNombre
-            FROM movimientodocumento md
-            LEFT JOIN areas ao ON md.AreaOrigen = ao.IdAreas
-            LEFT JOIN areas ad ON md.AreaDestino = ad.IdAreas
-            WHERE md.IdDocumentos = ?
-            ORDER BY md.FechaMovimiento ASC";
+    $sql = "SELECT 
+            md.IdMovimientoDocumento, 
+            md.AreaOrigen, 
+            md.AreaDestino, 
+            md.FechaMovimiento, 
+            md.NumeroFolios, 
+            md.IdInforme, 
+            md.Observacion, 
+            md.Recibido,
+            ao.Nombre AS OrigenNombre,
+            ad.Nombre AS DestinoNombre,
+            af.NombreInforme AS InformeNombre
+        FROM movimientodocumento md
+        LEFT JOIN informes af ON md.IdInforme = af.IdInforme
+        LEFT JOIN areas ao ON md.AreaOrigen = ao.IdAreas
+        LEFT JOIN areas ad ON md.AreaDestino = ad.IdAreas
+        WHERE md.IdDocumentos = ?
+        ORDER BY md.FechaMovimiento ASC";
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$id]);
