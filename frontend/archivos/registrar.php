@@ -34,6 +34,9 @@ $areas = $pdo->query("SELECT IdAreas, Nombre FROM areas")->fetchAll(PDO::FETCH_A
 
 $mensaje = $_SESSION['mensaje'] ?? '';
 unset($_SESSION['mensaje']);
+
+//Obtener tipo de objetos (CD, USB, etc)
+$tipos_objeto = $pdo->query("SELECT IdTipoObjeto, Descripcion FROM tipo_objeto")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -171,19 +174,15 @@ unset($_SESSION['mensaje']);
                             <input type="number" name="numero_folios" min="1" placeholder="Ej: 3">
                         </div>
 
-                        <?php if ($rol_id === 1 || $rol_id === 3): ?>
-                            <div class="form-group">
-                                <label><i class="fas fa-map-marker-alt"></i> Área Final:</label>
-                                <select name="area_final" required>
-                                    <option value="">Seleccione un área</option>
-                                    <?php foreach ($areas as $area) : ?>
-                                        <?php if ((int)$area['IdAreas'] !== (int)$area_id) : ?>
-                                            <option value="<?= $area['IdAreas'] ?>"><?= htmlspecialchars($area['Nombre']) ?></option>
-                                        <?php endif; ?>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                        <?php endif; ?>
+                        <div class="form-group">
+                            <label><i class="fas fa-copy"></i> ¿Trae objeto?</label>
+                            <select name="tipo_objeto" required>
+                                <option value="">--SELECCIONE TIPO--</option>
+                                <?php foreach ($tipos_objeto as $tipo) : ?>
+                                    <option value="<?= htmlspecialchars($tipo['IdTipoObjeto']) ?>"><?= htmlspecialchars($tipo['Descripcion']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
 
                         <div class="form-group full-width">
                             <label><i class="fas fa-align-left"></i> Asunto:</label>
