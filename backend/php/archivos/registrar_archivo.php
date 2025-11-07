@@ -117,9 +117,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $idDocumentoNuevo = $pdo->lastInsertId();
 
         // Insertar movimiento
-        $mov = $pdo->prepare("INSERT INTO movimientodocumento (IdDocumentos, AreaOrigen, AreaDestino, Recibido, Observacion)
-                              VALUES (?, ?, ?, 0, '')");
-        $mov->execute([$idDocumentoNuevo, $area_id, $area_destino]);
+        $mov = $pdo->prepare("INSERT INTO movimientodocumento (IdDocumentos, AreaOrigen, AreaDestino, Recibido, Observacion, NumeroFolios)
+                              VALUES (?, ?, ?, 0, '', ?)");
+        $mov->execute([$idDocumentoNuevo, $area_id, $area_destino, $numero_folios]);
 
         // Crear notificación
         $mensaje = "Nuevo documento recibido: N° $numero - '$asunto' desde $areaOrigenNombre";

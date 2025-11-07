@@ -125,7 +125,7 @@ table thead {
 table th,
 table td {
   padding: 1rem;
-  text-align: left;
+  text-align: center !important;
   vertical-align: middle;
   border-bottom: 1px solid var(--busqueda-border);
 }

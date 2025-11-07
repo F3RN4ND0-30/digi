@@ -44,55 +44,141 @@ body {
   }
 }
 
+/* Overlay translúcido */
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(5px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 2000;
 }
 
-.modal-contenido {
-  background: #fff;
-  padding: 20px;
-  border-radius: 8px;
+/* Contenedor principal del modal */
+.tarjeta-modal {
+  background: rgba(255, 255, 255, 0.97);
+  border-radius: var(--reenviar-radius);
+  box-shadow: var(--reenviar-shadow);
   width: 500px;
   max-width: 90%;
+  overflow: hidden;
+  border: 1px solid var(--reenviar-border);
 }
 
-.modal-header h3 {
-  margin: 0;
+/* Animación de entrada */
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
+.animar-entrada {
+  animation: fadeInScale 0.4s ease forwards;
+}
+
+/* Header con degradado y línea inferior */
+.modal-header {
+  background: linear-gradient(135deg, var(--reenviar-primary), var(--reenviar-primary-dark));
+  color: var(--reenviar-white);
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+}
+
+.modal-header::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--reenviar-accent), var(--reenviar-success));
+}
+
+/* Botón de cierre */
 .close-modal {
-  float: right;
-  font-size: 20px;
-  cursor: pointer;
+  font-size: 1.5rem;
+  color: var(--reenviar-white);
   background: none;
   border: none;
+  cursor: pointer;
+  transition: transform 0.2s ease;
 }
 
+.close-modal:hover {
+  transform: scale(1.2);
+}
+
+/* Cuerpo del modal */
+.modal-body {
+  padding: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.2rem;
+}
+
+label {
+  display: block;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 0.4rem;
+}
+
+input[type="text"] {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  outline: none;
+  transition: border 0.2s, box-shadow 0.2s;
+  background: #f8fafc;
+}
+
+input[type="text"]:focus {
+  border-color: var(--reenviar-primary);
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+}
+
+/* Resultados */
 .resultados-lista {
   list-style: none;
   padding: 0;
-  margin: 5px 0 15px 0;
-  border: 1px solid #ccc;
+  margin-top: 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
   max-height: 150px;
   overflow-y: auto;
+  background: #fff;
 }
 
 .resultados-lista li {
-  padding: 5px;
+  padding: 0.6rem;
   cursor: pointer;
+  transition: background 0.2s;
 }
 
 .resultados-lista li:hover {
-  background: #f0f0f0;
+  background: #f1f5f9;
+}
+
+
+/* Footer del modal */
+.modal-footer {
+  padding: 1rem 1.5rem;
+  text-align: right;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
 }
 
 /* Layout general - SIN interferir con navbar */
@@ -247,7 +333,7 @@ body {
 
 .tarjeta table th {
   padding: 1rem 1.25rem;
-  text-align: left;
+  text-align: center;
   border: none;
   vertical-align: middle;
   font-weight: 600;
@@ -258,9 +344,18 @@ body {
   z-index: auto;
 }
 
+th i {
+  margin-right: 6px;
+}
+
+th {
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
 .tarjeta table td {
   padding: 1rem 1.25rem;
-  text-align: left;
+  text-align: center;
   border-bottom: 1px solid var(--reenviar-border);
   vertical-align: middle;
   transition: var(--reenviar-transition);
@@ -358,6 +453,12 @@ body {
 }
 
 .area-pequena {
+  width: 250px;
+  font-size: 0.85rem;
+  padding: 0.5rem 0.7rem;
+}
+
+.informe-pequena {
   width: 250px;
   font-size: 0.85rem;
   padding: 0.5rem 0.7rem;
