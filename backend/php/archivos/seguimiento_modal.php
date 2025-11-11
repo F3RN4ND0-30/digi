@@ -10,7 +10,7 @@ if (!$id) {
 }
 
 try {
-    // 🔸 1. Obtener movimientos del documento
+    // 🔹 1. Obtener movimientos del documento
     $sql = "SELECT 
             md.IdMovimientoDocumento, 
             md.AreaOrigen, 
@@ -34,19 +34,21 @@ try {
     $stmt->execute([$id]);
     $movimientos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // 🔸 2. Obtener el estado "Finalizado" del documento
-    $sqlFinalizado = "SELECT Finalizado FROM documentos WHERE IdDocumentos = ?";
+    // 🔹 2. Obtener info del documento (Finalizado e IdEstadoDocumento)
+    $sqlFinalizado = "SELECT Finalizado, IdEstadoDocumento FROM documentos WHERE IdDocumentos = ?";
     $stmtFinal = $pdo->prepare($sqlFinalizado);
     $stmtFinal->execute([$id]);
     $docInfo = $stmtFinal->fetch(PDO::FETCH_ASSOC);
 
-    $finalizado = $docInfo['Finalizado'] ?? 0; // por defecto 0 si no se encuentra
+    $finalizado = $docInfo['Finalizado'] ?? 0;
+    $idEstado = $docInfo['IdEstadoDocumento'] ?? null;
 
-    // 🔸 3. Enviar todo al frontend
+    // 🔹 3. Enviar todo al frontend
     echo json_encode([
         'success' => true,
         'id_documento' => $id,
         'Finalizado' => (int)$finalizado,
+        'IdEstadoDocumento' => (int)$idEstado,
         'movimientos' => $movimientos
     ]);
 } catch (Exception $e) {

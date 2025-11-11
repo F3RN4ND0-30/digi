@@ -24,25 +24,26 @@ $like = "%$busqueda%";
 if ($rol_id == 1) {
     $sql = "
         SELECT 
-            md1.IdDocumentos,
-            d.NumeroDocumento,
-            d.Asunto,
-            d.Finalizado,                            -- ✅ Agregado
-            md1.AreaDestino,
-            a.Nombre AS NombreAreaDestino,
-            md1.FechaMovimiento,
-            md1.Recibido
-        FROM movimientodocumento md1
-        LEFT JOIN areas a ON md1.AreaDestino = a.IdAreas
-        INNER JOIN (
-            SELECT IdDocumentos, MAX(FechaMovimiento) AS MaxFecha
-            FROM movimientodocumento
-            GROUP BY IdDocumentos
-        ) ult ON md1.IdDocumentos = ult.IdDocumentos AND md1.FechaMovimiento = ult.MaxFecha
-        INNER JOIN documentos d ON d.IdDocumentos = md1.IdDocumentos
-        WHERE d.NumeroDocumento LIKE :busqueda OR d.Asunto LIKE :busqueda
-        ORDER BY md1.FechaMovimiento DESC
-        LIMIT 100
+        md1.IdDocumentos,
+        d.NumeroDocumento,
+        d.Asunto,
+        d.Finalizado,
+        d.IdEstadoDocumento,
+        md1.AreaDestino,
+        a.Nombre AS NombreAreaDestino,
+        md1.FechaMovimiento,
+        md1.Recibido
+    FROM movimientodocumento md1
+    LEFT JOIN areas a ON md1.AreaDestino = a.IdAreas
+    INNER JOIN (
+        SELECT IdDocumentos, MAX(FechaMovimiento) AS MaxFecha
+        FROM movimientodocumento
+        GROUP BY IdDocumentos
+    ) ult ON md1.IdDocumentos = ult.IdDocumentos AND md1.FechaMovimiento = ult.MaxFecha
+    INNER JOIN documentos d ON d.IdDocumentos = md1.IdDocumentos
+    WHERE d.NumeroDocumento LIKE :busqueda OR d.Asunto LIKE :busqueda
+    ORDER BY md1.FechaMovimiento DESC
+    LIMIT 100
     ";
 
     $stmt = $pdo->prepare($sql);
@@ -56,30 +57,31 @@ if ($rol_id == 1) {
 
     $sql = "
         SELECT 
-            md1.IdDocumentos,
-            d.NumeroDocumento,
-            d.Asunto,
-            d.Finalizado,                            -- ✅ Agregado
-            md1.AreaDestino,
-            a.Nombre AS NombreAreaDestino,
-            md1.FechaMovimiento,
-            md1.Recibido
-        FROM movimientodocumento md1
-        LEFT JOIN areas a ON md1.AreaDestino = a.IdAreas
-        INNER JOIN (
-            SELECT IdDocumentos, MAX(FechaMovimiento) AS MaxFecha
-            FROM movimientodocumento
-            GROUP BY IdDocumentos
-        ) ult ON md1.IdDocumentos = ult.IdDocumentos AND md1.FechaMovimiento = ult.MaxFecha
-        INNER JOIN documentos d ON d.IdDocumentos = md1.IdDocumentos
-        WHERE md1.IdDocumentos IN (
-            SELECT DISTINCT IdDocumentos
-            FROM movimientodocumento
-            WHERE AreaOrigen = :area_id OR AreaDestino = :area_id
-        )
-        AND (d.NumeroDocumento LIKE :busqueda OR d.Asunto LIKE :busqueda)
-        ORDER BY md1.FechaMovimiento DESC
-        LIMIT 100
+        md1.IdDocumentos,
+        d.NumeroDocumento,
+        d.Asunto,
+        d.Finalizado,
+        d.IdEstadoDocumento,
+        md1.AreaDestino,
+        a.Nombre AS NombreAreaDestino,
+        md1.FechaMovimiento,
+        md1.Recibido
+    FROM movimientodocumento md1
+    LEFT JOIN areas a ON md1.AreaDestino = a.IdAreas
+    INNER JOIN (
+        SELECT IdDocumentos, MAX(FechaMovimiento) AS MaxFecha
+        FROM movimientodocumento
+        GROUP BY IdDocumentos
+    ) ult ON md1.IdDocumentos = ult.IdDocumentos AND md1.FechaMovimiento = ult.MaxFecha
+    INNER JOIN documentos d ON d.IdDocumentos = md1.IdDocumentos
+    WHERE md1.IdDocumentos IN (
+        SELECT DISTINCT IdDocumentos
+        FROM movimientodocumento
+        WHERE AreaOrigen = :area_id OR AreaDestino = :area_id
+    )
+    AND (d.NumeroDocumento LIKE :busqueda OR d.Asunto LIKE :busqueda)
+    ORDER BY md1.FechaMovimiento DESC
+    LIMIT 100
     ";
 
     $stmt = $pdo->prepare($sql);

@@ -546,6 +546,25 @@ th {
   box-shadow: 0 4px 15px rgba(0, 184, 148, 0.4);
 }
 
+.btn-observacion {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  /* azul degradado */
+  color: var(--reenviar-white);
+  border: 1px solid rgba(0, 123, 255, 0.3);
+  transition: all 0.2s ease;
+}
+
+.btn-observacion:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0056b3, #004494);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);
+}
+
+.btn-observacion:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .btn-secondary {
   background: linear-gradient(135deg, #6c757d, #5a6268);
   color: var(--reenviar-white);

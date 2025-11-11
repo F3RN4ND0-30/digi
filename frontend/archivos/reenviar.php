@@ -187,12 +187,34 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
                                                         <button type="submit" class="btn btn-success btn-sm">Reenviar</button>
                                                     </form>
 
-                                                    <form method="POST" action="../../backend/php/archivos/finalizar_documento.php"
+                                                    <form method="POST"
+                                                        action="../../backend/php/archivos/finalizar_documento.php"
+                                                        class="finalizar-form"
                                                         onsubmit="return confirm('¿Seguro que quieres finalizar el documento? Si lo finalizas ya nadie lo podrá reenviar.')">
+
                                                         <input type="hidden" name="id_documento" value="<?= $doc['IdDocumentos'] ?>">
+                                                        <!-- Agrega también estos campos -->
                                                         <input type="hidden" name="numero_folios" value="<?= $doc['NumeroFolios'] ?>">
-                                                        <input type="hidden" name="id_informe" value="<?= $idInformeSeleccionado ?>">
+                                                        <input type="hidden" name="id_informe" value="">
+                                                        <input type="hidden" name="observacion" value="">
+                                                        <input type="hidden" name="nueva_area" value="">
+
                                                         <button type="submit" class="btn btn-danger btn-sm">Finalizar</button>
+                                                    </form>
+
+                                                    <form method="POST"
+                                                        action="../../backend/php/archivos/observacion_documento.php"
+                                                        class="observacion-form"
+                                                        onsubmit="return confirm('¿Seguro que quieres observar el documento? Si lo observas ya nadie lo podrá reenviar.')">
+
+                                                        <input type="hidden" name="id_documento" value="<?= $doc['IdDocumentos'] ?>">
+                                                        <!-- Agrega también estos campos -->
+                                                        <input type="hidden" name="numero_folios" value="<?= $doc['NumeroFolios'] ?>">
+                                                        <input type="hidden" name="id_informe" value="">
+                                                        <input type="hidden" name="observacion" value="">
+                                                        <input type="hidden" name="nueva_area" value="">
+
+                                                        <button type="submit" class="btn btn-observacion btn-sm" style="margin-top: 5px;">Observar</button>
                                                     </form>
                                                 </td>
                                             </form>
@@ -243,7 +265,26 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
         </div>
     </div>
 
+    <!-- Modal de contraseña -->
+    <div id="modalPassword" class="modal-overlay" style="display: none;">
+        <div class="modal-contenido tarjeta-modal animar-entrada">
+            <div class="modal-header tarjeta-header">
+                <h3><i class="fas fa-lock"></i> Confirmar acción</h3>
+                <button class="close-modal" onclick="cerrarModalPassword()">&times;</button>
+            </div>
 
+            <div class="modal-body tarjeta-body">
+                <p>Ingrese su contraseña para continuar:</p>
+                <input type="password" id="passwordInput" placeholder="Contraseña" autocomplete="off">
+                <div id="passwordError" style="color: red; display: none; margin-top: 5px;">Contraseña incorrecta.</div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="cerrarModalPassword()">Cancelar</button>
+                <button class="btn btn-success" onclick="confirmarPassword()">Confirmar</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Ahora sí cargamos el JS de notificaciones normalmente -->
     <script src="../../backend/js/notificaciones.js"></script>
@@ -272,14 +313,34 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
         });
     </script>
     <script>
+        document.querySelectorAll('.observacion-form').forEach(form => {
+            form.addEventListener('submit', function() {
+                const row = form.closest('tr');
+                const folios = row.querySelector('input[name="numero_folios"]').value;
+                const informe = row.querySelector('select[name="id_informe"]').value;
+                const observacion = row.querySelector('input[name="observacion"]').value;
+                const area = row.querySelector('select[name="nueva_area"]').value;
+
+                form.querySelector('input[name="numero_folios"]').value = folios;
+                form.querySelector('input[name="id_informe"]').value = informe;
+                form.querySelector('input[name="observacion"]').value = observacion;
+                form.querySelector('input[name="nueva_area"]').value = area;
+            });
+        });
+    </script>
+    <script>
         document.querySelectorAll('.finalizar-form').forEach(form => {
             form.addEventListener('submit', function() {
                 const row = form.closest('tr');
                 const folios = row.querySelector('input[name="numero_folios"]').value;
                 const informe = row.querySelector('select[name="id_informe"]').value;
+                const observacion = row.querySelector('input[name="observacion"]').value;
+                const area = row.querySelector('select[name="nueva_area"]').value;
 
-                document.getElementById('numero_folios_finalizar').value = folios;
-                document.getElementById('id_informe_finalizar').value = informe;
+                form.querySelector('input[name="numero_folios"]').value = folios;
+                form.querySelector('input[name="id_informe"]').value = informe;
+                form.querySelector('input[name="observacion"]').value = observacion;
+                form.querySelector('input[name="nueva_area"]').value = area;
             });
         });
     </script>

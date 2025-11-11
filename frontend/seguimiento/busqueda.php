@@ -156,12 +156,23 @@ $navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
                     {
                         data: null,
                         render: function(data, type, row) {
-                            // 🔸 Si el documento está finalizado, mostrar 🏁
+                            // 🔹 Si tiene estado 8, mostrar Bloqueado no Finalizado
+                            if (row.IdEstadoDocumento == 8) {
+                                return '🚫 Bloqueado';
+                            }
+
+                            // 🔹 Si está finalizado (pero no bloqueado)
                             if (row.Finalizado == 1) {
                                 return '🏁 Finalizado';
-                            } else {
-                                return row.Recibido == 1 ? '✅ Recibido' : '⏳ Pendiente';
                             }
+
+                            // 🔹 Si fue recibido
+                            if (row.Recibido == 1) {
+                                return '✅ Recibido';
+                            }
+
+                            // 🔹 Caso por defecto
+                            return '⏳ Pendiente';
                         }
                     },
                     {
@@ -205,8 +216,9 @@ $navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
                         return;
                     }
 
-                    // 🔸 Nuevo: valor del campo Finalizado (de la tabla documentos)
+                    // 🔸 Campos de la tabla documentos
                     const finalizado = data.Finalizado;
+                    const idEstado = data.IdEstadoDocumento; // <-- nuevo
 
                     let html = `
                 <table class="tabla-seguimiento">
@@ -227,10 +239,15 @@ $navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
                     data.movimientos.forEach((mov, index) => {
                         let estadoClass, estadoTexto;
 
-                        // 🔸 Si el documento está finalizado y este es el último movimiento
+                        // 🔹 Si el documento está finalizado y este es el último movimiento
                         if (finalizado == 1 && index === data.movimientos.length - 1) {
-                            estadoClass = 'estado-finalizado';
-                            estadoTexto = '🏁 Finalizado';
+                            if (idEstado == 8) {
+                                estadoClass = 'estado-bloqueado';
+                                estadoTexto = '🚫 Bloqueado';
+                            } else {
+                                estadoClass = 'estado-finalizado';
+                                estadoTexto = '🏁 Finalizado';
+                            }
                         } else {
                             estadoClass = mov.Recibido == 1 ? 'estado-recibido' : 'estado-pendiente';
                             estadoTexto = mov.Recibido == 1 ? '✅ Recibido' : '⏳ Pendiente';
@@ -242,7 +259,7 @@ $navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
                         <td>${mov.DestinoNombre || mov.AreaDestino}</td>
                         <td class="fecha-cell">${mov.FechaMovimiento}</td>
                         <td>${mov.NumeroFolios || mov.NumeroFolios}</td>
-                        <td>${mov.InformeNombre || '-' }</td>
+                        <td>${mov.InformeNombre || '-'}</td>
                         <td class="${estadoClass}">${estadoTexto}</td>
                         <td class="observacion-cell">${mov.Observacion || '-'}</td>
                     </tr>
