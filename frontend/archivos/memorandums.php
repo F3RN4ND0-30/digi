@@ -21,7 +21,7 @@ $navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
 $usuario_id = $_SESSION['dg_id'] ?? null;
 $area_id    = $_SESSION['dg_area_id'] ?? null;
 
-// Info del área emisora (Nombre + Abreviatura como prefijo de memo)
+// Info del área emisora
 $areaInfo = null;
 if ($area_id) {
     $stmt = $pdo->prepare("SELECT Nombre, Abreviatura FROM areas WHERE IdAreas = ?");
@@ -34,9 +34,17 @@ $areasStmt = $pdo->prepare("SELECT IdAreas, Nombre FROM areas ORDER BY Nombre");
 $areasStmt->execute();
 $areas = $areasStmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Mensaje de operación
+// Mensaje
 $mensaje = $_SESSION['mensaje_memo'] ?? '';
 unset($_SESSION['mensaje_memo']);
+
+// Base del código (sin el texto de tipo)
+$anio = date('Y');
+if ($areaInfo && !empty($areaInfo['Abreviatura'])) {
+    $baseCodigo = 'N° XXX-' . $anio . '-' . $areaInfo['Abreviatura'];
+} else {
+    $baseCodigo = 'Se generará automáticamente al guardar';
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -46,17 +54,12 @@ unset($_SESSION['mensaje_memo']);
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Registrar Memorándum - DIGI MPP</title>
 
-    <!-- Fuentes y estilos generales -->
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- CSS del Navbar (dinámico) -->
     <link rel="stylesheet" href="../../backend/css/navbar/<?= $navbarCss ?>" />
-
-    <!-- Reutilizamos el mismo estilo del formulario de registrar -->
     <link rel="stylesheet" href="../../backend/css/sisvis/escritorio.css" />
 
-    <!-- Selectize -->
     <link href="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/css/selectize.default.css" rel="stylesheet" />
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/js/standalone/selectize.min.js"></script>
@@ -66,7 +69,6 @@ unset($_SESSION['mensaje_memo']);
 
 <body>
     <div class="layout-escritorio">
-        <!-- Navbar -->
         <?php include "../navbar/$navbarFile"; ?>
 
         <main class="contenido-principal">
@@ -81,35 +83,28 @@ unset($_SESSION['mensaje_memo']);
                 <form method="POST" action="../../backend/php/memorandum/guardar_memo.php">
                     <div class="form-grid">
 
-                        <!-- TIPO DE MEMORÁNDUM -->
+                        <!-- TIPO -->
                         <div class="form-group">
                             <label><i class="fas fa-tags"></i> Tipo de memorándum:</label>
-                            <select name="tipo_memo" required>
+                            <select name="tipo_memo" id="tipo_memo" required>
                                 <option value="">Seleccione un tipo</option>
                                 <option value="CIRCULAR">MEMORÁNDUM CIRCULAR</option>
                                 <option value="MULTIPLE">MEMORÁNDUM MÚLTIPLE</option>
                             </select>
                         </div>
 
-                        <!-- CÓDIGO DE MEMORÁNDUM (SOLO VISTA PREVIA) -->
+                        <!-- CÓDIGO REFERENCIAL -->
                         <div class="form-group">
                             <label><i class="fas fa-hashtag"></i> Código de Memorándum (referencial):</label>
-                            <input type="text"
-                                value="<?php
-                                        $anio = date('Y');
-                                        if ($areaInfo && !empty($areaInfo['Abreviatura'])) {
-                                            // Ejemplos:
-                                            //  MEMORÁNDUM MÚLTIPLE N° 001-2025-MPP-OGAF-US
-                                            //  MEMORÁNDUM CIRCULAR N° 043-2025-OGS
-                                            echo htmlspecialchars('XXX-' . $anio . '-' . $areaInfo['Abreviatura'] . '-MEMO');
-                                        } else {
-                                            echo 'Se generará automáticamente al guardar';
-                                        }
-                                        ?>"
+                            <input
+                                type="text"
+                                id="codigo_preview"
+                                value="<?= htmlspecialchars($baseCodigo) ?>"
+                                data-base="<?= htmlspecialchars($baseCodigo) ?>"
                                 readonly
-                                style="background-color: #a19f9fff; color: #555;">
-                            <small style="font-size:0.8rem;color:#666;">
-                                El número exacto se generará automáticamente por área y año.
+                                style="background-color:#a19f9fff;color:#555;">
+                            <small style="font-size:.8rem;color:#666;">
+                                El número correlativo real se generará por área y año.
                             </small>
                         </div>
 
@@ -119,26 +114,28 @@ unset($_SESSION['mensaje_memo']);
                             <input type="text"
                                 value="<?= $areaInfo ? htmlspecialchars($areaInfo['Nombre']) : 'No asignada' ?>"
                                 readonly
-                                style="background-color: #a19f9fff; color: #555;">
+                                style="background-color:#a19f9fff;color:#555;">
                             <input type="hidden" name="area_emisora" value="<?= (int)$area_id ?>">
                         </div>
 
-                        <!-- ÁREAS DESTINO (MÚLTIPLE) -->
+                        <!-- ÁREAS DESTINO -->
                         <div class="form-group">
                             <label><i class="fas fa-share-nodes"></i> Áreas de destino:</label>
                             <select name="areas_destino[]" id="areas_destino" multiple required>
                                 <?php foreach ($areas as $a): ?>
-                                    <option value="<?= $a['IdAreas'] ?>">
-                                        <?= htmlspecialchars($a['Nombre']) ?>
-                                    </option>
+                                    <?php if ((int)$a['IdAreas'] !== (int)$area_id): ?>
+                                        <option value="<?= $a['IdAreas'] ?>">
+                                            <?= htmlspecialchars($a['Nombre']) ?>
+                                        </option>
+                                    <?php endif; ?>
                                 <?php endforeach; ?>
                             </select>
-                            <small style="font-size:0.8rem;color:#666;">Puede seleccionar una o varias áreas.</small>
+                            <small style="font-size:.8rem;color:#666;">Puede seleccionar una o varias áreas.</small>
                         </div>
 
-                        <!-- NÚMERO DE FOLIOS (TOTAL DEL MEMO + ANEXOS) -->
+                        <!-- FOLIOS OPCIONAL -->
                         <div class="form-group">
-                            <label><i class="fas fa-copy"></i> Número de folios:</label>
+                            <label><i class="fas fa-copy"></i> Número de folios (opcional):</label>
                             <input type="number" name="numero_folios" min="1" placeholder="Ej: 3">
                         </div>
 
@@ -147,8 +144,10 @@ unset($_SESSION['mensaje_memo']);
                             <label><i class="fas fa-align-left"></i> Asunto:</label>
                             <input type="text" name="asunto" required placeholder="Asunto principal del memorándum">
                         </div>
-                                    
-                        <!-- (SIN CUERPO: SOLO CABECERA) -->
+
+                        <!-- Tipo de objeto fijo SIN OBJETO (id=3) -->
+                        <input type="hidden" name="tipo_objeto" value="3">
+
                     </div>
 
                     <button type="submit">
@@ -159,29 +158,55 @@ unset($_SESSION['mensaje_memo']);
         </main>
     </div>
 
-    <!-- Notificaciones -->
     <script src="../../backend/js/notificaciones.js"></script>
 
     <script>
-        // Forzar mayúsculas en texto
         document.addEventListener('DOMContentLoaded', function() {
-            const inputs = document.querySelectorAll('input[type="text"], textarea');
-
-            inputs.forEach(function(element) {
-                element.addEventListener('input', function() {
+            // Forzar mayúsculas en inputs de texto
+            const inputs = document.querySelectorAll('input[type="text"]');
+            inputs.forEach(el => {
+                el.addEventListener('input', function() {
                     this.value = this.value.toUpperCase();
                 });
             });
-        });
 
-        // Selectize para el select múltiple de áreas destino
-        $(document).ready(function() {
+            // Selectize para destinos
             $('#areas_destino').selectize({
                 plugins: ['remove_button'],
                 placeholder: 'Seleccione una o varias áreas',
                 sortField: 'text',
                 create: false
             });
+
+            // Actualizar código referencial según tipo de memo
+            const tipoSelect   = document.getElementById('tipo_memo');
+            const codigoInput  = document.getElementById('codigo_preview');
+            const baseCodigo   = codigoInput ? codigoInput.dataset.base : '';
+
+            function actualizarCodigo() {
+                if (!codigoInput) return;
+
+                const tipo = tipoSelect.value;
+
+                if (!tipo || !baseCodigo || baseCodigo.indexOf('Se generará') === 0) {
+                    codigoInput.value = baseCodigo;
+                    return;
+                }
+
+                let prefijo = '';
+                if (tipo === 'MULTIPLE') {
+                    prefijo = 'MEMORÁNDUM MÚLTIPLE ';
+                } else if (tipo === 'CIRCULAR') {
+                    prefijo = 'MEMORÁNDUM CIRCULAR ';
+                }
+
+                codigoInput.value = prefijo + baseCodigo;
+            }
+
+            if (tipoSelect && codigoInput) {
+                tipoSelect.addEventListener('change', actualizarCodigo);
+                actualizarCodigo(); // por si ya viene seleccionado algo
+            }
         });
     </script>
 </body>
