@@ -7,33 +7,61 @@ if (!isset($_SESSION['dg_id'])) {
 
 require '../../db/conexion.php';
 
+// Recibir datos del formulario
 $documento_id = $_POST['id_documento'] ?? null;
+$numero_folios = $_POST['numero_folios'] ?? null;
+$id_informe = $_POST['id_informe'] ?? null;
 $area_usuario = $_SESSION['dg_area_id'] ?? null;
 
 if (!$documento_id || !$area_usuario) {
     die("❌ Datos inválidos.");
 }
 
-// Verificar si el área del usuario es el área final del documento
-$consulta = $pdo->prepare("SELECT IdAreaFinal, Finalizado FROM documentos WHERE IdDocumentos = ?");
-$consulta->execute([$documento_id]);
-$documento = $consulta->fetch(PDO::FETCH_ASSOC);
+// Convertir folios e informe a enteros si vienen
+$numero_folios = $numero_folios ? intval($numero_folios) : null;
+$id_informe = $id_informe ? intval($id_informe) : null;
 
-if (!$documento) {
-    die("❌ Documento no encontrado.");
+try {
+    // Obtener documento
+    $stmt = $pdo->prepare("SELECT IdAreaFinal, Finalizado, NumeroFolios FROM documentos WHERE IdDocumentos = ?");
+    $stmt->execute([$documento_id]);
+    $doc = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$doc) {
+        throw new Exception("❌ Documento no encontrado.");
+    }
+
+    // Verificar permiso de área
+    if ((int)$doc['IdAreaFinal'] !== (int)$area_usuario) {
+        throw new Exception("❌ No tienes permiso para finalizar este documento. Área usuario: $area_usuario");
+    }
+
+    // Verificar si ya está finalizado
+    if ($doc['Finalizado']) {
+        throw new Exception("❌ El documento ya está finalizado.");
+    }
+
+    // Si no viene número de folios desde el form, usar el del documento
+    if (!$numero_folios) {
+        $numero_folios = $doc['NumeroFolios'];
+    }
+
+    // Actualizar documento como finalizado
+    $stmtUpdate = $pdo->prepare("UPDATE documentos SET Finalizado = 1, IdEstadoDocumento = 7, NumeroFolios = ? WHERE IdDocumentos = ?");
+    $stmtUpdate->execute([$numero_folios, $documento_id]);
+
+    // Insertar movimiento final en movimientodocumento
+    $stmtInsert = $pdo->prepare("
+        INSERT INTO movimientodocumento 
+        (IdDocumentos, AreaOrigen, AreaDestino, FechaMovimiento, Observacion, Recibido, NumeroFolios, IdInforme)
+        VALUES (?, ?, ?, NOW(), ?, 1, ?, ?)
+    ");
+
+    $observacion = "Documento finalizado";
+    $stmtInsert->execute([$documento_id, $area_usuario, $area_usuario, $observacion, $numero_folios, $id_informe]);
+
+    header("Location: ../../../frontend/archivos/reenviar.php?msg=Documento finalizado correctamente");
+    exit();
+} catch (Exception $e) {
+    die("❌ Error al finalizar el documento: " . $e->getMessage());
 }
-
-if ((int)$documento['IdAreaFinal'] !== (int)$area_usuario) {
-    die("❌ No tienes permiso para finalizar este documento. Área usuario: $area_usuario");
-}
-
-if ($documento['Finalizado']) {
-    die("❌ El documento ya está finalizado.");
-}
-
-// Actualizar el campo Finalizado
-$stmt = $pdo->prepare("UPDATE documentos SET Finalizado = 1, IdEstadoDocumento = 7 WHERE IdDocumentos = ?");
-$stmt->execute([$documento_id]);
-
-header("Location: ../../../frontend/archivos/reenviar.php?msg=Documento finalizado correctamente");
-exit;
