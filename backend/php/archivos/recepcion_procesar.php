@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $tipo = $_POST['tipo'] ?? 'DOC';
 
     /* ======================================================
-       FLUJO DOCUMENTO (igual que ya tenías)
+       FLUJO DOCUMENTO (igual que ya tenías)    
        ====================================================== */
     if ($tipo === 'DOC') {
         $id_movimiento = $_POST['id_movimiento'] ?? null;
@@ -72,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header("Location: ../../../frontend/archivos/recepcion.php");
         exit();
     }
-
+    
     /* ======================================================
        FLUJO MEMORÁNDUM
        - Elimina el registro de memorandum_destinos para esta área
