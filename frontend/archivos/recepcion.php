@@ -3,12 +3,7 @@ session_start();
 
 if (isset($_SESSION['mensaje'])) {
     $mensaje = addslashes($_SESSION['mensaje']);
-    echo "
-    <script>
-        window.onload = function() {
-            alert('$mensaje');
-        };
-    </script>";
+    echo "<script>window.onload=function(){alert('$mensaje');};</script>";
     unset($_SESSION['mensaje']);
 }
 
@@ -35,30 +30,67 @@ if (!$area_id) {
     die("❌ No se pudo determinar el área del usuario.");
 }
 
-$sql = "SELECT 
+/* ==========================================================
+   1) DOCUMENTOS pendientes (flujo existente)
+   ========================================================== */
+$sqlDocs = "SELECT 
+            'DOC' AS TipoRegistro,
             m.IdMovimientoDocumento,
+            NULL  AS IdMemo,
             d.NumeroDocumento,
             d.Asunto,
             e.Estado,
             a_origen.Nombre AS AreaOrigen,
             m.Observacion,
             m.FechaMovimiento,
-            d.NumeroFolios,          -- Número de folios
-            t.Descripcion AS TipoObjeto  -- Descripción del tipo de objeto
+            d.NumeroFolios,
+            t.Descripcion   AS TipoObjeto,
+            NULL AS TipoMemo
         FROM movimientodocumento m
-        INNER JOIN documentos d ON m.IdDocumentos = d.IdDocumentos
-        INNER JOIN estadodocumento e ON d.IdEstadoDocumento = e.IdEstadoDocumento
-        INNER JOIN areas a_origen ON m.AreaOrigen = a_origen.IdAreas
-        INNER JOIN tipo_objeto t ON d.IdTipoObjeto = t.IdTipoObjeto  -- JOIN con tipo_objeto
-        WHERE m.AreaDestino = ? AND m.Recibido = 0
-        ORDER BY m.FechaMovimiento DESC";
+        INNER JOIN documentos d        ON m.IdDocumentos = d.IdDocumentos
+        INNER JOIN estadodocumento e   ON d.IdEstadoDocumento = e.IdEstadoDocumento
+        INNER JOIN areas a_origen      ON m.AreaOrigen = a_origen.IdAreas
+        INNER JOIN tipo_objeto t       ON d.IdTipoObjeto = t.IdTipoObjeto
+        WHERE m.AreaDestino = :area AND m.Recibido = 0";
 
-$stmt = $pdo->prepare($sql);
-$stmt->execute([$area_id]);
-$documentos_pendientes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$stmt = $pdo->prepare($sqlDocs);
+$stmt->execute(['area' => $area_id]);
+$docs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+/* ==========================================================
+   2) MEMORÁNDUMS pendientes para mi área
+   ========================================================== */
+/* OJO: acá ya NO usamos m.Estado, sino IdEstadoDocumento + tabla estadodocumento */
+$sqlMemos = "SELECT
+            'MEMO' AS TipoRegistro,
+            NULL AS IdMovimientoDocumento,
+            m.IdMemo,
+            m.CodigoMemo      AS NumeroDocumento,
+            m.Asunto,
+            e.Estado          AS Estado,
+            a_origen.Nombre   AS AreaOrigen,
+            ''                AS Observacion,
+            m.FechaEmision    AS FechaMovimiento,
+            NULL              AS NumeroFolios,
+            'SIN OBJETO'      AS TipoObjeto,
+            m.TipoMemo        AS TipoMemo
+        FROM memorandums m
+        INNER JOIN memorandum_destinos md ON md.IdMemo = m.IdMemo
+        INNER JOIN areas a_origen         ON a_origen.IdAreas = m.IdAreaOrigen
+        INNER JOIN estadodocumento e      ON e.IdEstadoDocumento = m.IdEstadoDocumento
+        WHERE md.IdAreaDestino = :area
+          AND m.IdEstadoDocumento = 1"; 
+
+$stmt2 = $pdo->prepare($sqlMemos);
+$stmt2->execute(['area' => $area_id]);
+$memos = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+
+/* Unir y ordenar (desc por fecha) */
+$documentos_pendientes = array_merge($docs, $memos);
+usort($documentos_pendientes, function ($a, $b) {
+    return strtotime($b['FechaMovimiento']) <=> strtotime($a['FechaMovimiento']);
+});
 ?>
-
-
 <!DOCTYPE html>
 <html lang="es">
 
@@ -83,6 +115,29 @@ $documentos_pendientes = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <link rel="stylesheet" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css">
 
     <link rel="icon" type="image/png" href="../../backend/img/logoPisco.png" />
+
+    <style>
+        /* Contenedor vertical para el número + etiqueta de memo */
+        .numero-memo-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 3px;
+            max-width: 160px;
+        }
+
+        .badge-memo-tipo {
+            font-size: 0.70rem;
+            font-weight: 600;
+            border-radius: 999px;
+            white-space: nowrap;
+        }
+
+        .badge-numero {
+            font-size: 0.78rem;
+            white-space: nowrap;
+        }
+    </style>
 </head>
 
 <body>
@@ -103,7 +158,7 @@ $documentos_pendientes = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <i class="fas fa-info-circle me-3"></i>
                             <div>
                                 <strong>Sin documentos pendientes</strong><br>
-                                No hay documentos pendientes de recepción en tu área.
+                                No hay documentos o memorándums pendientes de recepción en tu área.
                             </div>
                         </div>
                     <?php else : ?>
@@ -124,11 +179,34 @@ $documentos_pendientes = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 </thead>
                                 <tbody id="tablaRecepcionBody">
                                     <?php foreach ($documentos_pendientes as $doc): ?>
+                                        <?php
+                                        $esMemo = ($doc['TipoRegistro'] === 'MEMO');
+                                        $labelTipoMemo = '';
+
+                                        if ($esMemo && !empty($doc['TipoMemo'])) {
+                                            if ($doc['TipoMemo'] === 'MULTIPLE') {
+                                                $labelTipoMemo = 'MEMO MÚLTIPLE';
+                                            } elseif ($doc['TipoMemo'] === 'CIRCULAR') {
+                                                $labelTipoMemo = 'MEMO CIRCULAR';
+                                            } else {
+                                                $labelTipoMemo = 'MEMO';
+                                            }
+                                        }
+                                        ?>
                                         <tr>
                                             <td>
-                                                <span class="badge bg-primary">
-                                                    <?= htmlspecialchars($doc['NumeroDocumento']) ?>
-                                                </span>
+                                                <div class="numero-memo-wrapper">
+                                                    <?php if ($esMemo && $labelTipoMemo): ?>
+                                                        <span class="badge bg-success badge-memo-tipo">
+                                                            <?= htmlspecialchars($labelTipoMemo) ?>
+                                                        </span>
+                                                    <?php endif; ?>
+
+                                                    <!-- Número: mismo estilo morado para todos -->
+                                                    <span class="badge bg-primary badge-numero">
+                                                        <?= htmlspecialchars($doc['NumeroDocumento']) ?>
+                                                    </span>
+                                                </div>
                                             </td>
                                             <td>
                                                 <div class="text-truncate" style="max-width: 200px;" title="<?= htmlspecialchars($doc['Asunto']) ?>">
@@ -151,7 +229,9 @@ $documentos_pendientes = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                 </small>
                                             </td>
                                             <td>
-                                                <span class="badge bg-secondary"><?= htmlspecialchars($doc['NumeroFolios']) ?></span>
+                                                <span class="badge bg-secondary">
+                                                    <?= $doc['NumeroFolios'] !== null ? htmlspecialchars($doc['NumeroFolios']) : '-' ?>
+                                                </span>
                                             </td>
                                             <td>
                                                 <span class="badge bg-info"><?= htmlspecialchars($doc['TipoObjeto']) ?></span>
@@ -163,7 +243,12 @@ $documentos_pendientes = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                             </td>
                                             <td>
                                                 <form method="POST" action="../../backend/php/archivos/recepcion_procesar.php" class="d-inline">
-                                                    <input type="hidden" name="id_movimiento" value="<?= $doc['IdMovimientoDocumento'] ?>">
+                                                    <input type="hidden" name="tipo" value="<?= $doc['TipoRegistro'] ?>">
+                                                    <?php if ($doc['TipoRegistro'] === 'DOC'): ?>
+                                                        <input type="hidden" name="id_movimiento" value="<?= (int)$doc['IdMovimientoDocumento'] ?>">
+                                                    <?php else: ?>
+                                                        <input type="hidden" name="id_memo" value="<?= (int)$doc['IdMemo'] ?>">
+                                                    <?php endif; ?>
                                                     <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('¿Confirmar recepción?')">
                                                         <i class="fas fa-check"></i> Recibir
                                                     </button>
@@ -180,7 +265,7 @@ $documentos_pendientes = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </main>
     </div>
 
-    <!-- Ahora sí cargamos el JS de notificaciones normalmente -->
+    <!-- Notificaciones -->
     <script src="../../backend/js/notificaciones.js"></script>
 
     <!-- Scripts -->
@@ -189,75 +274,8 @@ $documentos_pendientes = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
     <script>
-        $(document).ready(function() {
-            // Mobile toggle
-            window.toggleMobileNav = function() {
-                $('.navbar-nav').toggleClass('active');
-            };
-
-            // Dropdown functionality
-            $('.nav-dropdown .dropdown-toggle').on('click', function(e) {
-                e.preventDefault();
-
-                // Cerrar otros dropdowns
-                $('.nav-dropdown').not($(this).parent()).removeClass('active');
-
-                // Toggle este dropdown
-                $(this).parent().toggleClass('active');
-            });
-
-            // Cerrar dropdown al hacer clic fuera
-            $(document).on('click', function(e) {
-                if (!$(e.target).closest('.nav-dropdown').length) {
-                    $('.nav-dropdown').removeClass('active');
-                }
-            });
-        });
-    </script>
-    <script>
-        $(document).ready(function() {
-            // 1. Mostrar/Ocultar el menú móvil completo
-            window.toggleMobileMenu = function() {
-                $('#mobileMenu').slideToggle(200); // Usa slide para transición suave
-            };
-
-            // 2. Controlar los dropdowns internos del menú móvil
-            $('#mobileMenu .dropdown-toggle').on('click', function(e) {
-                e.preventDefault();
-
-                const parentDropdown = $(this).closest('.nav-dropdown');
-                const dropdownMenu = parentDropdown.find('.dropdown-menu');
-
-                const isOpen = parentDropdown.hasClass('active');
-
-                // Cerrar todos los demás
-                $('#mobileMenu .nav-dropdown').not(parentDropdown).removeClass('active')
-                    .find('.dropdown-menu').css('max-height', '0');
-
-                // Toggle el actual
-                if (isOpen) {
-                    parentDropdown.removeClass('active');
-                    dropdownMenu.css('max-height', '0');
-                } else {
-                    parentDropdown.addClass('active');
-                    dropdownMenu.css('max-height', dropdownMenu[0].scrollHeight + 'px');
-                }
-            });
-
-            // 3. (Opcional) Cerrar dropdowns si se hace clic fuera
-            $(document).on('click', function(e) {
-                if (!$(e.target).closest('#mobileMenu .nav-dropdown').length &&
-                    !$(e.target).closest('.fas.fa-bars').length) {
-                    $('#mobileMenu .nav-dropdown').removeClass('active')
-                        .find('.dropdown-menu').css('max-height', '0');
-                }
-            });
-        });
-    </script>
-
-    <script>
         $('#tablaRecepcion').DataTable({
-            autoWidth: false, // 🔧 IMPORTANTE: desactiva auto ajuste
+            autoWidth: false,
             responsive: true,
             pageLength: 25,
             language: {
@@ -284,38 +302,26 @@ $documentos_pendientes = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 }
             ]
         });
-
-        function actualizarRecepcion() {
-            $.ajax({
-                url: '../../backend/php/ajax/cargar_recepcion_ajax.php',
-                method: 'GET',
-                success: function(data) {
-                    $('#tablaRecepcionBody').html(data);
-                    $('#tablaRecepcion').DataTable().destroy();
-                    $('#tablaRecepcion').DataTable({
-                        language: {
-                            url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
-                        },
-                        responsive: true,
-                        pageLength: 25,
-                        order: [
-                            [4, 'desc']
-                        ],
-                        columnDefs: [{
-                            targets: [6],
-                            orderable: false
-                        }]
-                    });
-                },
-                error: function() {
-                    console.error("Error al actualizar la tabla de recepción.");
-                }
-            });
-        }
-
-        setInterval(actualizarRecepcion, 30000);
     </script>
 
-</body>
+    <script>
+        $(document).ready(function() {
+            window.toggleMobileNav = function() {
+                $('.navbar-nav').toggleClass('active');
+            };
 
+            $('.nav-dropdown .dropdown-toggle').on('click', function(e) {
+                e.preventDefault();
+                $('.nav-dropdown').not($(this).parent()).removeClass('active');
+                $(this).parent().toggleClass('active');
+            });
+
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('.nav-dropdown').length) {
+                    $('.nav-dropdown').removeClass('active');
+                }
+            });
+        });
+    </script>
+</body>
 </html>
