@@ -125,7 +125,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $upd = $pdo->prepare("UPDATE memorandums SET IdEstadoDocumento = 3 WHERE IdMemo = ?");
                 $upd->execute([$id_memo]);
             }
-
+            
             // 3) Notificar al área de origen
             $codigo  = $memo['CodigoMemo'];
             $mensaje = "El memorándum N° $codigo ha sido recepcionado.";

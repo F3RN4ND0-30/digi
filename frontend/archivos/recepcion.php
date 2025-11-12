@@ -60,7 +60,7 @@ $docs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 /* ==========================================================
    2) MEMORÁNDUMS pendientes para mi área
    ========================================================== */
-/* OJO: acá ya NO usamos m.Estado, sino IdEstadoDocumento + tabla estadodocumento */
+/* Aquí agregamos md.Recibido = 0 para que desaparezcan al recepcionar */
 $sqlMemos = "SELECT
             'MEMO' AS TipoRegistro,
             NULL AS IdMovimientoDocumento,
@@ -79,6 +79,7 @@ $sqlMemos = "SELECT
         INNER JOIN areas a_origen         ON a_origen.IdAreas = m.IdAreaOrigen
         INNER JOIN estadodocumento e      ON e.IdEstadoDocumento = m.IdEstadoDocumento
         WHERE md.IdAreaDestino = :area
+          AND md.Recibido = 0       -- ⬅️ solo los memos NO recibidos por esta área
           AND m.IdEstadoDocumento = 1"; 
 
 $stmt2 = $pdo->prepare($sqlMemos);
@@ -93,7 +94,6 @@ usort($documentos_pendientes, function ($a, $b) {
 ?>
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -117,7 +117,6 @@ usort($documentos_pendientes, function ($a, $b) {
     <link rel="icon" type="image/png" href="../../backend/img/logoPisco.png" />
 
     <style>
-        /* Contenedor vertical para el número + etiqueta de memo */
         .numero-memo-wrapper {
             display: flex;
             flex-direction: column;
@@ -125,25 +124,20 @@ usort($documentos_pendientes, function ($a, $b) {
             gap: 3px;
             max-width: 160px;
         }
-
         .badge-memo-tipo {
             font-size: 0.70rem;
             font-weight: 600;
             border-radius: 999px;
             white-space: nowrap;
         }
-
         .badge-numero {
             font-size: 0.78rem;
             white-space: nowrap;
         }
     </style>
 </head>
-
 <body>
     <div class="layout-escritorio">
-
-        <!-- Incluir el navbar correcto -->
         <?php include "../navbar/$navbarFile"; ?>
 
         <main class="contenido-principal">
@@ -201,8 +195,6 @@ usort($documentos_pendientes, function ($a, $b) {
                                                             <?= htmlspecialchars($labelTipoMemo) ?>
                                                         </span>
                                                     <?php endif; ?>
-
-                                                    <!-- Número: mismo estilo morado para todos -->
                                                     <span class="badge bg-primary badge-numero">
                                                         <?= htmlspecialchars($doc['NumeroDocumento']) ?>
                                                     </span>
@@ -265,10 +257,7 @@ usort($documentos_pendientes, function ($a, $b) {
         </main>
     </div>
 
-    <!-- Notificaciones -->
     <script src="../../backend/js/notificaciones.js"></script>
-
-    <!-- Scripts -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
@@ -281,25 +270,12 @@ usort($documentos_pendientes, function ($a, $b) {
             language: {
                 url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
             },
-            order: [
-                [4, 'desc']
-            ],
-            columnDefs: [{
-                    targets: 0,
-                    width: '20%'
-                },
-                {
-                    targets: 2,
-                    width: '2%'
-                },
-                {
-                    targets: 3,
-                    width: '15%'
-                },
-                {
-                    targets: 6,
-                    orderable: false
-                }
+            order: [[4, 'desc']],
+            columnDefs: [
+                { targets: 0, width: '20%' },
+                { targets: 2, width: '2%'  },
+                { targets: 3, width: '15%' },
+                { targets: 6, orderable: false }
             ]
         });
     </script>
