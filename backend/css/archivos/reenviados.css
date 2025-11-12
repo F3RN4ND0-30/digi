@@ -124,6 +124,62 @@ body {
   padding: 1.5rem;
 }
 
+#passwordInput {
+  padding: 0.7rem 1rem;
+  width: 370px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+#passwordInput:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+}
+
+/* Mensaje de error */
+#passwordError {
+  color: #dc2626;
+  /* rojo */
+  font-size: 0.9rem;
+  margin-top: -0.5rem;
+}
+
+.password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-wrapper input {
+  flex: 1;
+  padding-right: 2.5rem;
+  /* espacio para el botón */
+}
+
+.btn-toggle-pass {
+  position: absolute;
+  right: 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  /* gris */
+  font-size: 1rem;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.btn-toggle-pass:hover {
+  color: #4f46e5;
+  /* color activo al pasar el mouse */
+}
+
 .form-group {
   margin-bottom: 1.2rem;
 }
@@ -544,6 +600,25 @@ th {
   background: linear-gradient(135deg, #00a085, #008f72);
   transform: translateY(-2px);
   box-shadow: 0 4px 15px rgba(0, 184, 148, 0.4);
+}
+
+.btn-observacion {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  /* azul degradado */
+  color: var(--reenviar-white);
+  border: 1px solid rgba(0, 123, 255, 0.3);
+  transition: all 0.2s ease;
+}
+
+.btn-observacion:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0056b3, #004494);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);
+}
+
+.btn-observacion:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .btn-secondary {

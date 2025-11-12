@@ -187,12 +187,34 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
                                                         <button type="submit" class="btn btn-success btn-sm">Reenviar</button>
                                                     </form>
 
-                                                    <form method="POST" action="../../backend/php/archivos/finalizar_documento.php"
+                                                    <form method="POST"
+                                                        action="../../backend/php/archivos/finalizar_documento.php"
+                                                        class="finalizar-form"
                                                         onsubmit="return confirm('¿Seguro que quieres finalizar el documento? Si lo finalizas ya nadie lo podrá reenviar.')">
+
                                                         <input type="hidden" name="id_documento" value="<?= $doc['IdDocumentos'] ?>">
+                                                        <!-- Agrega también estos campos -->
                                                         <input type="hidden" name="numero_folios" value="<?= $doc['NumeroFolios'] ?>">
-                                                        <input type="hidden" name="id_informe" value="<?= $idInformeSeleccionado ?>">
-                                                        <button type="submit" class="btn btn-danger btn-sm">Finalizar</button>
+                                                        <input type="hidden" name="id_informe" value="">
+                                                        <input type="hidden" name="observacion" value="">
+                                                        <input type="hidden" name="nueva_area" value="">
+
+                                                        <button type="submit" class="btn btn-danger btn-sm btn-protegido">Finalizar</button>
+                                                    </form>
+
+                                                    <form method="POST"
+                                                        action="../../backend/php/archivos/observacion_documento.php"
+                                                        class="observacion-form"
+                                                        onsubmit="return confirm('¿Seguro que quieres observar el documento? Si lo observas ya nadie lo podrá reenviar.')">
+
+                                                        <input type="hidden" name="id_documento" value="<?= $doc['IdDocumentos'] ?>">
+                                                        <!-- Agrega también estos campos -->
+                                                        <input type="hidden" name="numero_folios" value="<?= $doc['NumeroFolios'] ?>">
+                                                        <input type="hidden" name="id_informe" value="">
+                                                        <input type="hidden" name="observacion" value="">
+                                                        <input type="hidden" name="nueva_area" value="">
+
+                                                        <button type="submit" class="btn btn-observacion btn-sm btn-protegido" style="margin-top: 5px;">Observar</button>
                                                     </form>
                                                 </td>
                                             </form>
@@ -243,7 +265,31 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
         </div>
     </div>
 
+    <!-- Modal de contraseña -->
+    <div id="modalPassword" class="modal-overlay" style="display: none;">
+        <div class="modal-contenido tarjeta-modal animar-entrada">
+            <div class="modal-header tarjeta-header">
+                <h3><i class="fas fa-lock"></i> Confirmar acción</h3>
+                <button class="close-modal" onclick="cerrarModalPassword()">&times;</button>
+            </div>
 
+            <div class="modal-body tarjeta-body">
+                <p>Ingrese su contraseña para continuar:</p>
+                <div class="password-wrapper">
+                    <input type="password" id="passwordInput" placeholder="Contraseña" autocomplete="off">
+                    <button type="button" class="btn-toggle-pass" onclick="togglePassword()">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <div id="passwordError" style="color: red; display: none; margin-top: 5px;">Contraseña incorrecta.</div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="cerrarModalPassword()">Cancelar</button>
+                <button class="btn btn-success" onclick="confirmarPassword()">Confirmar</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Ahora sí cargamos el JS de notificaciones normalmente -->
     <script src="../../backend/js/notificaciones.js"></script>
@@ -272,14 +318,34 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
         });
     </script>
     <script>
+        document.querySelectorAll('.observacion-form').forEach(form => {
+            form.addEventListener('submit', function() {
+                const row = form.closest('tr');
+                const folios = row.querySelector('input[name="numero_folios"]').value;
+                const informe = row.querySelector('select[name="id_informe"]').value;
+                const observacion = row.querySelector('input[name="observacion"]').value;
+                const area = row.querySelector('select[name="nueva_area"]').value;
+
+                form.querySelector('input[name="numero_folios"]').value = folios;
+                form.querySelector('input[name="id_informe"]').value = informe;
+                form.querySelector('input[name="observacion"]').value = observacion;
+                form.querySelector('input[name="nueva_area"]').value = area;
+            });
+        });
+    </script>
+    <script>
         document.querySelectorAll('.finalizar-form').forEach(form => {
             form.addEventListener('submit', function() {
                 const row = form.closest('tr');
                 const folios = row.querySelector('input[name="numero_folios"]').value;
                 const informe = row.querySelector('select[name="id_informe"]').value;
+                const observacion = row.querySelector('input[name="observacion"]').value;
+                const area = row.querySelector('select[name="nueva_area"]').value;
 
-                document.getElementById('numero_folios_finalizar').value = folios;
-                document.getElementById('id_informe_finalizar').value = informe;
+                form.querySelector('input[name="numero_folios"]').value = folios;
+                form.querySelector('input[name="id_informe"]').value = informe;
+                form.querySelector('input[name="observacion"]').value = observacion;
+                form.querySelector('input[name="nueva_area"]').value = area;
             });
         });
     </script>
@@ -612,6 +678,105 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
             }
         }
     </script>
+    <script>
+        let formularioActual = null; // Para guardar el formulario que se quiere enviar
+
+        // Interceptar los botones con clase .btn-protegido
+        document.querySelectorAll('.btn-protegido').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault(); // Evitar el envío inmediato
+                formularioActual = btn.closest('form'); // Guardar el formulario
+                document.getElementById('passwordInput').value = ''; // Limpiar input
+                document.getElementById('passwordError').style.display = 'none'; // Ocultar error
+                document.getElementById('modalPassword').style.display = 'flex'; // Mostrar modal
+            });
+        });
+
+        // Función para cerrar el modal
+        function cerrarModalPassword() {
+            document.getElementById('modalPassword').style.display = 'none';
+            document.getElementById('passwordInput').value = '';
+            document.getElementById('passwordError').style.display = 'none';
+        }
+
+        function togglePassword() {
+            const input = document.getElementById('passwordInput');
+            const icon = document.querySelector('.btn-toggle-pass i');
+            if (input.type === "password") {
+                input.type = "text";
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = "password";
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        // Función para enviar el formulario con los valores correctos
+        function enviarFormularioConPassword() {
+            if (!formularioActual) return;
+
+            const row = formularioActual.closest('tr');
+            formularioActual.querySelector('input[name="id_informe"]').value =
+                row.querySelector('select[name="id_informe"]').value;
+            formularioActual.querySelector('input[name="numero_folios"]').value =
+                row.querySelector('input[name="numero_folios"]').value;
+            formularioActual.querySelector('input[name="observacion"]').value =
+                row.querySelector('input[name="observacion"]').value;
+            formularioActual.querySelector('input[name="nueva_area"]').value =
+                row.querySelector('select[name="nueva_area"]').value;
+
+            formularioActual.submit();
+        }
+
+        // Función para confirmar contraseña
+        function confirmarPassword() {
+            const password = document.getElementById('passwordInput').value.trim();
+            const errorDiv = document.getElementById('passwordError');
+
+            if (password === '') {
+                errorDiv.innerText = 'Ingrese su contraseña';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            // Verificación vía AJAX
+            fetch('../../backend/php/verificar_password.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        password: password
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        cerrarModalPassword();
+                        enviarFormularioConPassword(); // <-- Aquí usamos la función
+                    } else {
+                        errorDiv.innerText = 'Contraseña incorrecta';
+                        errorDiv.style.display = 'block';
+                    }
+                })
+                .catch(err => {
+                    errorDiv.innerText = 'Error de conexión';
+                    errorDiv.style.display = 'block';
+                    console.error(err);
+                });
+        }
+
+        // Permitir enviar al presionar Enter en el input
+        document.getElementById('passwordInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                confirmarPassword();
+            }
+        });
+    </script>
+
 </body>
 
 </html>
