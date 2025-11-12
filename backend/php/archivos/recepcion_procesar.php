@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $tipo = $_POST['tipo'] ?? 'DOC';
 
     /* ======================================================
-       FLUJO DOCUMENTO (igual que ya tenías)    
+       FLUJO DOCUMENTO (igual que ya tenías)
        ====================================================== */
     if ($tipo === 'DOC') {
         $id_movimiento = $_POST['id_movimiento'] ?? null;
@@ -72,11 +72,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header("Location: ../../../frontend/archivos/recepcion.php");
         exit();
     }
-    
+
     /* ======================================================
        FLUJO MEMORÁNDUM
-       - Elimina el registro de memorandum_destinos para esta área
-       - Si ya no quedan destinos => memo IdEstadoDocumento = 3 (RECIBIDO)
+       - Marca Recibido = 1 en memorandum_destinos para esta área
+       - Si ya no quedan destinos con Recibido = 0 => memo IdEstadoDocumento = 3 (RECIBIDO)
        - Notifica al área de origen
        ====================================================== */
     if ($tipo === 'MEMO') {
@@ -98,18 +98,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception("Memorándum no encontrado.");
             }
 
-            // 1) Eliminar destino de ESTA área
-            $del = $pdo->prepare("
-                DELETE FROM memorandum_destinos
-                WHERE IdMemo = ? AND IdAreaDestino = ?
+            // 1) Marcar ESTE destino como recibido (si aún no lo estaba)
+            $updDest = $pdo->prepare("
+                UPDATE memorandum_destinos
+                SET Recibido = 1
+                WHERE IdMemo = ? AND IdAreaDestino = ? AND Recibido = 0
             ");
-            $del->execute([$id_memo, $area_destino]);
+            $updDest->execute([$id_memo, $area_destino]);
 
-            // 2) ¿Quedan destinos pendientes?
+            // Si no afectó filas, probablemente ya estaba recepcionado
+            if ($updDest->rowCount() === 0) {
+                throw new Exception("Este memorándum ya fue recepcionado por tu área.");
+            }
+
+            // 2) ¿Quedan destinos sin recibir?
             $cnt = $pdo->prepare("
                 SELECT COUNT(*) 
                 FROM memorandum_destinos 
-                WHERE IdMemo = ?
+                WHERE IdMemo = ? AND Recibido = 0
             ");
             $cnt->execute([$id_memo]);
             $restantes = (int)$cnt->fetchColumn();
