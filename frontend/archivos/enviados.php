@@ -31,7 +31,7 @@ if (!$area_id) {
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Documentos Enviados - DIGI MPP</title>
+    <title>Enviados - DIGI MPP</title>
 
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -47,8 +47,65 @@ if (!$area_id) {
 
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css">
-    
+
     <link rel="icon" type="image/png" href="../../backend/img/logoPisco.png" />
+
+    <style>
+        .tabs-enviados {
+            display: flex;
+            gap: 0.25rem;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .tab-btn {
+            border: none;
+            background: #f1f5f9;
+            padding: 0.7rem 1.5rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            color: #475569;
+            border-radius: 6px 6px 0 0; /* cuadradito arriba */
+            border: 1px solid transparent;
+            border-bottom: none;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn:hover {
+            background: #e2e8f0;
+        }
+
+        .tab-btn.active {
+            background: #6c5ce7;
+            color: #fff;
+            border-color: #6c5ce7;
+            box-shadow: 0 2px 8px rgba(108, 92, 231, 0.35);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Badge para el número/código */
+        .badge-numero-enviado {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            color: #fff;
+            box-shadow: 0 2px 6px rgba(108, 92, 231, 0.35);
+            white-space: nowrap;
+        }
+    </style>
 </head>
 
 <body>
@@ -60,33 +117,68 @@ if (!$area_id) {
         <main class="contenido-principal">
             <div class="tarjeta">
                 <div class="tarjeta-header">
-                    <h2><i class="fas fa-paper-plane"></i> Documentos Enviados</h2>
+                    <h2><i class="fas fa-paper-plane"></i> Enviados</h2>
                 </div>
 
                 <div class="tarjeta-body">
-                    <div class="table-responsive">
-                        <table id="tablaEnviados" class="table table-striped" style="width:100%">
-                            <thead>
-                                <tr>
-                                    <th>N°</th>
-                                    <th>Número/Nombre</th>
-                                    <th>Asunto</th>
-                                    <th>Estado</th>
-                                    <th>Fecha</th>
-                                    <th>Área Destino</th>
-                                    <th>Observación</th>
-                                    <th>Recibido</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
+                    <!-- Pestañas -->
+                    <div class="tabs-enviados">
+                        <button class="tab-btn active" data-target="#tab-docs">
+                            <i class="fas fa-file-alt"></i> Documentos
+                        </button>
+                        <button class="tab-btn" data-target="#tab-memos">
+                            <i class="fas fa-file-signature"></i> Memorándums
+                        </button>
                     </div>
+
+                    <!-- TAB DOCUMENTOS -->
+                    <div id="tab-docs" class="tab-content active">
+                        <div class="table-responsive">
+                            <table id="tablaEnviadosDocs" class="table table-striped" style="width:100%">
+                                <thead>
+                                    <tr>
+                                        <th>N°</th>
+                                        <th>Número/Nombre</th>
+                                        <th>Asunto</th>
+                                        <th>Estado</th>
+                                        <th>Fecha</th>
+                                        <th>Área Destino</th>
+                                        <th>Observación</th>
+                                        <th>Recibido</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- TAB MEMORÁNDUMS -->
+                    <div id="tab-memos" class="tab-content">
+                        <div class="table-responsive">
+                            <table id="tablaEnviadosMemos" class="table table-striped" style="width:100%">
+                                <thead>
+                                    <tr>
+                                        <th>N°</th>
+                                        <th>Código Memo</th>
+                                        <th>Asunto</th>
+                                        <th>Estado</th>
+                                        <th>Fecha</th>
+                                        <th>Áreas Destino</th>
+                                        <th>Observación</th>
+                                        <th>Recibido</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- Ahora sí cargamos el JS de notificaciones normalmente -->
+    <!-- Notificaciones -->
     <script src="../../backend/js/notificaciones.js"></script>
 
     <!-- Scripts -->
@@ -94,57 +186,95 @@ if (!$area_id) {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
-    <!-- DataTables -->
     <script>
         $(document).ready(function() {
-            $('#tablaEnviados').DataTable({
+
+            // Tabs
+            $('.tab-btn').on('click', function() {
+                $('.tab-btn').removeClass('active');
+                $(this).addClass('active');
+
+                const target = $(this).data('target');
+                $('.tab-content').removeClass('active');
+                $(target).addClass('active');
+            });
+
+            // DataTable Documentos
+            const tablaDocs = $('#tablaEnviadosDocs').DataTable({
                 ajax: {
-                    url: '../../backend/php/ajax/cargar_enviados_ajax.php',
+                    url: '../../backend/php/ajax/cargar_enviados_ajax.php?tipo=DOC',
                     dataSrc: ''
                 },
-                columns: [{
-                        data: 'IdMovimientoDocumento'
-                    },
+                columns: [
+                    { data: 'IdMovimientoDocumento' },
                     {
-                        data: 'NumeroDocumento'
+                        data: 'NumeroDocumento',
+                        render: function(data) {
+                            return '<span class="badge-numero-enviado">' + data + '</span>';
+                        }
                     },
-                    {
-                        data: 'Asunto'
-                    },
-                    {
-                        data: 'Estado'
-                    },
-                    {
-                        data: 'FechaMovimiento'
-                    },
-                    {
-                        data: 'AreaDestino'
-                    },
-                    {
-                        data: 'Observacion'
-                    },
+                    { data: 'Asunto' },
+                    { data: 'Estado' },
+                    { data: 'FechaMovimiento' },
+                    { data: 'AreaDestino' },
+                    { data: 'Observacion' },
                     {
                         data: 'Recibido',
                         render: function(data) {
-                            return data == 1 ?
-                                '<span class="badge bg-success"><i class="fas fa-check"></i> Recibido</span>' :
-                                '<span class="badge bg-warning"><i class="fas fa-clock"></i> Pendiente</span>';
+                            return data == 1
+                                ? '<span class="badge bg-success"><i class="fas fa-check"></i> Recibido</span>'
+                                : '<span class="badge bg-warning"><i class="fas fa-clock"></i> Pendiente</span>';
                         }
                     }
                 ],
-                order: [
-                    [0, 'desc']
+                columnDefs: [
+                    { targets: [0, 1], className: 'text-center' }
                 ],
-                language: {
-                    url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
-                },
+                order: [[0, 'desc']],
                 responsive: true,
                 pageLength: 25
             });
 
-            // Auto-refresh
+            // DataTable Memorándums
+            const tablaMemos = $('#tablaEnviadosMemos').DataTable({
+                ajax: {
+                    url: '../../backend/php/ajax/cargar_enviados_ajax.php?tipo=MEMO',
+                    dataSrc: ''
+                },
+                columns: [
+                    { data: 'IdMovimientoDocumento' },
+                    {
+                        data: 'NumeroDocumento',
+                        render: function(data) {
+                            return '<span class="badge-numero-enviado">' + data + '</span>';
+                        }
+                    },
+                    { data: 'Asunto' },
+                    { data: 'Estado' },
+                    { data: 'FechaMovimiento' },
+                    { data: 'AreaDestino' },
+                    { data: 'Observacion' },
+                    {
+                        data: 'Recibido',
+                        render: function(data) {
+                            return data == 1
+                                ? '<span class="badge bg-success"><i class="fas fa-check"></i> Recibido</span>'
+                                : '<span class="badge bg-warning"><i class="fas fa-clock"></i> Pendiente</span>';
+                        }
+                    }
+                ],
+                columnDefs: [
+                    { targets: [0, 1], className: 'text-center' }
+                ],
+                order: [[0, 'desc']],
+                responsive: true,
+                pageLength: 25
+            });
+
+            // Auto-refresh ambas tablas
             setInterval(() => {
-                $('#tablaEnviados').DataTable().ajax.reload(null, false);
+                tablaDocs.ajax.reload(null, false);
+                tablaMemos.ajax.reload(null, false);
             }, 30000);
         });
     </script>
@@ -159,11 +289,7 @@ if (!$area_id) {
             // Dropdown functionality
             $('.nav-dropdown .dropdown-toggle').on('click', function(e) {
                 e.preventDefault();
-
-                // Cerrar otros dropdowns
                 $('.nav-dropdown').not($(this).parent()).removeClass('active');
-
-                // Toggle este dropdown
                 $(this).parent().toggleClass('active');
             });
 
@@ -175,11 +301,12 @@ if (!$area_id) {
             });
         });
     </script>
+
     <script>
         $(document).ready(function() {
             // 1. Mostrar/Ocultar el menú móvil completo
             window.toggleMobileMenu = function() {
-                $('#mobileMenu').slideToggle(200); // Usa slide para transición suave
+                $('#mobileMenu').slideToggle(200);
             };
 
             // 2. Controlar los dropdowns internos del menú móvil
@@ -201,11 +328,11 @@ if (!$area_id) {
                     dropdownMenu.css('max-height', '0');
                 } else {
                     parentDropdown.addClass('active');
-                    dropdownMenu.css('max-height', dropdownMenu[0].scrollHeight + 'px');
+                    dropdownMenu[0].style.maxHeight = dropdownMenu[0].scrollHeight + 'px';
                 }
             });
 
-            // 3. (Opcional) Cerrar dropdowns si se hace clic fuera
+            // 3. Cerrar dropdowns si se hace clic fuera
             $(document).on('click', function(e) {
                 if (!$(e.target).closest('#mobileMenu .nav-dropdown').length &&
                     !$(e.target).closest('.fas.fa-bars').length) {
