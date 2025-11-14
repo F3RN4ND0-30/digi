@@ -47,7 +47,7 @@ $stmt = $pdo->prepare($sqlDocs);
 $stmt->execute([$area_id]);
 $documentos_recibidos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-/* ---------- Datos: Memorándums recibidos (solo responder al emisor) ---------- */
+/* ---------- Datos: Memorándums recibidos ---------- */
 $sqlMemos = "
     SELECT
         m.IdMemo,
@@ -75,6 +75,11 @@ $memos_recibidos = $stmtM->fetchAll(PDO::FETCH_ASSOC);
 $areas = $pdo->prepare("SELECT IdAreas, Nombre FROM areas WHERE IdAreas != ?");
 $areas->execute([$area_id]);
 $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
+
+/* ---------- Flash (toast) ---------- */
+$flash_type = $_SESSION['flash_type'] ?? null;
+$flash_text = $_SESSION['flash_text'] ?? null;
+unset($_SESSION['flash_type'], $_SESSION['flash_text']);
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -84,24 +89,20 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reenviar Documentos - DIGI MPP</title>
 
-    <!-- Fuentes e iconos -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- Navbar -->
     <link rel="stylesheet" href="../../backend/css/navbar/<?= $navbarCss ?>" />
-
-    <!-- Estilos de la vista -->
     <link rel="stylesheet" href="../../backend/css/archivos/reenviados.css" />
 
-    <!-- DataTables / Selectize -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <link href="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/css/selectize.default.css" rel="stylesheet" />
-
     <link rel="icon" type="image/png" href="../../backend/img/logoPisco.png" />
 
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <style>
-        /* Tabs estilo enviados.php */
         .tabs-enviados {
             display: flex;
             gap: .25rem;
@@ -185,8 +186,33 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
             display: inline-block
         }
 
-        .input-mini {
-            max-width: 220px
+        /* Scroll solo cuando hace falta: la tabla ocupa el ancho disponible */
+        .table-responsive {
+            overflow-x: auto
+        }
+
+        .dataTables_wrapper,
+        .dataTables_wrapper .dataTables_scroll,
+        table.dataTable {
+            width: 100% !important
+        }
+
+        td input.form-control {
+            max-width: 260px
+        }
+
+        td.area-select select {
+            min-width: 220px
+        }
+
+        @media (max-width:1200px) {
+            td.input.form-control {
+                max-width: 200px
+            }
+
+            td.area-select select {
+                min-width: 180px
+            }
         }
     </style>
 </head>
@@ -205,8 +231,6 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
                 </div>
 
                 <div class="tarjeta-body">
-
-                    <!-- Tabs -->
                     <div class="tabs-enviados">
                         <button class="tab-btn active" data-target="#tab-docs"><i class="fas fa-file-alt"></i> Documentos</button>
                         <button class="tab-btn" data-target="#tab-memos"><i class="fas fa-file-signature"></i> Memorándums</button>
@@ -260,7 +284,6 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
                                                     <td><input type="number" name="numero_folios" min="<?= (int)$d['NumeroFolios'] ?>" value="<?= (int)$d['NumeroFolios'] ?>" class="form-control form-control-sm" required></td>
                                                     <td><input type="text" name="observacion" class="form-control form-control-sm observacion-grande" placeholder="Observación opcional..." maxlength="100"></td>
 
-                                                    <!-- Informe (Selectize) -->
                                                     <td class="informe-input area-select" data-id-documento="<?= (int)$d['IdDocumentos'] ?>">
                                                         <select class="select-informes area-pequena" name="id_informe">
                                                             <option>Cargando...</option>
@@ -340,16 +363,13 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
                                                         <div class="text-truncate" title="<?= htmlspecialchars($m['Asunto']) ?>"><?= htmlspecialchars($m['Asunto']) ?></div>
                                                     </td>
                                                     <td>
-                                                        <div class="user-info-mini"><i class="fas fa-user-circle"></i>
-                                                            <span><?= htmlspecialchars($m['Nombres'] . ' ' . $m['ApellidoPat']) ?></span>
-                                                        </div>
+                                                        <div class="user-info-mini"><i class="fas fa-user-circle"></i><span><?= htmlspecialchars($m['Nombres'] . ' ' . $m['ApellidoPat']) ?></span></div>
                                                     </td>
                                                     <td><span class="badge-area"><?= htmlspecialchars($m['AreaOrigenNombre']) ?></span></td>
 
                                                     <td><input type="number" name="numero_folios" min="0" value="0" class="form-control form-control-sm"></td>
                                                     <td><input type="text" name="observacion" class="form-control form-control-sm observacion-grande" placeholder="Observación opcional..." maxlength="100"></td>
 
-                                                    <!-- Informe (Selectize igual estilo; no hay datos => opción fija) -->
                                                     <td class="informe-input area-select" data-id-documento="0">
                                                         <select class="select-informes area-pequena input-mini" name="id_informe">
                                                             <option value="">No hay informes</option>
@@ -412,7 +432,7 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
         </div>
     </div>
 
-    <!-- Modal password -->
+    <!-- Modal password (igual que tenías) -->
     <div id="modalPassword" class="modal-overlay" style="display:none;">
         <div class="modal-contenido tarjeta-modal animar-entrada">
             <div class="modal-header tarjeta-header">
@@ -441,7 +461,31 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
     <script src="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/js/standalone/selectize.min.js"></script>
     <script src="../../backend/js/notificaciones.js"></script>
 
-    <!-- ========== UI: Modal Informe ========== -->
+    <script>
+        // Toast SweetAlert (top-end)
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 2500,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                // el contenedor es el padre del popup
+                if (toast && toast.parentElement) {
+                    toast.parentElement.style.zIndex = '300000';
+                }
+            }
+        });
+
+        <?php if ($flash_text): ?>
+            Toast.fire({
+                icon: '<?= $flash_type === 'success' ? 'success' : 'error' ?>',
+                title: <?= json_encode($flash_text) ?>
+            });
+        <?php endif; ?>
+    </script>
+
+    <!-- UI: Modal Informe -->
     <script>
         function abrirModalInforme() {
             document.getElementById('modalCrearInforme').style.display = 'flex';
@@ -461,7 +505,7 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
         });
     </script>
 
-    <!-- ========== Lógica: Crear informe (correlativo/búsqueda/guardar) ========== -->
+    <!-- Crear informe -->
     <script>
         let idArea = <?= $_SESSION['dg_area_id'] ?>;
 
@@ -504,41 +548,47 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
             const id_area = document.getElementById('idAreaModal').value;
             const titulo = document.getElementById('tituloInforme').value.trim();
             if (!id_documento || !id_area || !titulo) {
-                alert('Faltan datos para crear el informe.');
+                Toast.fire({
+                    icon: 'warning',
+                    title: 'Faltan datos para crear el informe'
+                });
                 return;
             }
             fetch('../../backend/php/archivos/crear_informe.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    body: `id_documento=${encodeURIComponent(id_documento)}&id_area=${encodeURIComponent(id_area)}&titulo=${encodeURIComponent(titulo)}`
-                })
-                .then(r => r.json()).then(d => {
-                    if (d.status === 'success') {
-                        document.getElementById('nombreFinalInforme').value = d.nombre_final;
-                        cerrarModalInforme();
-                        location.reload();
-                    } else {
-                        alert('Error: ' + d.message);
-                    }
-                }).catch(() => alert('Error al crear el informe'));
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `id_documento=${encodeURIComponent(id_documento)}&id_area=${encodeURIComponent(id_area)}&titulo=${encodeURIComponent(titulo)}`
+            }).then(r => r.json()).then(d => {
+                if (d.status === 'success') {
+                    document.getElementById('nombreFinalInforme').value = d.nombre_final;
+                    cerrarModalInforme();
+                    location.reload();
+                } else {
+                    Toast.fire({
+                        icon: 'error',
+                        title: 'Error: ' + d.message
+                    });
+                }
+            }).catch(() => Toast.fire({
+                icon: 'error',
+                title: 'Error al crear el informe'
+            }));
         }
     </script>
 
-    <!-- ========== Lógica: Cargar/estilizar “Informe” con Selectize (Docs + Memos) ========== -->
+    <!-- Selectize informes -->
     <script>
         function initInformeSelects(scopeSel) {
             document.querySelectorAll(scopeSel + ' .informe-input').forEach(td => {
                 const idDocumento = parseInt(td.dataset.idDocumento || '0', 10);
                 const select = td.querySelector('.select-informes');
                 if (!select) return;
-
                 if (idDocumento > 0) {
                     select.innerHTML = '<option>Cargando...</option>';
                     fetch(`../../backend/php/archivos/obtener_informes.php?id_documento=${idDocumento}`)
-                        .then(res => res.json())
-                        .then(data => {
+                        .then(res => res.json()).then(data => {
                             let opts = '';
                             if (!Array.isArray(data) || data.length === 0) {
                                 opts = '<option value="">No hay informes</option>';
@@ -559,15 +609,13 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
                                     this.refreshOptions(false);
                                 }
                             });
-                        })
-                        .catch(() => {
+                        }).catch(() => {
                             select.innerHTML = '<option value="">No hay informes</option>';
                             $(select).selectize({
                                 allowEmptyOption: true
                             });
                         });
                 } else {
-                    // Memos: no hay informes -> misma UI con Selectize
                     select.innerHTML = '<option value="">No hay informes</option>';
                     const $s = $(select);
                     if ($s[0].selectize) $s[0].selectize.destroy();
@@ -581,84 +629,82 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
                 }
             });
         }
-        // Inicializa para ambas pestañas
         initInformeSelects('#tab-docs');
         initInformeSelects('#tab-memos');
     </script>
 
-    <!-- ========== DataTables (ES) + ajustes al cambiar de pestaña ========== -->
+    <!-- DataTables (sin responsive) -->
     <script>
         const LANG_ES = {
-            "decimal": ",",
-            "thousands": ".",
-            "processing": "Procesando...",
-            "search": "Buscar:",
-            "lengthMenu": "Mostrar _MENU_ registros",
-            "info": "Mostrando _START_ a _END_ de _TOTAL_ registros",
-            "infoEmpty": "Mostrando 0 a 0 de 0 registros",
-            "infoFiltered": "(filtrado de _MAX_ registros totales)",
-            "infoPostFix": "",
-            "loadingRecords": "Cargando...",
-            "zeroRecords": "No se encontraron resultados",
-            "emptyTable": "Sin datos disponibles",
-            "paginate": {
-                "first": "Primero",
-                "previous": "Anterior",
-                "next": "Siguiente",
-                "last": "Último"
+            decimal: ",",
+            thousands: ".",
+            processing: "Procesando...",
+            search: "Buscar:",
+            lengthMenu: "Mostrar _MENU_ registros",
+            info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
+            infoEmpty: "Mostrando 0 a 0 de 0 registros",
+            infoFiltered: "(filtrado de _MAX_ registros totales)",
+            loadingRecords: "Cargando...",
+            zeroRecords: "No se encontraron resultados",
+            emptyTable: "Sin datos disponibles",
+            paginate: {
+                first: "Primero",
+                previous: "Anterior",
+                next: "Siguiente",
+                last: "Último"
             },
-            "aria": {
-                "sortAscending": ": activar para ordenar ascendente",
-                "sortDescending": ": activar para ordenar descendente"
+            aria: {
+                sortAscending: ": activar para ordenar ascendente",
+                sortDescending: ": activar para ordenar descendente"
             }
         };
-
         let dtDocs, dtMemos;
         $(function() {
-            dtDocs = $('#tablaDocs').DataTable({
+            const baseCfg = {
                 language: LANG_ES,
-                responsive: true,
+                responsive: false,
+                autoWidth: true,
+                scrollX: true,
+                scrollCollapse: true,
                 pageLength: 25,
-                autoWidth: false,
                 order: [
                     [0, 'desc']
                 ]
-            });
-            dtMemos = $('#tablaMemos').DataTable({
-                language: LANG_ES,
-                responsive: true,
-                pageLength: 25,
-                autoWidth: false,
-                order: [
-                    [0, 'desc']
-                ]
-            });
-
-            // Tabs switch
+            };
+            dtDocs = $('#tablaDocs').DataTable(baseCfg);
+            dtMemos = $('#tablaMemos').DataTable(baseCfg);
             $('.tab-btn').on('click', function() {
                 $('.tab-btn').removeClass('active');
                 $(this).addClass('active');
                 const t = $(this).data('target');
                 $('.tab-content').removeClass('active');
                 $(t).addClass('active');
-                // Ajusta columnas al mostrar
-                if (t === '#tab-docs') {
-                    dtDocs.columns.adjust().responsive.recalc();
-                } else {
-                    dtMemos.columns.adjust().responsive.recalc();
-                }
+                setTimeout(() => {
+                    (t === '#tab-docs' ? dtDocs : dtMemos).columns.adjust();
+                }, 60);
+            });
+            $(window).on('resize', function() {
+                dtDocs.columns.adjust();
+                dtMemos.columns.adjust();
             });
         });
     </script>
 
-    <!-- ========== UX: Select área + spinner envío + navbar ========== -->
+    <!-- Sincroniza valores de fila al form + toasts -->
     <script>
+        function toast(msg, type = 'warning') {
+            Toast.fire({
+                icon: type,
+                title: msg
+            });
+        }
+
         $(function() {
-            // Selectize para "Reenviar a"
+            // Selectize del área => habilita botón reenviar
             $('#tab-docs select[name="nueva_area"]').each(function() {
                 const $s = $(this),
                     btn = $s.closest('tr').find('.btn-reenviar');
-                const sz = $s.selectize({
+                $s.selectize({
                     allowEmptyOption: true,
                     placeholder: 'Seleccione una opción',
                     sortField: 'text',
@@ -675,70 +721,84 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
                             btn.prop('disabled', true).removeClass('btn-success').addClass('btn-secondary');
                         }
                     }
-                })[0].selectize;
+                });
                 btn.addClass('btn-secondary').prop('disabled', true);
             });
 
-            // Spinner en envío
-            $('.reenvio-form').on('submit', function() {
-                const b = $(this).find('button[type="submit"]');
-                const t = b.html();
-                b.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Enviando...');
+            // Reenviar: sincroniza hidden + valida
+            $('.reenvio-form').on('submit', function(e) {
+                const $form = $(this),
+                    $row = $form.closest('tr');
+                const area = ($row.find('select[name="nueva_area"]').val() || '').trim();
+                const folios = ($row.find('input[name="numero_folios"]').val() || '').trim();
+                const obs = ($row.find('input[name="observacion"]').val() || '').trim();
+                const inf = ($row.find('select[name="id_informe"]').val() || '').trim();
+
+                if (!area) {
+                    e.preventDefault();
+                    return toast('Seleccione el área de destino');
+                }
+                if (!folios || Number(folios) < 1) {
+                    e.preventDefault();
+                    return toast('Ingrese un número de folios válido');
+                }
+
+                const ensure = (n, v) => {
+                    let $h = $form.find(`input[name="${n}"]`);
+                    if ($h.length === 0) {
+                        $h = $(`<input type="hidden" name="${n}">`).appendTo($form);
+                    }
+                    $h.val(v);
+                };
+                ensure('nueva_area', area);
+                ensure('numero_folios', folios);
+                ensure('observacion', obs);
+                ensure('id_informe', inf);
+
+                const $btn = $form.find('button[type="submit"]'),
+                    old = $btn.html();
+                $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Enviando...');
                 setTimeout(() => {
-                    if (b.prop('disabled')) {
-                        b.prop('disabled', false).html(t);
+                    if ($btn.prop('disabled')) {
+                        $btn.prop('disabled', false).html(old);
                     }
                 }, 3000);
             });
 
-            // Navbar desktop
-            window.toggleMobileNav = function() {
-                $('.navbar-nav').toggleClass('active');
-            };
-            $('.nav-dropdown .dropdown-toggle').on('click', function(e) {
-                e.preventDefault();
-                $('.nav-dropdown').not($(this).parent()).removeClass('active');
-                $(this).parent().toggleClass('active');
-            });
-            $(document).on('click', function(e) {
-                if (!$(e.target).closest('.nav-dropdown').length) {
-                    $('.nav-dropdown').removeClass('active');
+            // Finalizar / Observar: sincroniza desde la fila
+            $('.finalizar-form, .observacion-form').on('submit', function(e) {
+                const $f = $(this),
+                    $row = $f.closest('tr');
+                const folios = ($row.find('input[name="numero_folios"]').val() || '').trim();
+                const obs = ($row.find('input[name="observacion"]').val() || '').trim();
+                const inf = ($row.find('select[name="id_informe"]').val() || '').trim();
+                const area = ($row.find('select[name="nueva_area"]').val() || '').trim();
+                const ensure = (n, v) => {
+                    let $h = $f.find(`input[name="${n}"]`);
+                    if ($h.length === 0) {
+                        $h = $(`<input type="hidden" name="${n}">`).appendTo($f);
+                    }
+                    $h.val(v);
+                };
+                ensure('numero_folios', folios);
+                ensure('observacion', obs);
+                ensure('id_informe', inf);
+                if (area) ensure('nueva_area', area);
+                if ($f.hasClass('finalizar-form') && (!folios || Number(folios) < 1)) {
+                    e.preventDefault();
+                    return toast('Ingrese un número de folios válido para finalizar');
                 }
             });
 
-            // Navbar mobile
-            window.toggleMobileMenu = function() {
-                $('#mobileMenu').slideToggle(200);
-            };
-            $('#mobileMenu .dropdown-toggle').on('click', function(e) {
-                e.preventDefault();
-                const p = $(this).closest('.nav-dropdown'),
-                    m = p.find('.dropdown-menu'),
-                    open = p.hasClass('active');
-                $('#mobileMenu .nav-dropdown').not(p).removeClass('active').find('.dropdown-menu').css('max-height', '0');
-                if (open) {
-                    p.removeClass('active');
-                    m.css('max-height', '0');
-                } else {
-                    p.addClass('active');
-                    m[0].style.maxHeight = m[0].scrollHeight + 'px';
-                }
-            });
-            $(document).on('click', function(e) {
-                if (!$(e.target).closest('#mobileMenu .nav-dropdown').length && !$(e.target).closest('.fas.fa-bars').length) {
-                    $('#mobileMenu .nav-dropdown').removeClass('active').find('.dropdown-menu').css('max-height', '0');
-                }
+            // Mayúsculas
+            document.querySelectorAll('input[type="text"], textarea').forEach(el => {
+                el.addEventListener('input', function() {
+                    this.value = this.value.toUpperCase();
+                });
             });
         });
-    </script>
 
-    <!-- ========== Mayúsculas automáticas + modal password (finalizar/observación) ========== -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('input[type="text"], textarea').forEach(el => el.addEventListener('input', function() {
-                this.value = this.value.toUpperCase();
-            }));
-        });
+        // Password modal (sin cambios funcionales)
         let formularioActual = null;
         document.querySelectorAll('.btn-protegido').forEach(btn => {
             btn.addEventListener('click', function(e) {
