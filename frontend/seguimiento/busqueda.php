@@ -44,6 +44,63 @@ $navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
     <link rel="stylesheet" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css">
 
     <link rel="icon" type="image/png" href="../../backend/img/logoPisco.png" />
+    <style>
+        .tabs-enviados {
+            display: flex;
+            gap: 0.25rem;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .tab-btn {
+            border: none;
+            background: #f1f5f9;
+            padding: 0.7rem 1.5rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            color: #475569;
+            border-radius: 6px 6px 0 0;
+            /* cuadradito arriba */
+            border: 1px solid transparent;
+            border-bottom: none;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn:hover {
+            background: #e2e8f0;
+        }
+
+        .tab-btn.active {
+            background: #6c5ce7;
+            color: #fff;
+            border-color: #6c5ce7;
+            box-shadow: 0 2px 8px rgba(108, 92, 231, 0.35);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Badge para el número/código */
+        .badge-numero-enviado {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            color: #fff;
+            box-shadow: 0 2px 6px rgba(108, 92, 231, 0.35);
+            white-space: nowrap;
+        }
+    </style>
 </head>
 
 <body>
@@ -53,6 +110,14 @@ $navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
         <?php include "../navbar/$navbarFile"; ?>
 
         <main class="contenido-principal">
+            <div class="tabs-enviados">
+                <button class="tab-btn active" data-target="#tabDOC" data-tipo="DOC">
+                    <i class="fas fa-file-alt"></i> Documentos
+                </button>
+                <button class="tab-btn" data-target="#tabMEMO" data-tipo="MEMO">
+                    <i class="fas fa-file-signature"></i> Memorándums
+                </button>
+            </div>
             <div class="container">
                 <h2>🔎 Buscar Documentos Enviados</h2>
 
@@ -71,6 +136,26 @@ $navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
                     </thead>
                     <tbody></tbody>
                 </table>
+            </div>
+            <div class="container">
+                <!-- TAB MEMORÁNDUMS -->
+                <div id="tab-memos" class="tab-content">
+                    <div class="table-responsive">
+                        <table id="tablaEnviadosMemos" class="table table-striped" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th>Número Documento</th>
+                                    <th>Asunto</th>
+                                    <th>Área Destino</th>
+                                    <th>Fecha Movimiento</th>
+                                    <th>Estado Recepción</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
@@ -106,33 +191,32 @@ $navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
 
     <script>
         $(document).ready(function() {
-            // Botón de menú móvil
+            // ------------------------------------------------------------
+            // 🔹 NAVBAR Y DROPDOWN
+            // ------------------------------------------------------------
             window.toggleMobileNav = function() {
                 $('.navbar-nav').toggleClass('active');
             };
 
-            // Dropdown
             $('.nav-dropdown .dropdown-toggle').on('click', function(e) {
                 e.preventDefault();
-
-                // Cerrar otros
                 $('.nav-dropdown').not($(this).parent()).removeClass('active');
                 $(this).parent().toggleClass('active');
             });
 
-            // Cerrar dropdown si se hace clic afuera
             $(document).on('click', function(e) {
                 if (!$(e.target).closest('.nav-dropdown').length) {
                     $('.nav-dropdown').removeClass('active');
                 }
             });
-        });
 
-        $(document).ready(function() {
-            var tabla = $('#tablaResultados').DataTable({
+            // ------------------------------------------------------------
+            // 🔹 DATATABLE
+            // ------------------------------------------------------------
+            let tabla = $('#tablaResultados').DataTable({
                 responsive: true,
                 ajax: {
-                    url: '../../backend/php/ajax/buscar_documentos_ajax.php',
+                    url: '../../backend/php/ajax/buscar_documentos_ajax.php?tipo=DOC',
                     dataSrc: '',
                     data: function(d) {
                         d.busqueda = $('#inputBusqueda').val();
@@ -147,7 +231,7 @@ $navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
                     {
                         data: 'NombreAreaDestino',
                         render: function(data, type, row) {
-                            return data || `[ID ${row.AreaDestino}]`; // fallback por si no hay nombre
+                            return data || `[ID ${row.AreaDestino}]`;
                         }
                     },
                     {
@@ -156,29 +240,16 @@ $navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
                     {
                         data: null,
                         render: function(data, type, row) {
-                            // 🔹 Si tiene estado 8, mostrar Bloqueado no Finalizado
-                            if (row.IdEstadoDocumento == 8) {
-                                return '🚫 Bloqueado';
-                            }
-
-                            // 🔹 Si está finalizado (pero no bloqueado)
-                            if (row.Finalizado == 1) {
-                                return '🏁 Finalizado';
-                            }
-
-                            // 🔹 Si fue recibido
-                            if (row.Recibido == 1) {
-                                return '✅ Recibido';
-                            }
-
-                            // 🔹 Caso por defecto
+                            if (row.IdEstadoDocumento == 8) return '🚫 Bloqueado';
+                            if (row.Finalizado == 1) return '🏁 Finalizado';
+                            if (row.Recibido == 1) return '✅ Recibido';
                             return '⏳ Pendiente';
                         }
                     },
                     {
                         data: null,
                         render: function(data, type, row) {
-                            return `<button onclick="verSeguimiento(${row.IdDocumentos})" class="btn-seguimiento">🔎 Ver seguimiento</button>`;
+                            return `<button onclick="verSeguimientoAuto(${row.IdDocMemo})" class="btn-seguimiento">🔎 Ver seguimiento</button>`;
                         }
                     }
                 ],
@@ -190,111 +261,169 @@ $navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
                 ]
             });
 
+            // ------------------------------------------------------------
+            // 🔍 BUSCADOR
+            // ------------------------------------------------------------
             $('#inputBusqueda').on('keyup', function() {
                 tabla.ajax.reload();
             });
+
+            // ------------------------------------------------------------
+            // 🔹 CONTROL DE TABS
+            // ------------------------------------------------------------
+            $('.tab-btn').on('click', function() {
+                $('.tab-btn').removeClass('active');
+                $(this).addClass('active');
+
+                const tipo = $(this).data('tipo'); // DOC, MEMO
+                const target = $(this).data('target');
+
+                // Cambiar contenido visible
+                $('.tab-content').removeClass('active');
+                $(target).addClass('active');
+
+                // Cambiar URL del DataTable según tab activo
+                tabla.ajax.url(`../../backend/php/ajax/buscar_documentos_ajax.php?tipo=${tipo}`).load();
+            });
         });
 
-        // Funciones del Modal de Seguimiento
+        // ------------------------------------------------------------
+        // 🔹 BOTÓN DE SEGUIMIENTO AUTOMÁTICO
+        // ------------------------------------------------------------
+        function verSeguimientoAuto(idDocMemo) {
+            const tabActivo = document.querySelector('.tab-btn.active').dataset.tipo;
+            if (tabActivo === 'MEMO') {
+                verSeguimientoMemo(idDocMemo);
+            } else {
+                verSeguimiento(idDocMemo);
+            }
+        }
+
+        // ------------------------------------------------------------
+        // 🔹 MODAL DE SEGUIMIENTO PARA DOCUMENTOS
+        // ------------------------------------------------------------
         function verSeguimiento(idDocumento) {
-            document.getElementById('modalSeguimiento').style.display = 'flex';
+            const modal = document.getElementById('modalSeguimiento');
+            modal.style.display = 'flex';
             document.getElementById('tituloModal').textContent = `Trazabilidad del Documento N° ${idDocumento}`;
             document.getElementById('contenidoSeguimiento').innerHTML = '<div class="loading">Cargando datos...</div>';
 
             fetch(`../../backend/php/archivos/seguimiento_modal.php?id_documentos=${idDocumento}`)
-                .then(response => response.json())
+                .then(res => res.json())
                 .then(data => {
-                    if (data.error) {
-                        document.getElementById('contenidoSeguimiento').innerHTML =
-                            `<div class="sin-movimientos">Error: ${data.error}</div>`;
-                        return;
-                    }
+                    if (data.error) return document.getElementById('contenidoSeguimiento').innerHTML = `<div class="sin-movimientos">Error: ${data.error}</div>`;
+                    if (!data.movimientos.length) return document.getElementById('contenidoSeguimiento').innerHTML = '<div class="sin-movimientos">No se encontraron movimientos.</div>';
 
-                    if (data.movimientos.length === 0) {
-                        document.getElementById('contenidoSeguimiento').innerHTML =
-                            '<div class="sin-movimientos">No se encontraron movimientos para este documento.</div>';
-                        return;
-                    }
-
-                    // 🔸 Campos de la tabla documentos
                     const finalizado = data.Finalizado;
-                    const idEstado = data.IdEstadoDocumento; // <-- nuevo
+                    const idEstado = data.IdEstadoDocumento;
 
-                    let html = `
-                <table class="tabla-seguimiento">
-                    <thead>
-                        <tr>
-                            <th>Área Origen</th>
-                            <th>Área Destino</th>
-                            <th>Fecha de Movimiento</th>
-                            <th>Folios</th>
-                            <th>Informes</th>
-                            <th>Estado</th>                            
-                            <th>Observación</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
+                    let html = `<table class="tabla-seguimiento">
+                <thead>
+                    <tr>
+                        <th>Área Origen</th>
+                        <th>Área Destino</th>
+                        <th>Fecha de Movimiento</th>
+                        <th>Folios</th>
+                        <th>Informes</th>
+                        <th>Estado</th>
+                        <th>Observación</th>
+                    </tr>
+                </thead>
+                <tbody>`;
 
                     data.movimientos.forEach((mov, index) => {
                         let estadoClass, estadoTexto;
-
-                        // 🔹 Si el documento está finalizado y este es el último movimiento
                         if (finalizado == 1 && index === data.movimientos.length - 1) {
-                            if (idEstado == 8) {
-                                estadoClass = 'estado-bloqueado';
-                                estadoTexto = '🚫 Bloqueado';
-                            } else {
-                                estadoClass = 'estado-finalizado';
-                                estadoTexto = '🏁 Finalizado';
-                            }
+                            estadoClass = idEstado == 8 ? 'estado-bloqueado' : 'estado-finalizado';
+                            estadoTexto = idEstado == 8 ? '🚫 Bloqueado' : '🏁 Finalizado';
                         } else {
                             estadoClass = mov.Recibido == 1 ? 'estado-recibido' : 'estado-pendiente';
                             estadoTexto = mov.Recibido == 1 ? '✅ Recibido' : '⏳ Pendiente';
                         }
-
-                        html += `
-                    <tr>
-                        <td>${mov.OrigenNombre || mov.AreaOrigen}</td>
-                        <td>${mov.DestinoNombre || mov.AreaDestino}</td>
-                        <td class="fecha-cell">${mov.FechaMovimiento}</td>
-                        <td>${mov.NumeroFolios || mov.NumeroFolios}</td>
-                        <td>${mov.InformeNombre || '-'}</td>
-                        <td class="${estadoClass}">${estadoTexto}</td>
-                        <td class="observacion-cell">${mov.Observacion || '-'}</td>
-                    </tr>
-                `;
+                        html += `<tr>
+                    <td>${mov.OrigenNombre || mov.AreaOrigen}</td>
+                    <td>${mov.DestinoNombre || mov.AreaDestino}</td>
+                    <td class="fecha-cell">${mov.FechaMovimiento}</td>
+                    <td>${mov.NumeroFolios || '-'}</td>
+                    <td>${mov.InformeNombre || '-'}</td>
+                    <td class="${estadoClass}">${estadoTexto}</td>
+                    <td class="observacion-cell">${mov.Observacion || '-'}</td>
+                </tr>`;
                     });
 
                     html += '</tbody></table>';
                     document.getElementById('contenidoSeguimiento').innerHTML = html;
                 })
-                .catch(error => {
-                    console.error('Error:', error);
-                    document.getElementById('contenidoSeguimiento').innerHTML =
-                        '<div class="sin-movimientos">Error al cargar los datos.</div>';
+                .catch(err => {
+                    console.error(err);
+                    document.getElementById('contenidoSeguimiento').innerHTML = '<div class="sin-movimientos">Error al cargar los datos.</div>';
                 });
         }
 
+        // ------------------------------------------------------------
+        // 🔹 MODAL DE SEGUIMIENTO PARA MEMORÁNDUMS
+        // ------------------------------------------------------------
+        function verSeguimientoMemo(idMemo) {
+            const modal = document.getElementById('modalSeguimiento');
+            modal.style.display = 'flex';
+            document.getElementById('tituloModal').textContent = `Trazabilidad del Memorándum N° ${idMemo}`;
+            document.getElementById('contenidoSeguimiento').innerHTML = '<div class="loading">Cargando datos...</div>';
+
+            fetch(`../../backend/php/memorandum/seguimiento_memo_modal.php?id_memo=${idMemo}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) return document.getElementById('contenidoSeguimiento').innerHTML = `<div class="sin-movimientos">Error: ${data.error}</div>`;
+                    if (!data.movimientos.length) return document.getElementById('contenidoSeguimiento').innerHTML = '<div class="sin-movimientos">No se encontraron movimientos.</div>';
+
+                    let html = `<table class="tabla-seguimiento">
+                <thead>
+                    <tr>
+                        <th>Área Origen</th>
+                        <th>Área Destino</th>
+                        <th>Fecha de Emisión</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+                    data.movimientos.forEach(mov => {
+                        const estadoTexto = mov.Recibido == 1 ? '✅ Recibido' : '⏳ Pendiente';
+                        const estadoClass = mov.Recibido == 1 ? 'estado-recibido' : 'estado-pendiente';
+                        html += `<tr>
+                    <td>${mov.AreaOrigen}</td>
+                    <td>${mov.AreaDestino}</td>
+                    <td class="fecha-cell">${mov.FechaEmision}</td>
+                    <td class="${estadoClass}">${estadoTexto}</td>
+                </tr>`;
+                    });
+
+                    html += '</tbody></table>';
+                    document.getElementById('contenidoSeguimiento').innerHTML = html;
+                })
+                .catch(err => {
+                    console.error(err);
+                    document.getElementById('contenidoSeguimiento').innerHTML = '<div class="sin-movimientos">Error al cargar los datos.</div>';
+                });
+        }
+
+        // ------------------------------------------------------------
+        // 🔹 CERRAR MODAL
+        // ------------------------------------------------------------
         function cerrarModalSeguimiento() {
             document.getElementById('modalSeguimiento').style.display = 'none';
         }
 
-        // Cerrar modal al hacer clic fuera
-        document.addEventListener('click', function(event) {
+        document.addEventListener('click', function(e) {
             const modal = document.getElementById('modalSeguimiento');
-            if (event.target === modal) {
-                cerrarModalSeguimiento();
-            }
+            if (e.target === modal) cerrarModalSeguimiento();
         });
 
-        // Cerrar modal con tecla Escape
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                cerrarModalSeguimiento();
-            }
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') cerrarModalSeguimiento();
         });
     </script>
+
+
     <script>
         $(document).ready(function() {
             // 1. Mostrar/Ocultar el menú móvil completo
