@@ -79,7 +79,7 @@ $sqlMemos = "SELECT
         INNER JOIN areas a_origen         ON a_origen.IdAreas = m.IdAreaOrigen
         INNER JOIN estadodocumento e      ON e.IdEstadoDocumento = m.IdEstadoDocumento
         WHERE md.IdAreaDestino = :area
-          AND md.Recibido = 0       -- ⬅️ solo los memos NO recibidos por esta área
+          AND md.Recibido = 0     
           AND m.IdEstadoDocumento = 1"; 
 
 $stmt2 = $pdo->prepare($sqlMemos);

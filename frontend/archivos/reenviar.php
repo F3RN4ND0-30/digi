@@ -4,107 +4,200 @@ if (!isset($_SESSION['dg_id'])) {
     header('Location: ../login.php');
     exit;
 }
-
 require '../../backend/db/conexion.php';
 
-// Detectar si es móvil para cargar navbar y css correspondientes
 $isMobile = false;
 if (isset($_SERVER['HTTP_USER_AGENT'])) {
     $isMobile = preg_match('/Mobile|Android|iP(hone|od|ad)/i', $_SERVER['HTTP_USER_AGENT']);
 }
-
-// Definir qué archivo de navbar y CSS se va a usar
 $navbarFile = $isMobile ? 'navbar_mobil.php' : 'navbar.php';
 $navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
 
 $area_id = $_SESSION['dg_area_id'] ?? null;
+if (!$area_id) die('❌ No se pudo determinar el área del usuario.');
 
-$sql = "
-SELECT m.IdMovimientoDocumento, m.IdDocumentos, d.NumeroDocumento, d.NumeroFolios, d.Asunto, d.IdUsuarios, d.IdAreaFinal,
-               u.Nombres, u.ApellidoPat
-        FROM movimientodocumento m
-        INNER JOIN documentos d ON m.IdDocumentos = d.IdDocumentos
-        INNER JOIN usuarios u ON d.IdUsuarios = u.IdUsuarios
-        WHERE m.AreaDestino = ?  -- El área que recibe el documento
-          AND m.Recibido = 1  -- Asegurarnos de que el documento ha sido recibido
-          AND d.Finalizado = 0  -- El documento no ha sido finalizado
-          AND d.IdEstadoDocumento != 5  -- Excluir los documentos reenviados
-          AND d.IdEstadoDocumento IN (1, 2, 3, 6)  -- Solo los documentos en estado NUEVO, SEGUIMIENTO o RECIBIDO
-          
-          -- Excluir el último emisor del documento
-          AND NOT EXISTS (
-              SELECT 1
-              FROM movimientodocumento m2
-              WHERE m2.IdDocumentos = d.IdDocumentos
-              AND m2.IdMovimientoDocumento = (
-                  SELECT MAX(IdMovimientoDocumento) 
-                  FROM movimientodocumento 
-                  WHERE IdDocumentos = d.IdDocumentos
-              )
-              AND m2.AreaOrigen = ?
-          )
-          
-          -- Seleccionamos solo el último movimiento para evitar duplicados
-          AND m.IdMovimientoDocumento = (
-              SELECT MAX(IdMovimientoDocumento)
-              FROM movimientodocumento m3
-              WHERE m3.IdDocumentos = d.IdDocumentos
-          )
-          
-        ORDER BY m.IdMovimientoDocumento DESC";
-
-$stmt = $pdo->prepare($sql);
-$stmt->execute([$area_id, $area_id]);  // Usamos el mismo $area_id para ambas subconsultas
+/* ---------- Datos: Documentos recibidos ---------- */
+$sqlDocs = "
+    SELECT 
+        m.IdMovimientoDocumento, 
+        m.IdDocumentos, 
+        d.NumeroDocumento, 
+        d.NumeroFolios, 
+        d.Asunto, 
+        d.IdUsuarios, 
+        d.IdAreaFinal,
+        u.Nombres, 
+        u.ApellidoPat
+    FROM movimientodocumento m
+    INNER JOIN documentos d ON m.IdDocumentos = d.IdDocumentos
+    INNER JOIN usuarios   u ON d.IdUsuarios   = u.IdUsuarios
+    WHERE m.AreaDestino = ?
+      AND m.Recibido = 1
+      AND d.Finalizado = 0
+      AND d.IdEstadoDocumento != 5
+      AND d.IdEstadoDocumento IN (1,2,3,6)
+      AND m.IdMovimientoDocumento = (
+            SELECT MAX(m3.IdMovimientoDocumento)
+            FROM movimientodocumento m3
+            WHERE m3.IdDocumentos = d.IdDocumentos
+      )
+    ORDER BY m.IdMovimientoDocumento DESC
+";
+$stmt = $pdo->prepare($sqlDocs);
+$stmt->execute([$area_id]);
 $documentos_recibidos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+/* ---------- Datos: Memorándums recibidos (solo responder al emisor) ---------- */
+$sqlMemos = "
+    SELECT
+        m.IdMemo,
+        m.CodigoMemo       AS NumeroDocumento,
+        m.Asunto,
+        m.TipoMemo,
+        m.IdAreaOrigen,
+        ao.Nombre          AS AreaOrigenNombre,
+        u.Nombres,
+        u.ApellidoPat
+    FROM memorandums m
+    INNER JOIN memorandum_destinos md ON md.IdMemo = m.IdMemo
+    INNER JOIN areas ao               ON ao.IdAreas = m.IdAreaOrigen
+    INNER JOIN usuarios u             ON u.IdUsuarios = m.IdUsuarioEmisor
+    WHERE md.IdAreaDestino = :area
+      AND md.Recibido = 1
+      AND m.IdEstadoDocumento IN (1,2,3,6)
+    ORDER BY m.IdMemo DESC
+";
+$stmtM = $pdo->prepare($sqlMemos);
+$stmtM->execute(['area' => $area_id]);
+$memos_recibidos = $stmtM->fetchAll(PDO::FETCH_ASSOC);
+
+/* ---------- Áreas (para reenviar DOC) ---------- */
 $areas = $pdo->prepare("SELECT IdAreas, Nombre FROM areas WHERE IdAreas != ?");
 $areas->execute([$area_id]);
 $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reenvío de Documentos - DIGI MPP</title>
+    <title>Reenviar Documentos - DIGI MPP</title>
 
-    <!-- Google Fonts -->
+    <!-- Fuentes e iconos -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- CSS del Navbar (dinámico) -->
+    <!-- Navbar -->
     <link rel="stylesheet" href="../../backend/css/navbar/<?= $navbarCss ?>" />
 
-    <!-- CSS de Reenvío -->
+    <!-- Estilos de la vista -->
     <link rel="stylesheet" href="../../backend/css/archivos/reenviados.css" />
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-    <!-- DataTables CSS -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css">
-
-    <!-- Selectize CSS -->
+    <!-- DataTables / Selectize -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <link href="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/css/selectize.default.css" rel="stylesheet" />
-    <!-- Selectize JS -->
-    <script src="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/js/standalone/selectize.min.js"></script>
 
     <link rel="icon" type="image/png" href="../../backend/img/logoPisco.png" />
 
+    <style>
+        /* Tabs estilo enviados.php */
+        .tabs-enviados {
+            display: flex;
+            gap: .25rem;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #e2e8f0
+        }
+
+        .tab-btn {
+            border: none;
+            background: #f1f5f9;
+            padding: .7rem 1.5rem;
+            font-size: .9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            cursor: pointer;
+            color: #475569;
+            border-radius: 6px 6px 0 0;
+            border: 1px solid transparent;
+            border-bottom: none;
+            transition: all .2s
+        }
+
+        .tab-btn:hover {
+            background: #e2e8f0
+        }
+
+        .tab-btn.active {
+            background: #6c5ce7;
+            color: #fff;
+            border-color: #6c5ce7;
+            box-shadow: 0 2px 8px rgba(108, 92, 231, .35)
+        }
+
+        .tab-content {
+            display: none
+        }
+
+        .tab-content.active {
+            display: block
+        }
+
+        .numero-memo-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            align-items: flex-start
+        }
+
+        .badge-num {
+            font-size: .80rem;
+            border-radius: 999px;
+            padding: .45rem .75rem
+        }
+
+        .badge-memo-tipo {
+            font-size: .72rem;
+            font-weight: 700;
+            border-radius: 999px;
+            padding: .25rem .6rem;
+            white-space: nowrap;
+            letter-spacing: .2px
+        }
+
+        .badge-memo-circular {
+            background: #0ea5a4;
+            color: #fff
+        }
+
+        .badge-memo-multiple {
+            background: #7c3aed;
+            color: #fff
+        }
+
+        .badge-area {
+            background: #e0f2fe;
+            color: #0c4a6e;
+            border-radius: 999px;
+            padding: .25rem .6rem;
+            font-size: .78rem;
+            display: inline-block
+        }
+
+        .input-mini {
+            max-width: 220px
+        }
+    </style>
 </head>
 
 <body>
     <div class="layout-escritorio">
-
-        <!-- Incluir el navbar correcto -->
         <?php include "../navbar/$navbarFile"; ?>
 
         <main class="contenido-principal">
             <div class="tarjeta">
-                <div class="tarjeta-header">
+                <div class="tarjeta-header" style="justify-content:space-between;align-items:center">
                     <h2 class="mb-0"><i class="fas fa-share"></i> Reenviar Documentos</h2>
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCrearInforme" onclick="abrirModalInforme()">
                         <i class="fas fa-file-alt"></i> Crear Informe
@@ -112,152 +205,206 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
                 </div>
 
                 <div class="tarjeta-body">
-                    <?php if (empty($documentos_recibidos)): ?>
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i>
-                            <span>No hay documentos recibidos para reenviar en este momento.</span>
-                        </div>
-                    <?php else: ?>
-                        <div class="table-responsive">
-                            <table id="tablaReenvio" class="table table-striped" style="width:100%">
-                                <thead>
-                                    <tr>
-                                        <th><i class="fas fa-hashtag"></i> Número</th>
-                                        <th><i class="fas fa-align-left"></i> Asunto</th>
-                                        <th><i class="fas fa-user"></i> Remitente</th>
-                                        <th><i class="fas fa-building"></i> Reenviar a</th>
-                                        <th><i class="fas fa-copy"></i> N° de Folios</th>
-                                        <th><i class="fas fa-comment-dots"></i> Observación</th>
-                                        <th><i class="fas fa-file-alt"></i> Informe</th>
-                                        <th><i class="fas fa-cogs"></i> Acción</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($documentos_recibidos as $doc): ?>
+
+                    <!-- Tabs -->
+                    <div class="tabs-enviados">
+                        <button class="tab-btn active" data-target="#tab-docs"><i class="fas fa-file-alt"></i> Documentos</button>
+                        <button class="tab-btn" data-target="#tab-memos"><i class="fas fa-file-signature"></i> Memorándums</button>
+                    </div>
+
+                    <!-- TAB: Documentos -->
+                    <div id="tab-docs" class="tab-content active">
+                        <?php if (empty($documentos_recibidos)): ?>
+                            <div class="alert alert-info"><i class="fas fa-info-circle"></i> No hay documentos recibidos.</div>
+                        <?php else: ?>
+                            <div class="table-responsive">
+                                <table id="tablaDocs" class="table table-striped" style="width:100%">
+                                    <thead>
                                         <tr>
-                                            <form method="POST" action="../../backend/php/archivos/procesar_reenvio.php" class="reenvio-form">
-                                                <td class="numero-doc">
-                                                    <span class="badge bg-primary">
-                                                        <?= htmlspecialchars($doc['NumeroDocumento']) ?>
-                                                    </span>
-                                                </td>
-                                                <td class="asunto-doc">
-                                                    <div class="text-truncate" title="<?= htmlspecialchars($doc['Asunto']) ?>">
-                                                        <?= htmlspecialchars($doc['Asunto']) ?>
-                                                    </div>
-                                                </td>
-                                                <td class="remitente-doc">
-                                                    <div class="user-info-mini">
-                                                        <i class="fas fa-user-circle"></i>
-                                                        <span><?= htmlspecialchars($doc['Nombres'] . ' ' . $doc['ApellidoPat']) ?></span>
-                                                    </div>
-                                                </td>
-                                                <td class="area-select">
-                                                    <select name="nueva_area" required class="area-pequena">
-                                                        <option value="">Seleccione área</option>
-                                                        <?php foreach ($areas as $a): ?>
-                                                            <option value="<?= $a['IdAreas'] ?>"><?= htmlspecialchars($a['Nombre']) ?></option>
-                                                        <?php endforeach; ?>
-                                                    </select>
-                                                </td>
-                                                <td class="folios-doc">
-                                                    <input
-                                                        type="number"
-                                                        name="numero_folios"
-                                                        min="<?= $doc['NumeroFolios'] ?>"
-                                                        value="<?= $doc['NumeroFolios'] ?>"
-                                                        class="form-control form-control-sm"
-                                                        required>
-                                                </td>
-                                                <td class="observacion-input">
-                                                    <input type="text"
-                                                        name="observacion"
-                                                        class="form-control form-control-sm observacion-grande"
-                                                        placeholder="Observación opcional..."
-                                                        maxlength="100">
-                                                </td>
-                                                <td class="informe-input area-select" data-id-documento="<?= $doc['IdDocumentos'] ?>">
-                                                    <select class="select-informes area-pequena" name="id_informe">
-                                                        <option>Cargando...</option>
-                                                    </select>
-                                                </td>
-                                                <td class="accion-btn">
-                                                    <form method="POST" action="procesar_reenvio.php">
-                                                        <input type="hidden" name="id_documento" value="<?= $doc['IdDocumentos'] ?>">
-                                                        <button type="submit" class="btn btn-success btn-sm">Reenviar</button>
-                                                    </form>
-
-                                                    <form method="POST"
-                                                        action="../../backend/php/archivos/finalizar_documento.php"
-                                                        class="finalizar-form"
-                                                        onsubmit="return confirm('¿Seguro que quieres finalizar el documento? Si lo finalizas ya nadie lo podrá reenviar.')">
-
-                                                        <input type="hidden" name="id_documento" value="<?= $doc['IdDocumentos'] ?>">
-                                                        <!-- Agrega también estos campos -->
-                                                        <input type="hidden" name="numero_folios" value="<?= $doc['NumeroFolios'] ?>">
-                                                        <input type="hidden" name="id_informe" value="">
-                                                        <input type="hidden" name="observacion" value="">
-                                                        <input type="hidden" name="nueva_area" value="">
-
-                                                        <button type="submit" class="btn btn-danger btn-sm btn-protegido">Finalizar</button>
-                                                    </form>
-
-                                                    <form method="POST"
-                                                        action="../../backend/php/archivos/observacion_documento.php"
-                                                        class="observacion-form"
-                                                        onsubmit="return confirm('¿Seguro que quieres observar el documento? Si lo observas ya nadie lo podrá reenviar.')">
-
-                                                        <input type="hidden" name="id_documento" value="<?= $doc['IdDocumentos'] ?>">
-                                                        <!-- Agrega también estos campos -->
-                                                        <input type="hidden" name="numero_folios" value="<?= $doc['NumeroFolios'] ?>">
-                                                        <input type="hidden" name="id_informe" value="">
-                                                        <input type="hidden" name="observacion" value="">
-                                                        <input type="hidden" name="nueva_area" value="">
-
-                                                        <button type="submit" class="btn btn-observacion btn-sm btn-protegido" style="margin-top: 5px;">Observar</button>
-                                                    </form>
-                                                </td>
-                                            </form>
+                                            <th># Número</th>
+                                            <th>Asunto</th>
+                                            <th>Remitente</th>
+                                            <th>Reenviar a</th>
+                                            <th>N° de Folios</th>
+                                            <th>Observación</th>
+                                            <th>Informe</th>
+                                            <th>Acción</th>
                                         </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    <?php endif; ?>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($documentos_recibidos as $d): ?>
+                                            <tr>
+                                                <form method="POST" action="../../backend/php/archivos/procesar_reenvio.php" class="reenvio-form">
+                                                    <input type="hidden" name="tipo" value="DOC">
+                                                    <input type="hidden" name="id_documento" value="<?= (int)$d['IdDocumentos'] ?>">
+
+                                                    <td><span class="badge badge-num bg-primary"><?= htmlspecialchars($d['NumeroDocumento']) ?></span></td>
+                                                    <td>
+                                                        <div class="text-truncate" title="<?= htmlspecialchars($d['Asunto']) ?>"><?= htmlspecialchars($d['Asunto']) ?></div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="user-info-mini"><i class="fas fa-user-circle"></i>
+                                                            <span><?= htmlspecialchars($d['Nombres'] . ' ' . $d['ApellidoPat']) ?></span>
+                                                        </div>
+                                                    </td>
+
+                                                    <td class="area-select">
+                                                        <select name="nueva_area" required class="area-pequena">
+                                                            <option value="">Seleccione área</option>
+                                                            <?php foreach ($areas as $a): ?>
+                                                                <option value="<?= $a['IdAreas'] ?>"><?= htmlspecialchars($a['Nombre']) ?></option>
+                                                            <?php endforeach; ?>
+                                                        </select>
+                                                    </td>
+
+                                                    <td><input type="number" name="numero_folios" min="<?= (int)$d['NumeroFolios'] ?>" value="<?= (int)$d['NumeroFolios'] ?>" class="form-control form-control-sm" required></td>
+                                                    <td><input type="text" name="observacion" class="form-control form-control-sm observacion-grande" placeholder="Observación opcional..." maxlength="100"></td>
+
+                                                    <!-- Informe (Selectize) -->
+                                                    <td class="informe-input area-select" data-id-documento="<?= (int)$d['IdDocumentos'] ?>">
+                                                        <select class="select-informes area-pequena" name="id_informe">
+                                                            <option>Cargando...</option>
+                                                        </select>
+                                                    </td>
+
+                                                    <td class="accion-btn">
+                                                        <button type="submit" class="btn btn-success btn-sm btn-reenviar"><i class="fas fa-share"></i> Reenviar</button>
+
+                                                        <form method="POST" action="../../backend/php/archivos/finalizar_documento.php" class="finalizar-form" onsubmit="return confirm('¿Seguro que quieres finalizar el documento?')">
+                                                            <input type="hidden" name="id_documento" value="<?= (int)$d['IdDocumentos'] ?>">
+                                                            <input type="hidden" name="numero_folios" value="<?= (int)$d['NumeroFolios'] ?>">
+                                                            <input type="hidden" name="id_informe" value="">
+                                                            <input type="hidden" name="observacion" value="">
+                                                            <input type="hidden" name="nueva_area" value="">
+                                                            <button type="submit" class="btn btn-danger btn-sm btn-protegido" style="margin-top:5px;">Finalizar</button>
+                                                        </form>
+
+                                                        <form method="POST" action="../../backend/php/archivos/observacion_documento.php" class="observacion-form" onsubmit="return confirm('¿Observar el documento?')">
+                                                            <input type="hidden" name="id_documento" value="<?= (int)$d['IdDocumentos'] ?>">
+                                                            <input type="hidden" name="numero_folios" value="<?= (int)$d['NumeroFolios'] ?>">
+                                                            <input type="hidden" name="id_informe" value="">
+                                                            <input type="hidden" name="observacion" value="">
+                                                            <input type="hidden" name="nueva_area" value="">
+                                                            <button type="submit" class="btn btn-observacion btn-sm btn-protegido" style="margin-top:5px;">Observar</button>
+                                                        </form>
+                                                    </td>
+                                                </form>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- TAB: Memorándums -->
+                    <div id="tab-memos" class="tab-content">
+                        <?php if (empty($memos_recibidos)): ?>
+                            <div class="alert alert-info"><i class="fas fa-info-circle"></i> No hay memorándums recibidos.</div>
+                        <?php else: ?>
+                            <div class="table-responsive">
+                                <table id="tablaMemos" class="table table-striped" style="width:100%">
+                                    <thead>
+                                        <tr>
+                                            <th># / Tipo</th>
+                                            <th>Asunto</th>
+                                            <th>Remitente</th>
+                                            <th>Responder a</th>
+                                            <th>N° de Folios</th>
+                                            <th>Observación</th>
+                                            <th>Informe</th>
+                                            <th>Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($memos_recibidos as $m): ?>
+                                            <tr>
+                                                <form method="POST" action="../../backend/php/memorandum/procesar_reenvio.php" class="reenvio-form">
+                                                    <input type="hidden" name="tipo" value="MEMO">
+                                                    <input type="hidden" name="id_memo" value="<?= (int)$m['IdMemo'] ?>">
+                                                    <input type="hidden" name="nueva_area" value="<?= (int)$m['IdAreaOrigen'] ?>">
+
+                                                    <td>
+                                                        <div class="numero-memo-wrapper">
+                                                            <?php
+                                                            $esMultiple = ($m['TipoMemo'] === 'MULTIPLE');
+                                                            $label = $esMultiple ? 'MEMORÁNDUM MÚLTIPLE' : 'MEMORÁNDUM CIRCULAR';
+                                                            $clase = $esMultiple ? 'badge-memo-multiple' : 'badge-memo-circular';
+                                                            ?>
+                                                            <span class="badge-memo-tipo <?= $clase ?>"><?= $label ?></span>
+                                                            <span class="badge badge-num bg-primary"><?= htmlspecialchars($m['NumeroDocumento']) ?></span>
+                                                        </div>
+                                                    </td>
+
+                                                    <td>
+                                                        <div class="text-truncate" title="<?= htmlspecialchars($m['Asunto']) ?>"><?= htmlspecialchars($m['Asunto']) ?></div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="user-info-mini"><i class="fas fa-user-circle"></i>
+                                                            <span><?= htmlspecialchars($m['Nombres'] . ' ' . $m['ApellidoPat']) ?></span>
+                                                        </div>
+                                                    </td>
+                                                    <td><span class="badge-area"><?= htmlspecialchars($m['AreaOrigenNombre']) ?></span></td>
+
+                                                    <td><input type="number" name="numero_folios" min="0" value="0" class="form-control form-control-sm"></td>
+                                                    <td><input type="text" name="observacion" class="form-control form-control-sm observacion-grande" placeholder="Observación opcional..." maxlength="100"></td>
+
+                                                    <!-- Informe (Selectize igual estilo; no hay datos => opción fija) -->
+                                                    <td class="informe-input area-select" data-id-documento="0">
+                                                        <select class="select-informes area-pequena input-mini" name="id_informe">
+                                                            <option value="">No hay informes</option>
+                                                        </select>
+                                                    </td>
+
+                                                    <td class="accion-btn">
+                                                        <button type="submit" class="btn btn-success btn-sm btn-reenviar"><i class="fas fa-reply"></i> Responder</button>
+
+                                                        <form method="POST" action="../../backend/php/memorandum/finalizar_memo.php" class="finalizar-form" onsubmit="return confirm('¿Finalizar el memorándum?')">
+                                                            <input type="hidden" name="id_memo" value="<?= (int)$m['IdMemo'] ?>">
+                                                            <input type="hidden" name="id_informe" value="">
+                                                            <input type="hidden" name="observacion" value="">
+                                                            <input type="hidden" name="nueva_area" value="<?= (int)$m['IdAreaOrigen'] ?>">
+                                                            <button type="submit" class="btn btn-danger btn-sm btn-protegido" style="margin-top:5px;">Finalizar</button>
+                                                        </form>
+                                                    </td>
+                                                </form>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
                 </div>
             </div>
         </main>
     </div>
 
     <!-- Modal Crear Informe -->
-    <div id="modalCrearInforme" class="modal-overlay" style="display: none;">
+    <div id="modalCrearInforme" class="modal-overlay" style="display:none;">
         <div class="modal-contenido tarjeta-modal animar-entrada">
             <div class="modal-header tarjeta-header">
                 <h3><i class="fas fa-file-alt"></i> Crear Informe</h3>
                 <button class="close-modal" onclick="cerrarModalInforme()">&times;</button>
             </div>
-
             <div class="modal-body tarjeta-body">
                 <input type="hidden" id="idDocumentoModal" name="id_documento">
                 <input type="hidden" id="idAreaModal" value="<?= $_SESSION['dg_area_id'] ?>">
-
                 <div class="form-group">
                     <label for="buscarDocumento">Documento asociado:</label>
                     <input type="text" id="buscarDocumento" placeholder="Escriba número o asunto..." autocomplete="off">
                     <ul id="resultadosDocumento" class="resultados-lista"></ul>
                 </div>
-
                 <div class="form-group">
                     <label for="tituloInforme">Nombre del informe:</label>
                     <input type="text" id="tituloInforme" placeholder="Ingrese el título..." autocomplete="off">
                 </div>
-
                 <div class="form-group">
                     <label for="nombreFinalInforme">Nombre final:</label>
                     <input type="text" id="nombreFinalInforme" readonly>
                 </div>
             </div>
-
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="cerrarModalInforme()">Cancelar</button>
                 <button class="btn btn-success" onclick="guardarInforme()">Guardar Informe</button>
@@ -265,25 +412,21 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
         </div>
     </div>
 
-    <!-- Modal de contraseña -->
-    <div id="modalPassword" class="modal-overlay" style="display: none;">
+    <!-- Modal password -->
+    <div id="modalPassword" class="modal-overlay" style="display:none;">
         <div class="modal-contenido tarjeta-modal animar-entrada">
             <div class="modal-header tarjeta-header">
                 <h3><i class="fas fa-lock"></i> Confirmar acción</h3>
                 <button class="close-modal" onclick="cerrarModalPassword()">&times;</button>
             </div>
-
             <div class="modal-body tarjeta-body">
                 <p>Ingrese su contraseña para continuar:</p>
                 <div class="password-wrapper">
                     <input type="password" id="passwordInput" placeholder="Contraseña" autocomplete="off">
-                    <button type="button" class="btn-toggle-pass" onclick="togglePassword()">
-                        <i class="fas fa-eye"></i>
-                    </button>
+                    <button type="button" class="btn-toggle-pass" onclick="togglePassword()"><i class="fas fa-eye"></i></button>
                 </div>
-                <div id="passwordError" style="color: red; display: none; margin-top: 5px;">Contraseña incorrecta.</div>
+                <div id="passwordError" style="color:red;display:none;margin-top:5px;">Contraseña incorrecta.</div>
             </div>
-
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="cerrarModalPassword()">Cancelar</button>
                 <button class="btn btn-success" onclick="confirmarPassword()">Confirmar</button>
@@ -291,120 +434,15 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
         </div>
     </div>
 
-    <!-- Ahora sí cargamos el JS de notificaciones normalmente -->
+    <!-- JS base -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/js/standalone/selectize.min.js"></script>
     <script src="../../backend/js/notificaciones.js"></script>
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-
+    <!-- ========== UI: Modal Informe ========== -->
     <script>
-        // Abrir el modal
-        function abrirModalInforme() {
-            document.getElementById('modalCrearInforme').style.display = 'flex';
-        }
-
-        // Cerrar el modal
-        function cerrarModalInforme() {
-            document.getElementById('modalCrearInforme').style.display = 'none';
-        }
-
-        // Cerrar al hacer clic fuera del contenido
-        window.addEventListener('click', function(e) {
-            const modal = document.getElementById('modalCrearInforme');
-            if (e.target === modal) {
-                cerrarModalInforme();
-            }
-        });
-    </script>
-    <script>
-        document.querySelectorAll('.observacion-form').forEach(form => {
-            form.addEventListener('submit', function() {
-                const row = form.closest('tr');
-                const folios = row.querySelector('input[name="numero_folios"]').value;
-                const informe = row.querySelector('select[name="id_informe"]').value;
-                const observacion = row.querySelector('input[name="observacion"]').value;
-                const area = row.querySelector('select[name="nueva_area"]').value;
-
-                form.querySelector('input[name="numero_folios"]').value = folios;
-                form.querySelector('input[name="id_informe"]').value = informe;
-                form.querySelector('input[name="observacion"]').value = observacion;
-                form.querySelector('input[name="nueva_area"]').value = area;
-            });
-        });
-    </script>
-    <script>
-        document.querySelectorAll('.finalizar-form').forEach(form => {
-            form.addEventListener('submit', function() {
-                const row = form.closest('tr');
-                const folios = row.querySelector('input[name="numero_folios"]').value;
-                const informe = row.querySelector('select[name="id_informe"]').value;
-                const observacion = row.querySelector('input[name="observacion"]').value;
-                const area = row.querySelector('select[name="nueva_area"]').value;
-
-                form.querySelector('input[name="numero_folios"]').value = folios;
-                form.querySelector('input[name="id_informe"]').value = informe;
-                form.querySelector('input[name="observacion"]').value = observacion;
-                form.querySelector('input[name="nueva_area"]').value = area;
-            });
-        });
-    </script>
-    <script>
-        document.querySelectorAll('.informe-input').forEach(td => {
-            const idDocumento = td.dataset.idDocumento;
-            const select = td.querySelector('.select-informes');
-            if (!idDocumento || !select) return;
-
-            // Mostrar estado de carga
-            select.innerHTML = '<option>Cargando...</option>';
-
-            // Cargar informes por documento
-            fetch(`../../backend/php/archivos/obtener_informes.php?id_documento=${idDocumento}`)
-                .then(res => res.json())
-                .then(data => {
-                    let opciones = '';
-
-                    if (!Array.isArray(data) || data.length === 0) {
-                        opciones = '<option value="">No hay informes</option>';
-                    } else {
-                        opciones = '<option value=""></option>'; // opción vacía inicial
-                        opciones += data.map(inf =>
-                            `<option value="${inf.IdInforme}">${inf.NombreInforme}</option>`
-                        ).join('');
-                    }
-
-                    select.innerHTML = opciones;
-
-                    // --- Inicializar Selectize ---
-                    const $select = $(select);
-
-                    // Destruir instancia previa si ya existe (por recargas dinámicas)
-                    if ($select[0].selectize) {
-                        $select[0].selectize.destroy();
-                    }
-
-                    $select.selectize({
-                        allowEmptyOption: true,
-                        placeholder: 'Seleccione un informe',
-                        sortField: 'text',
-                        create: false,
-                        dropdownParent: 'body',
-                        onFocus: function() {
-                            this.removeOption('');
-                            this.refreshOptions(false);
-                        }
-                    });
-                })
-                .catch(err => {
-                    console.error('Error cargando informes:', err);
-                    select.innerHTML = '<option>Error al cargar</option>';
-                });
-        });
-    </script>
-    <script>
-        let documentoSeleccionado = null;
-        let idArea = <?= $_SESSION['dg_area_id'] ?>;
-
         function abrirModalInforme() {
             document.getElementById('modalCrearInforme').style.display = 'flex';
             actualizarCorrelativo();
@@ -412,76 +450,63 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
 
         function cerrarModalInforme() {
             document.getElementById('modalCrearInforme').style.display = 'none';
-            documentoSeleccionado = null;
             document.getElementById('buscarDocumento').value = '';
             document.getElementById('resultadosDocumento').innerHTML = '';
             document.getElementById('tituloInforme').value = '';
             document.getElementById('nombreFinalInforme').value = '';
         }
+        window.addEventListener('click', e => {
+            const m = document.getElementById('modalCrearInforme');
+            if (e.target === m) cerrarModalInforme();
+        });
+    </script>
 
-        // Función para actualizar correlativo y mostrar en el input de nombre final
+    <!-- ========== Lógica: Crear informe (correlativo/búsqueda/guardar) ========== -->
+    <script>
+        let idArea = <?= $_SESSION['dg_area_id'] ?>;
+
         function actualizarCorrelativo() {
             fetch('../../backend/php/archivos/obtener_correlativo_informe.php?area=' + idArea)
-                .then(res => res.json())
-                .then(data => {
-                    const correlativo = data.correlativo;
-                    const año = data.año;
-                    const tituloInput = document.getElementById('tituloInforme').value;
-                    document.getElementById('nombreFinalInforme').value = `INFORME N°. ${correlativo}-${año}-${tituloInput}`;
+                .then(r => r.json()).then(d => {
+                    const c = d.correlativo,
+                        an = d.año,
+                        t = document.getElementById('tituloInforme').value;
+                    document.getElementById('nombreFinalInforme').value = `INFORME N°. ${c}-${an}-${t}`;
                 });
         }
-
-        // Buscador de documentos
         const buscarInput = document.getElementById('buscarDocumento');
         const resultadosLista = document.getElementById('resultadosDocumento');
-
-        buscarInput.addEventListener('input', function() {
+        buscarInput?.addEventListener('input', function() {
             const q = this.value.trim();
             if (q.length < 2) {
                 resultadosLista.innerHTML = '';
                 return;
             }
-
             fetch(`../../backend/php/archivos/buscar_documentos.php?q=${encodeURIComponent(q)}`)
-                .then(res => res.json())
-                .then(data => {
+                .then(r => r.json()).then(data => {
                     resultadosLista.innerHTML = '';
                     data.forEach(doc => {
                         const li = document.createElement('li');
                         li.textContent = `${doc.NumeroDocumento} - ${doc.Asunto}`;
                         li.onclick = () => {
-                            documentoSeleccionado = doc.IdDocumentos;
                             buscarInput.value = `${doc.NumeroDocumento} - ${doc.Asunto}`;
-                            document.getElementById('idDocumentoModal').value = doc.IdDocumentos; // <--- importante
+                            document.getElementById('idDocumentoModal').value = doc.IdDocumentos;
                             resultadosLista.innerHTML = '';
                         };
                         resultadosLista.appendChild(li);
                     });
                 });
         });
+        document.getElementById('tituloInforme')?.addEventListener('input', actualizarCorrelativo);
 
-        // Actualizar nombre final mientras escribe el usuario
-        document.getElementById('tituloInforme').addEventListener('input', function() {
-            actualizarCorrelativo();
-        });
-
-        function seleccionarDocumento(id, texto) {
-            document.getElementById('buscarDocumento').value = texto;
-            document.getElementById('idDocumentoModal').value = id; // <--- aquí guardamos el id
-            document.getElementById('resultadosDocumento').innerHTML = '';
-        }
-
-        // Guardar informe
         function guardarInforme() {
             const id_documento = document.getElementById('idDocumentoModal').value;
             const id_area = document.getElementById('idAreaModal').value;
             const titulo = document.getElementById('tituloInforme').value.trim();
-
             if (!id_documento || !id_area || !titulo) {
-                alert("Faltan datos para crear el informe.");
+                alert('Faltan datos para crear el informe.');
                 return;
             }
-
             fetch('../../backend/php/archivos/crear_informe.php', {
                     method: 'POST',
                     headers: {
@@ -489,63 +514,151 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
                     },
                     body: `id_documento=${encodeURIComponent(id_documento)}&id_area=${encodeURIComponent(id_area)}&titulo=${encodeURIComponent(titulo)}`
                 })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        // Actualizar nombre final en el modal
-                        document.getElementById('nombreFinalInforme').value = data.nombre_final;
-
-                        // Guardamos el IdInforme en un hidden (opcional)
-                        let inputIdInforme = document.getElementById('idInformeModal');
-                        if (!inputIdInforme) {
-                            inputIdInforme = document.createElement('input');
-                            inputIdInforme.type = 'hidden';
-                            inputIdInforme.id = 'idInformeModal';
-                            inputIdInforme.value = data.id_informe;
-                            document.getElementById('modalCrearInforme').appendChild(inputIdInforme);
-                        } else {
-                            inputIdInforme.value = data.id_informe;
-                        }
-
-                        // Cerrar modal
+                .then(r => r.json()).then(d => {
+                    if (d.status === 'success') {
+                        document.getElementById('nombreFinalInforme').value = d.nombre_final;
                         cerrarModalInforme();
-
-                        // ---- NUEVO: recargar página para actualizar tabla ----
                         location.reload();
-
                     } else {
-                        alert("Error: " + data.message);
+                        alert('Error: ' + d.message);
                     }
-                })
-                .catch(err => {
-                    console.error(err);
-                    alert("Error al crear el informe");
-                });
+                }).catch(() => alert('Error al crear el informe'));
         }
     </script>
+
+    <!-- ========== Lógica: Cargar/estilizar “Informe” con Selectize (Docs + Memos) ========== -->
     <script>
-        $(document).ready(function() {
-            // Inicializar DataTable
-            $('#tablaReenvio').DataTable({
-                language: {
-                    url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
-                },
+        function initInformeSelects(scopeSel) {
+            document.querySelectorAll(scopeSel + ' .informe-input').forEach(td => {
+                const idDocumento = parseInt(td.dataset.idDocumento || '0', 10);
+                const select = td.querySelector('.select-informes');
+                if (!select) return;
+
+                if (idDocumento > 0) {
+                    select.innerHTML = '<option>Cargando...</option>';
+                    fetch(`../../backend/php/archivos/obtener_informes.php?id_documento=${idDocumento}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            let opts = '';
+                            if (!Array.isArray(data) || data.length === 0) {
+                                opts = '<option value="">No hay informes</option>';
+                            } else {
+                                opts = '<option value=""></option>' + data.map(inf => `<option value="${inf.IdInforme}">${inf.NombreInforme}</option>`).join('');
+                            }
+                            select.innerHTML = opts;
+                            const $s = $(select);
+                            if ($s[0].selectize) $s[0].selectize.destroy();
+                            $s.selectize({
+                                allowEmptyOption: true,
+                                placeholder: 'Seleccione un informe',
+                                sortField: 'text',
+                                create: false,
+                                dropdownParent: 'body',
+                                onFocus: function() {
+                                    this.removeOption('');
+                                    this.refreshOptions(false);
+                                }
+                            });
+                        })
+                        .catch(() => {
+                            select.innerHTML = '<option value="">No hay informes</option>';
+                            $(select).selectize({
+                                allowEmptyOption: true
+                            });
+                        });
+                } else {
+                    // Memos: no hay informes -> misma UI con Selectize
+                    select.innerHTML = '<option value="">No hay informes</option>';
+                    const $s = $(select);
+                    if ($s[0].selectize) $s[0].selectize.destroy();
+                    $s.selectize({
+                        allowEmptyOption: true,
+                        placeholder: 'No hay informes',
+                        sortField: 'text',
+                        create: false,
+                        dropdownParent: 'body'
+                    });
+                }
+            });
+        }
+        // Inicializa para ambas pestañas
+        initInformeSelects('#tab-docs');
+        initInformeSelects('#tab-memos');
+    </script>
+
+    <!-- ========== DataTables (ES) + ajustes al cambiar de pestaña ========== -->
+    <script>
+        const LANG_ES = {
+            "decimal": ",",
+            "thousands": ".",
+            "processing": "Procesando...",
+            "search": "Buscar:",
+            "lengthMenu": "Mostrar _MENU_ registros",
+            "info": "Mostrando _START_ a _END_ de _TOTAL_ registros",
+            "infoEmpty": "Mostrando 0 a 0 de 0 registros",
+            "infoFiltered": "(filtrado de _MAX_ registros totales)",
+            "infoPostFix": "",
+            "loadingRecords": "Cargando...",
+            "zeroRecords": "No se encontraron resultados",
+            "emptyTable": "Sin datos disponibles",
+            "paginate": {
+                "first": "Primero",
+                "previous": "Anterior",
+                "next": "Siguiente",
+                "last": "Último"
+            },
+            "aria": {
+                "sortAscending": ": activar para ordenar ascendente",
+                "sortDescending": ": activar para ordenar descendente"
+            }
+        };
+
+        let dtDocs, dtMemos;
+        $(function() {
+            dtDocs = $('#tablaDocs').DataTable({
+                language: LANG_ES,
                 responsive: true,
                 pageLength: 25,
+                autoWidth: false,
+                order: [
+                    [0, 'desc']
+                ]
+            });
+            dtMemos = $('#tablaMemos').DataTable({
+                language: LANG_ES,
+                responsive: true,
+                pageLength: 25,
+                autoWidth: false,
                 order: [
                     [0, 'desc']
                 ]
             });
 
-            // Inicializar Selectize y botones por fila
-            $('select[name="nueva_area"]').each(function() {
-                const $select = $(this);
-                const row = $select.closest('tr');
-                const btnReenviar = row.find('.btn-reenviar');
-                const btnFinalizar = row.find('.btn-finalizar');
+            // Tabs switch
+            $('.tab-btn').on('click', function() {
+                $('.tab-btn').removeClass('active');
+                $(this).addClass('active');
+                const t = $(this).data('target');
+                $('.tab-content').removeClass('active');
+                $(t).addClass('active');
+                // Ajusta columnas al mostrar
+                if (t === '#tab-docs') {
+                    dtDocs.columns.adjust().responsive.recalc();
+                } else {
+                    dtMemos.columns.adjust().responsive.recalc();
+                }
+            });
+        });
+    </script>
 
-                // Inicializamos Selectize
-                const selectize = $select.selectize({
+    <!-- ========== UX: Select área + spinner envío + navbar ========== -->
+    <script>
+        $(function() {
+            // Selectize para "Reenviar a"
+            $('#tab-docs select[name="nueva_area"]').each(function() {
+                const $s = $(this),
+                    btn = $s.closest('tr').find('.btn-reenviar');
+                const sz = $s.selectize({
                     allowEmptyOption: true,
                     placeholder: 'Seleccione una opción',
                     sortField: 'text',
@@ -554,145 +667,89 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
                     onFocus: function() {
                         this.removeOption('');
                         this.refreshOptions(false);
+                    },
+                    onChange: function(v) {
+                        if (v) {
+                            btn.prop('disabled', false).removeClass('btn-secondary').addClass('btn-success');
+                        } else {
+                            btn.prop('disabled', true).removeClass('btn-success').addClass('btn-secondary');
+                        }
                     }
                 })[0].selectize;
-
-                // Inicializar estado de botones
-                btnReenviar.removeClass('btn-success').addClass('btn-secondary').prop('disabled', true);
-                btnFinalizar.prop('disabled', false); // Finalizar siempre activo
-
-                // Función para habilitar/deshabilitar solo Reenviar
-                function actualizarBotonReenviar() {
-                    if (selectize.getValue()) {
-                        btnReenviar.removeClass('btn-secondary').addClass('btn-success').prop('disabled', false);
-                    } else {
-                        btnReenviar.removeClass('btn-success').addClass('btn-secondary').prop('disabled', true);
-                    }
-                }
-
-                // Escuchar solo change en Selectize
-                selectize.on('change', actualizarBotonReenviar);
+                btn.addClass('btn-secondary').prop('disabled', true);
             });
 
-            // Mejorar UX del formulario
-            $('.reenvio-form').on('submit', function(e) {
-                const button = $(this).find('button[type="submit"]');
-                const originalText = button.html();
-
-                button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Enviando...');
-
-                // Restaurar botón después de 3 segundos si algo falla
+            // Spinner en envío
+            $('.reenvio-form').on('submit', function() {
+                const b = $(this).find('button[type="submit"]');
+                const t = b.html();
+                b.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Enviando...');
                 setTimeout(() => {
-                    if (button.prop('disabled')) {
-                        button.prop('disabled', false).html(originalText);
+                    if (b.prop('disabled')) {
+                        b.prop('disabled', false).html(t);
                     }
                 }, 3000);
             });
-        });
-    </script>
-    <!-- JavaScript del Navbar -->
-    <script>
-        $(document).ready(function() {
-            // Mobile toggle
+
+            // Navbar desktop
             window.toggleMobileNav = function() {
                 $('.navbar-nav').toggleClass('active');
             };
-
-            // Dropdown functionality
             $('.nav-dropdown .dropdown-toggle').on('click', function(e) {
                 e.preventDefault();
-
-                // Cerrar otros dropdowns
                 $('.nav-dropdown').not($(this).parent()).removeClass('active');
-
-                // Toggle este dropdown
                 $(this).parent().toggleClass('active');
             });
-
-            // Cerrar dropdown al hacer clic fuera
             $(document).on('click', function(e) {
                 if (!$(e.target).closest('.nav-dropdown').length) {
                     $('.nav-dropdown').removeClass('active');
                 }
             });
-        });
-    </script>
-    <script>
-        $(document).ready(function() {
-            // 1. Mostrar/Ocultar el menú móvil completo
-            window.toggleMobileMenu = function() {
-                $('#mobileMenu').slideToggle(200); // Usa slide para transición suave
-            };
 
-            // 2. Controlar los dropdowns internos del menú móvil
+            // Navbar mobile
+            window.toggleMobileMenu = function() {
+                $('#mobileMenu').slideToggle(200);
+            };
             $('#mobileMenu .dropdown-toggle').on('click', function(e) {
                 e.preventDefault();
-
-                const parentDropdown = $(this).closest('.nav-dropdown');
-                const dropdownMenu = parentDropdown.find('.dropdown-menu');
-
-                const isOpen = parentDropdown.hasClass('active');
-
-                // Cerrar todos los demás
-                $('#mobileMenu .nav-dropdown').not(parentDropdown).removeClass('active')
-                    .find('.dropdown-menu').css('max-height', '0');
-
-                // Toggle el actual
-                if (isOpen) {
-                    parentDropdown.removeClass('active');
-                    dropdownMenu.css('max-height', '0');
+                const p = $(this).closest('.nav-dropdown'),
+                    m = p.find('.dropdown-menu'),
+                    open = p.hasClass('active');
+                $('#mobileMenu .nav-dropdown').not(p).removeClass('active').find('.dropdown-menu').css('max-height', '0');
+                if (open) {
+                    p.removeClass('active');
+                    m.css('max-height', '0');
                 } else {
-                    parentDropdown.addClass('active');
-                    dropdownMenu.css('max-height', dropdownMenu[0].scrollHeight + 'px');
+                    p.addClass('active');
+                    m[0].style.maxHeight = m[0].scrollHeight + 'px';
                 }
             });
-
-            // 3. (Opcional) Cerrar dropdowns si se hace clic fuera
             $(document).on('click', function(e) {
-                if (!$(e.target).closest('#mobileMenu .nav-dropdown').length &&
-                    !$(e.target).closest('.fas.fa-bars').length) {
-                    $('#mobileMenu .nav-dropdown').removeClass('active')
-                        .find('.dropdown-menu').css('max-height', '0');
+                if (!$(e.target).closest('#mobileMenu .nav-dropdown').length && !$(e.target).closest('.fas.fa-bars').length) {
+                    $('#mobileMenu .nav-dropdown').removeClass('active').find('.dropdown-menu').css('max-height', '0');
                 }
             });
         });
     </script>
 
+    <!-- ========== Mayúsculas automáticas + modal password (finalizar/observación) ========== -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const inputs = document.querySelectorAll('input[type="text"], textarea');
-
-            inputs.forEach(function(element) {
-                element.addEventListener('input', function() {
-                    this.value = this.value.toUpperCase();
-                });
-            });
+            document.querySelectorAll('input[type="text"], textarea').forEach(el => el.addEventListener('input', function() {
+                this.value = this.value.toUpperCase();
+            }));
         });
-    </script>
-    <script>
-        function incrementarFolios(button) {
-            const input = button.previousElementSibling;
-            let currentValue = parseInt(input.value);
-            if (currentValue >= 1) {
-                input.value = currentValue + 1;
-            }
-        }
-    </script>
-    <script>
-        let formularioActual = null; // Para guardar el formulario que se quiere enviar
-
-        // Interceptar los botones con clase .btn-protegido
+        let formularioActual = null;
         document.querySelectorAll('.btn-protegido').forEach(btn => {
             btn.addEventListener('click', function(e) {
-                e.preventDefault(); // Evitar el envío inmediato
-                formularioActual = btn.closest('form'); // Guardar el formulario
-                document.getElementById('passwordInput').value = ''; // Limpiar input
-                document.getElementById('passwordError').style.display = 'none'; // Ocultar error
-                document.getElementById('modalPassword').style.display = 'flex'; // Mostrar modal
+                e.preventDefault();
+                formularioActual = btn.closest('form');
+                document.getElementById('passwordInput').value = '';
+                document.getElementById('passwordError').style.display = 'none';
+                document.getElementById('modalPassword').style.display = 'flex';
             });
         });
 
-        // Función para cerrar el modal
         function cerrarModalPassword() {
             document.getElementById('modalPassword').style.display = 'none';
             document.getElementById('passwordInput').value = '';
@@ -700,75 +757,65 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
         }
 
         function togglePassword() {
-            const input = document.getElementById('passwordInput');
-            const icon = document.querySelector('.btn-toggle-pass i');
-            if (input.type === "password") {
-                input.type = "text";
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
+            const i = document.getElementById('passwordInput');
+            const ic = document.querySelector('.btn-toggle-pass i');
+            if (i.type === 'password') {
+                i.type = 'text';
+                ic.classList.replace('fa-eye', 'fa-eye-slash');
             } else {
-                input.type = "password";
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
+                i.type = 'password';
+                ic.classList.replace('fa-eye-slash', 'fa-eye');
             }
         }
 
-        // Función para enviar el formulario con los valores correctos
         function enviarFormularioConPassword() {
             if (!formularioActual) return;
-
             const row = formularioActual.closest('tr');
-            formularioActual.querySelector('input[name="id_informe"]').value =
-                row.querySelector('select[name="id_informe"]').value;
-            formularioActual.querySelector('input[name="numero_folios"]').value =
-                row.querySelector('input[name="numero_folios"]').value;
-            formularioActual.querySelector('input[name="observacion"]').value =
-                row.querySelector('input[name="observacion"]').value;
-            formularioActual.querySelector('input[name="nueva_area"]').value =
-                row.querySelector('select[name="nueva_area"]').value;
-
+            formularioActual.querySelector('input[name="id_informe"]')?.setAttribute('value', (row.querySelector('select[name="id_informe"]')?.value ?? ''));
+            formularioActual.querySelector('input[name="numero_folios"]')?.setAttribute('value', (row.querySelector('input[name="numero_folios"]')?.value ?? ''));
+            formularioActual.querySelector('input[name="observacion"]')?.setAttribute('value', (row.querySelector('input[name="observacion"]')?.value ?? ''));
+            if (!formularioActual.querySelector('input[name="nueva_area"]') && row.querySelector('select[name="nueva_area"]')) {
+                const h = document.createElement('input');
+                h.type = 'hidden';
+                h.name = 'nueva_area';
+                h.value = row.querySelector('select[name="nueva_area"]').value || '';
+                formularioActual.appendChild(h);
+            } else {
+                formularioActual.querySelector('input[name="nueva_area"]')?.setAttribute('value', (row.querySelector('select[name="nueva_area"]')?.value ?? formularioActual.querySelector('input[name="nueva_area"]')?.value ?? ''));
+            }
             formularioActual.submit();
         }
 
-        // Función para confirmar contraseña
         function confirmarPassword() {
             const password = document.getElementById('passwordInput').value.trim();
             const errorDiv = document.getElementById('passwordError');
-
             if (password === '') {
                 errorDiv.innerText = 'Ingrese su contraseña';
                 errorDiv.style.display = 'block';
                 return;
             }
-
-            // Verificación vía AJAX
             fetch('../../backend/php/verificar_password.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        password: password
+                        password
                     })
                 })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
+                .then(r => r.json()).then(d => {
+                    if (d.success) {
                         cerrarModalPassword();
-                        enviarFormularioConPassword(); // <-- Aquí usamos la función
+                        enviarFormularioConPassword();
                     } else {
                         errorDiv.innerText = 'Contraseña incorrecta';
                         errorDiv.style.display = 'block';
                     }
-                })
-                .catch(err => {
+                }).catch(() => {
                     errorDiv.innerText = 'Error de conexión';
                     errorDiv.style.display = 'block';
-                    console.error(err);
                 });
         }
-
-        // Permitir enviar al presionar Enter en el input
         document.getElementById('passwordInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -776,7 +823,6 @@ $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
             }
         });
     </script>
-
 </body>
 
 </html>
