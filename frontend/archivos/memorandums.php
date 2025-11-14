@@ -34,7 +34,7 @@ $areasStmt = $pdo->prepare("SELECT IdAreas, Nombre FROM areas ORDER BY Nombre");
 $areasStmt->execute();
 $areas = $areasStmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Mensaje
+// Mensaje flash
 $mensaje = $_SESSION['mensaje_memo'] ?? '';
 unset($_SESSION['mensaje_memo']);
 
@@ -80,7 +80,7 @@ if ($areaInfo && !empty($areaInfo['Abreviatura'])) {
                     <p class="<?= $claseMensaje ?>"><strong><?= htmlspecialchars($mensaje) ?></strong></p>
                 <?php endif; ?>
 
-                <form method="POST" action="../../backend/php/memorandum/guardar_memo.php">
+                <form id="formMemo" method="POST" action="../../backend/php/memorandum/guardar_memo.php">
                     <div class="form-grid">
 
                         <!-- TIPO -->
@@ -124,19 +124,36 @@ if ($areaInfo && !empty($areaInfo['Abreviatura'])) {
                             <select name="areas_destino[]" id="areas_destino" multiple required>
                                 <?php foreach ($areas as $a): ?>
                                     <?php if ((int)$a['IdAreas'] !== (int)$area_id): ?>
-                                        <option value="<?= $a['IdAreas'] ?>">
-                                            <?= htmlspecialchars($a['Nombre']) ?>
-                                        </option>
+                                        <option value="<?= $a['IdAreas'] ?>"><?= htmlspecialchars($a['Nombre']) ?></option>
                                     <?php endif; ?>
                                 <?php endforeach; ?>
                             </select>
                             <small style="font-size:.8rem;color:#666;">Puede seleccionar una o varias áreas.</small>
                         </div>
 
-                        <!-- FOLIOS OPCIONAL -->
+                        <!-- FOLIOS (OPCIONAL, con checkbox) -->
                         <div class="form-group">
-                            <label><i class="fas fa-copy"></i> Número de folios (opcional):</label>
-                            <input type="number" name="numero_folios" min="1" placeholder="Ej: 3">
+                            <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:.35rem;">
+                                <span style="font-weight:600;color:#334155;display:flex;align-items:center;gap:.5rem;">
+                                    <i class="fas fa-copy"></i> Número de folios (Opcional)
+                                </span>
+                                <label style="display:inline-flex;align-items:center;gap:.4rem;cursor:pointer;user-select:none;">
+                                    <input type="checkbox" id="chk_usa_folios" />
+                                    <span style="font-size:.85rem;font-weight:600;color:#334155;">Agregar</span>
+                                </label>
+                            </div>
+
+                            <input
+                                type="number"
+                                name="numero_folios"
+                                id="numero_folios"
+                                min="1"
+                                placeholder="Ej: 3"
+                                disabled
+                                style="width:100%;padding:.6rem .75rem;border:1px solid #e2e8f0;border-radius:8px;background:#f1f5f9;color:#64748b;">
+                            <small style="font-size:.8rem;color:#64748b;display:block;margin-top:.25rem;">
+                                Si no activas “Agregar”, se guardará 0 folios.
+                            </small>
                         </div>
 
                         <!-- ASUNTO -->
@@ -162,15 +179,14 @@ if ($areaInfo && !empty($areaInfo['Abreviatura'])) {
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Forzar mayúsculas en inputs de texto
-            const inputs = document.querySelectorAll('input[type="text"]');
-            inputs.forEach(el => {
+            // Mayúsculas en texto
+            document.querySelectorAll('input[type="text"]').forEach(el => {
                 el.addEventListener('input', function() {
                     this.value = this.value.toUpperCase();
                 });
             });
 
-            // Selectize para destinos
+            // Selectize destinos
             $('#areas_destino').selectize({
                 plugins: ['remove_button'],
                 placeholder: 'Seleccione una o varias áreas',
@@ -178,35 +194,54 @@ if ($areaInfo && !empty($areaInfo['Abreviatura'])) {
                 create: false
             });
 
-            // Actualizar código referencial según tipo de memo
-            const tipoSelect   = document.getElementById('tipo_memo');
-            const codigoInput  = document.getElementById('codigo_preview');
-            const baseCodigo   = codigoInput ? codigoInput.dataset.base : '';
+            // Código referencial dinámico (solo visual)
+            const tipoSelect = document.getElementById('tipo_memo');
+            const codigoInput = document.getElementById('codigo_preview');
+            const baseCodigo = codigoInput ? codigoInput.dataset.base : '';
 
             function actualizarCodigo() {
                 if (!codigoInput) return;
-
                 const tipo = tipoSelect.value;
 
                 if (!tipo || !baseCodigo || baseCodigo.indexOf('Se generará') === 0) {
                     codigoInput.value = baseCodigo;
                     return;
                 }
-
-                let prefijo = '';
-                if (tipo === 'MULTIPLE') {
-                    prefijo = 'MEMORÁNDUM MÚLTIPLE ';
-                } else if (tipo === 'CIRCULAR') {
-                    prefijo = 'MEMORÁNDUM CIRCULAR ';
-                }
-
+                let prefijo = (tipo === 'MULTIPLE') ?
+                    'MEMORÁNDUM MÚLTIPLE ' :
+                    'MEMORÁNDUM CIRCULAR ';
                 codigoInput.value = prefijo + baseCodigo;
             }
-
             if (tipoSelect && codigoInput) {
                 tipoSelect.addEventListener('change', actualizarCodigo);
-                actualizarCodigo(); // por si ya viene seleccionado algo
+                actualizarCodigo();
             }
+
+            // Folios opcional
+            const chkFolios = document.getElementById('chk_usa_folios');
+            const inpFolios = document.getElementById('numero_folios');
+
+            function toggleFolios() {
+                const on = chkFolios.checked;
+                inpFolios.disabled = !on;
+                inpFolios.required = on;
+                inpFolios.style.background = on ? '#ffffff' : '#f1f5f9';
+                inpFolios.style.color = on ? '#111827' : '#64748b';
+                if (!on) inpFolios.value = '';
+            }
+            chkFolios.addEventListener('change', toggleFolios);
+            toggleFolios();
+
+            // Validación suave en submit: si activan folios, exigir >=1
+            document.getElementById('formMemo').addEventListener('submit', function(e) {
+                if (chkFolios.checked) {
+                    const v = (inpFolios.value || '').trim();
+                    if (v === '' || Number(v) < 1) {
+                        e.preventDefault();
+                        alert('Ingrese un número de folios válido (>= 1) o desactive “Agregar”.');
+                    }
+                }
+            });
         });
     </script>
 </body>

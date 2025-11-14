@@ -20,11 +20,16 @@ try {
         throw new Exception('Método inválido.');
     }
 
-    $usuarioId    = (int)($_SESSION['dg_id'] ?? 0);
-    $areaOrigenId = (int)($_POST['area_emisora'] ?? 0);
-    $tipoMemo     = strtoupper(trim($_POST['tipo_memo'] ?? ''));
-    $destinos     = array_filter(array_map('intval', $_POST['areas_destino'] ?? []));
-    $asunto       = trim($_POST['asunto'] ?? '');
+    $usuarioId     = (int)($_SESSION['dg_id'] ?? 0);
+    $areaOrigenId  = (int)($_POST['area_emisora'] ?? 0);
+    $tipoMemo      = strtoupper(trim($_POST['tipo_memo'] ?? ''));
+    $destinos      = array_filter(array_map('intval', $_POST['areas_destino'] ?? []));
+    $asunto        = trim($_POST['asunto'] ?? '');
+
+    // Folios: si no viene o viene vacío, usar 0
+    $numeroFolios  = (isset($_POST['numero_folios']) && $_POST['numero_folios'] !== '')
+        ? max(0, (int)$_POST['numero_folios'])
+        : 0;
 
     if (
         !$usuarioId || !$areaOrigenId ||
@@ -36,7 +41,7 @@ try {
 
     $pdo->beginTransaction();
 
-    // 1) Datos del área emisora
+    // 1) Área emisora (para abreviatura)
     $stArea = $pdo->prepare('SELECT Nombre, Abreviatura FROM areas WHERE IdAreas = ?');
     $stArea->execute([$areaOrigenId]);
     $area = $stArea->fetch(PDO::FETCH_ASSOC);
@@ -46,9 +51,8 @@ try {
     $nombreArea = $area['Nombre'];
     $abrev      = $area['Abreviatura'] ?: 'SIN-ABR';
 
-    // 2) Correlativo por área + año
+    // 2) Correlativo por área + año (bloquea fila para concurrencia)
     $anio = (int) date('Y');
-
     $stCorr = $pdo->prepare('
         SELECT COALESCE(MAX(NumeroCorrelativo), 0) AS maxcorr
         FROM memorandums
@@ -58,33 +62,38 @@ try {
     $stCorr->execute(['area' => $areaOrigenId, 'anio' => $anio]);
     $nuevoCorrelativo = ((int) $stCorr->fetchColumn()) + 1;
 
-    // 3) Código visible
-    $codStr = str_pad($nuevoCorrelativo, 3, '0', STR_PAD_LEFT);
-    $codigo = $codStr . '-' . $anio . '-' . $abrev; // ej: 001-2025-UDS
+    // 3) Componer códigos
+    $codStr          = str_pad($nuevoCorrelativo, 3, '0', STR_PAD_LEFT);
+    $codigoSimple    = $codStr . '-' . $anio . '-' . $abrev; // ej: 001-2025-UDS
+    $prefijoTipo     = ($tipoMemo === 'MULTIPLE') ? 'MEMORÁNDUM MÚLTIPLE' : 'MEMORÁNDUM CIRCULAR';
+    $codigoCompleto  = $prefijoTipo . ' N° ' . $codigoSimple;
 
-    // 4) Insertar memorándum
-    // OJO: usamos IdEstadoDocumento en vez de "Estado"
-    // 1 = NUEVO en tu tabla estadodocumento
+    // 4) Insertar Memorándum
+    // IdEstadoDocumento: usa el que corresponda a "NUEVO" o "REGISTRADO" (aquí 1)
     $ins = $pdo->prepare('
         INSERT INTO memorandums
         (IdAreaOrigen, TipoMemo, NumeroCorrelativo, `Año`,
-         CodigoMemo, Asunto, FechaEmision, IdUsuarioEmisor, IdEstadoDocumento)
+         CodigoMemo, Asunto, NumeroFolios, FechaEmision,
+         IdUsuarioEmisor, IdEstadoDocumento)
         VALUES
         (:area, :tipo, :corr, :anio,
-         :codigo, :asunto, NOW(), :usuario, 1)
+         :codigo, :asunto, :folios, NOW(),
+         :usuario, 1)
     ');
     $ins->execute([
         'area'    => $areaOrigenId,
         'tipo'    => $tipoMemo,
         'corr'    => $nuevoCorrelativo,
         'anio'    => $anio,
-        'codigo'  => $codigo,
+        'codigo'  => $codigoCompleto,  
         'asunto'  => $asunto,
+        'folios'  => $numeroFolios,    
         'usuario' => $usuarioId
     ]);
     $idMemo = (int) $pdo->lastInsertId();
 
     // 5) Destinos + notificaciones
+    // Si tu tabla memorandum_destinos tiene Recibido con default 0, no es necesario pasarlo.
     $insDest = $pdo->prepare('
         INSERT INTO memorandum_destinos (IdMemo, IdAreaDestino)
         VALUES (:memo, :dest)
@@ -98,7 +107,7 @@ try {
             'dest' => $idDest
         ]);
 
-        $mensaje = "Has recibido un MEMORÁNDUM {$tipoMemo} N° {$codigo}: \"{$asunto}\" de {$nombreArea}.";
+        $mensaje = "Has recibido un {$prefijoTipo} {$codigoSimple}: \"{$asunto}\" de {$nombreArea}.";
 
         if ($usa_util_notis && function_exists('crearNotificacion')) {
             crearNotificacion($pdo, $idDest, $mensaje);
@@ -115,7 +124,7 @@ try {
     }
 
     $pdo->commit();
-    $_SESSION['mensaje_memo'] = "✅ Memorándum N° {$codigo} registrado y enviado.";
+    $_SESSION['mensaje_memo'] = "✅ {$prefijoTipo} {$codigoSimple} registrado y enviado.";
 } catch (Exception $e) {
     if ($pdo->inTransaction()) $pdo->rollBack();
     $_SESSION['mensaje_memo'] = '❌ Error al registrar el memorándum: ' . $e->getMessage();
