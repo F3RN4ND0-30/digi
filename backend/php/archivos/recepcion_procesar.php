@@ -52,8 +52,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([$id_movimiento]);
 
                 // 3. Actualizar estado del documento a "Recibido" (3)
-                $stmt3 = $pdo->prepare("UPDATE documentos SET IdEstadoDocumento = 3 WHERE IdDocumentos = ?");
-                $stmt3->execute([$id_documento]);
+                $stmt3 = $pdo->prepare("UPDATE documentos SET IdEstadoDocumento = 3, IdAreaFinal = ? WHERE IdDocumentos = ?");
+                $stmt3->execute([$id_documento, $area_destino]);
 
                 // 4. Notificación al área de origen
                 $mensaje = "El documento N° $numero_documento ha sido recepcionado.";
