@@ -9,9 +9,9 @@ require '../../db/conexion.php';
 require_once '../util/notificaciones_util.php';
 
 /*
-    Procesa:
-      - tipo = 'DOC'  -> reenvío de documentos (igual a tu lógica)
-      - tipo = 'MEMO' -> responder memorándum (OBLIGA N° INFORME) y FINALIZA
+  Procesa:
+   - tipo = 'DOC'  -> Reenvío de documentos (igual que antes)
+   - tipo = 'MEMO' -> Responder memorándum (con opción de Finalizar en el acto)
 */
 
 $tipo = $_POST['tipo'] ?? 'DOC';
@@ -117,47 +117,74 @@ try {
     }
 
     if ($tipo === 'MEMO') {
-        // -------------------- RESPONDER MEMORÁNDUM (FINALIZA) --------------------
-        $id_memo       = isset($_POST['id_memo']) ? (int)$_POST['id_memo'] : null;
-        $nueva_area    = isset($_POST['nueva_area']) ? (int)$_POST['nueva_area'] : null; // normalmente = área origen del memo
-        $observacion   = trim($_POST['observacion'] ?? '');
-        $numero_folios = isset($_POST['numero_folios']) ? (int)$_POST['numero_folios'] : 0;
-        $id_informe    = isset($_POST['id_informe']) && $_POST['id_informe'] !== '' ? (int)$_POST['id_informe'] : null;
+        // -------------------- RESPONDER (Y OPCIONALMENTE FINALIZAR) MEMORÁNDUM --------------------
+        $id_memo        = isset($_POST['id_memo']) ? (int)$_POST['id_memo'] : null;
+        $nueva_area     = isset($_POST['nueva_area']) ? (int)$_POST['nueva_area'] : null; // normalmente = área origen del memo
+        $observacion    = trim($_POST['observacion'] ?? '');
+        $numero_folios  = isset($_POST['numero_folios']) ? (int)$_POST['numero_folios'] : 0;
+        $id_informe     = isset($_POST['id_informe']) && $_POST['id_informe'] !== '' ? (int)$_POST['id_informe'] : null; // es el N° informe libre
+        $finalizar_memo = isset($_POST['finalizar_memo']) ? (int)$_POST['finalizar_memo'] : 0;
 
         if (!$id_memo || !$nueva_area) {
             throw new Exception("❌ Datos incompletos para responder el memorándum.");
         }
-        if (!$id_informe || $id_informe < 1) {
+        if ($id_informe === null || $id_informe <= 0) {
             throw new Exception("❌ Ingrese el N° de Informe para responder el memorándum.");
         }
 
         // Validar existencia del memo
-        $qMemo = $pdo->prepare("SELECT CodigoMemo, IdAreaOrigen FROM memorandums WHERE IdMemo = ?");
+        $qMemo = $pdo->prepare("SELECT CodigoMemo, IdAreaOrigen, IdEstadoDocumento FROM memorandums WHERE IdMemo = ?");
         $qMemo->execute([$id_memo]);
         $memo = $qMemo->fetch(PDO::FETCH_ASSOC);
         if (!$memo) {
             throw new Exception("❌ Memorándum no encontrado.");
         }
 
-        // La respuesta de MEMO ya no reenvía: FINALIZA y notifica
-        $pdo->beginTransaction();
+        // Evitar duplicar un destino pendiente al mismo lugar
+        $qPend = $pdo->prepare("
+            SELECT COUNT(*)
+            FROM memorandum_destinos
+            WHERE IdMemo = ? AND IdAreaDestino = ? AND Recibido = 0
+        ");
+        $qPend->execute([$id_memo, $nueva_area]);
+        if ((int)$qPend->fetchColumn() > 0) {
+            throw new Exception("❌ Ya existe un envío pendiente de este memorándum para esa área.");
+        }
 
-        // Marcar destinos como recibidos por si quedara alguno pendiente
-        $pdo->prepare("UPDATE memorandum_destinos SET Recibido = 1 WHERE IdMemo = ?")->execute([$id_memo]);
+        // 1) Cerrar la asignación actual en tu área (ya no debe mostrarse en tu bandeja)
+        $cierra = $pdo->prepare("
+            UPDATE memorandum_destinos
+            SET Recibido = 2
+            WHERE IdMemo = ? AND IdAreaDestino = ? AND Recibido = 1
+            LIMIT 1
+        ");
+        $cierra->execute([$id_memo, $area_origen]);
 
-        // Finalizar memo (usa 6 si tu catálogo = FINALIZADO)
-        $pdo->prepare("UPDATE memorandums SET IdEstadoDocumento = 6 WHERE IdMemo = ?")->execute([$id_memo]);
+        // 2) Insertar un nuevo destino hacia el área (normalmente el área de origen) para que lo recepcionen
+        $ins = $pdo->prepare("
+            INSERT INTO memorandum_destinos (IdMemo, IdAreaDestino, Recibido)
+            VALUES (?, ?, 0)
+        ");
+        $ins->execute([$id_memo, $nueva_area]);
 
-        // Notificación al emisor/origen con N° de informe
-        $codigo  = $memo['CodigoMemo'];
-        $msg = "Respuesta al memorándum N° {$codigo}: Informe #{$id_informe}";
-        if ($observacion !== '') { $msg .= " - {$observacion}"; }
-        crearNotificacion($pdo, (int)$memo['IdAreaOrigen'], $msg);
+        // 3) Estado del MEMO: si finalizar_memo=1 -> FINALIZADO(7), si no -> REENVIADO(5)
+        if ($finalizar_memo === 1) {
+            $upd = $pdo->prepare("UPDATE memorandums SET IdEstadoDocumento = 7 WHERE IdMemo = ?");
+        } else {
+            $upd = $pdo->prepare("UPDATE memorandums SET IdEstadoDocumento = 5 WHERE IdMemo = ?");
+        }
+        $upd->execute([$id_memo]);
 
-        $pdo->commit();
+        // 4) Notificación al destino (incluye N° informe en el mensaje)
+        $codigo = $memo['CodigoMemo'];
+        $prefijo = ($finalizar_memo === 1) ? "Respuesta FINAL a" : "Respuesta a";
+        $mensaje = "$prefijo MEMO $codigo con Informe N° $id_informe.";
+        crearNotificacion($pdo, $nueva_area, $mensaje);
 
         $_SESSION['flash_type'] = 'success';
-        $_SESSION['flash_text'] = '✅ Memorándum respondido y finalizado.';
+        $_SESSION['flash_text'] = ($finalizar_memo === 1)
+            ? '✅ Memorándum respondido y finalizado correctamente.'
+            : '✅ Memorándum respondido correctamente.';
         header("Location: ../../../frontend/archivos/reenviar.php");
         exit;
     }
@@ -165,7 +192,6 @@ try {
     // Tipo no soportado
     throw new Exception("❌ Tipo no soportado.");
 } catch (Exception $e) {
-    if ($pdo && $pdo->inTransaction()) { $pdo->rollBack(); }
     $_SESSION['flash_type'] = 'error';
     $_SESSION['flash_text'] = $e->getMessage();
     header("Location: ../../../frontend/archivos/reenviar.php");

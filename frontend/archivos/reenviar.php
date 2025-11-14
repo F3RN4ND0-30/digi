@@ -210,7 +210,7 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
         }
 
         .input-mini {
-            max-width: 180px;
+            max-width: 180px
         }
     </style>
 </head>
@@ -263,7 +263,6 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
                                                 <td>
                                                     <div class="user-info-mini"><i class="fas fa-user-circle"></i><span><?= htmlspecialchars($d['Nombres'] . ' ' . $d['ApellidoPat']) ?></span></div>
                                                 </td>
-
                                                 <td class="area-select">
                                                     <select class="area-pequena sel-area">
                                                         <option value="">Seleccione área</option>
@@ -272,16 +271,13 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
                                                         <?php endforeach; ?>
                                                     </select>
                                                 </td>
-
                                                 <td><input type="number" class="form-control form-control-sm inp-folios" min="<?= (int)$d['NumeroFolios'] ?>" value="<?= (int)$d['NumeroFolios'] ?>"></td>
                                                 <td><input type="text" class="form-control form-control-sm observacion-grande inp-obs" placeholder="Observación opcional..." maxlength="100"></td>
-
                                                 <td class="informe-input area-select" data-id-documento="<?= (int)$d['IdDocumentos'] ?>">
                                                     <select class="select-informes area-pequena sel-informe">
                                                         <option>Cargando...</option>
                                                     </select>
                                                 </td>
-
                                                 <td class="accion-btn">
                                                     <!-- Reenviar DOC -->
                                                     <form method="POST" action="../../backend/php/archivos/procesar_reenvio.php" class="form-reenviar">
@@ -294,7 +290,7 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
                                                         <button type="submit" class="btn btn-success btn-sm btn-reenviar"><i class="fas fa-share"></i> Reenviar</button>
                                                     </form>
 
-                                                    <!-- Finalizar -->
+                                                    <!-- Finalizar DOC -->
                                                     <form method="POST" action="../../backend/php/archivos/finalizar_documento.php" class="finalizar-form btn-protegido-form">
                                                         <input type="hidden" name="id_documento" value="<?= (int)$d['IdDocumentos'] ?>">
                                                         <input type="hidden" name="numero_folios" value="">
@@ -304,7 +300,7 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
                                                         <button type="submit" class="btn btn-danger btn-sm btn-protegido" style="margin-top:5px;">Finalizar</button>
                                                     </form>
 
-                                                    <!-- Observar -->
+                                                    <!-- Observar DOC -->
                                                     <form method="POST" action="../../backend/php/archivos/observacion_documento.php" class="observacion-form btn-protegido-form">
                                                         <input type="hidden" name="id_documento" value="<?= (int)$d['IdDocumentos'] ?>">
                                                         <input type="hidden" name="numero_folios" value="">
@@ -366,11 +362,11 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
                                                 <td><input type="number" class="form-control form-control-sm memo-folios" min="0" value="0"></td>
                                                 <td><input type="text" class="form-control form-control-sm observacion-grande memo-obs" placeholder="Observación opcional..." maxlength="100"></td>
 
-                                                <!-- Para MEMO pediste obligar solo el NÚMERO de informe (campo libre) -->
+                                                <!-- N° de Informe OBLIGATORIO para Responder -->
                                                 <td><input type="number" class="form-control form-control-sm input-mini memo-informe" placeholder="N° Informe" min="1"></td>
 
                                                 <td class="accion-btn">
-                                                    <!-- RESPONDER MEMO (misma ruta unificada) -->
+                                                    <!-- RESPONDER MEMO (envía al área origen, exige N° informe) -->
                                                     <form method="POST" action="../../backend/php/archivos/procesar_reenvio.php" class="form-responder-memo">
                                                         <input type="hidden" name="tipo" value="MEMO">
                                                         <input type="hidden" name="id_memo" value="<?= (int)$m['IdMemo'] ?>">
@@ -381,13 +377,10 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
                                                         <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-reply"></i> Responder</button>
                                                     </form>
 
-                                                    <!-- Finalizar MEMO (si luego haces endpoint dedicado) -->
-                                                    <form method="POST" action="../../backend/php/memorandum/finalizar_memo.php" class="finalizar-memo-form btn-protegido-form">
+                                                    <!-- FINALIZAR MEMO (como DOCS, sin responder) -->
+                                                    <form method="POST" action="../../backend/php/archivos/finalizar_memo.php" class="finalizar-memo-form btn-protegido-form">
                                                         <input type="hidden" name="id_memo" value="<?= (int)$m['IdMemo'] ?>">
-                                                        <input type="hidden" name="id_informe" value="">
-                                                        <input type="hidden" name="observacion" value="">
-                                                        <input type="hidden" name="nueva_area" value="<?= (int)$m['IdAreaOrigen'] ?>">
-                                                        <button type="submit" class="btn btn-danger btn-sm btn-protegido" style="margin-top:5px;">Finalizar</button>
+                                                        <button type="submit" class="btn btn-danger btn-sm btn-protegido" style="margin-top:5px;"><i class="fas fa-check"></i> Finalizar</button>
                                                     </form>
                                                 </td>
                                             </tr>
@@ -464,7 +457,7 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
     <script src="../../backend/js/notificaciones.js"></script>
 
     <script>
-        // Toast por encima del navbar
+        // Toast
         const Toast = Swal.mixin({
             toast: true,
             position: 'top-end',
@@ -623,8 +616,7 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
                 }
             });
         }
-        // Sólo para DOCS
-        initInformeSelects('#tab-docs');
+        initInformeSelects('#tab-docs'); // sólo DOCS
     </script>
 
     <!-- DataTables -->
@@ -694,7 +686,7 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
         }
 
         $(function() {
-            // Selectize para "Reenviar a" (DOC)
+            // Selectize DOC áreas
             $('#tab-docs .sel-area').each(function() {
                 const $s = $(this),
                     btn = $s.closest('tr').find('.btn-reenviar');
@@ -758,9 +750,7 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
                 const obs = ($tr.find('.memo-obs').val() || '').trim();
                 const inf = ($tr.find('.memo-informe').val() || '').trim();
 
-                if (!inf) {
-                    return toast('Ingrese el N° de Informe para responder el memorándum.');
-                }
+                if (!inf) return toast('Ingrese el N° de Informe para responder el memorándum.');
 
                 form.querySelector('input[name="numero_folios"]').value = fol;
                 form.querySelector('input[name="observacion"]').value = obs;
@@ -787,7 +777,7 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
             });
         });
 
-        // Modal Password (igual)
+        // Modal Password (compartido)
         let formularioActual = null;
 
         function cerrarModalPassword() {
@@ -838,7 +828,8 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
                         errorDiv.innerText = 'Contraseña incorrecta';
                         errorDiv.style.display = 'block';
                     }
-                }).catch(() => {
+                })
+                .catch(() => {
                     errorDiv.innerText = 'Error de conexión';
                     errorDiv.style.display = 'block';
                 });
