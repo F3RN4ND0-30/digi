@@ -26,10 +26,12 @@ try {
     $destinos      = array_filter(array_map('intval', $_POST['areas_destino'] ?? []));
     $asunto        = trim($_POST['asunto'] ?? '');
 
-    // Folios: si no viene o viene vacío, usar 0
-    $numeroFolios  = (isset($_POST['numero_folios']) && $_POST['numero_folios'] !== '')
-        ? max(0, (int)$_POST['numero_folios'])
-        : 0;
+    // FOLIOS: default 1 si no viene o si es < 1
+    // Así aunque no marquen la casilla en el formulario, registrará 1.
+    $numeroFolios = 1;
+    if (isset($_POST['numero_folios']) && $_POST['numero_folios'] !== '') {
+        $numeroFolios = max(1, (int)$_POST['numero_folios']);
+    }
 
     if (
         !$usuarioId || !$areaOrigenId ||
@@ -51,7 +53,7 @@ try {
     $nombreArea = $area['Nombre'];
     $abrev      = $area['Abreviatura'] ?: 'SIN-ABR';
 
-    // 2) Correlativo por área + año (bloquea fila para concurrencia)
+    // 2) Correlativo por área + año (con bloqueo)
     $anio = (int) date('Y');
     $stCorr = $pdo->prepare('
         SELECT COALESCE(MAX(NumeroCorrelativo), 0) AS maxcorr
@@ -60,16 +62,15 @@ try {
         FOR UPDATE
     ');
     $stCorr->execute(['area' => $areaOrigenId, 'anio' => $anio]);
-    $nuevoCorrelativo = ((int) $stCorr->fetchColumn()) + 1;
+    $nuevoCorrelativo = ((int)$stCorr->fetchColumn()) + 1;
 
-    // 3) Componer códigos
-    $codStr          = str_pad($nuevoCorrelativo, 3, '0', STR_PAD_LEFT);
-    $codigoSimple    = $codStr . '-' . $anio . '-' . $abrev; // ej: 001-2025-UDS
-    $prefijoTipo     = ($tipoMemo === 'MULTIPLE') ? 'MEMORÁNDUM MÚLTIPLE' : 'MEMORÁNDUM CIRCULAR';
-    $codigoCompleto  = $prefijoTipo . ' N° ' . $codigoSimple;
+    // 3) Códigos
+    $codStr         = str_pad($nuevoCorrelativo, 3, '0', STR_PAD_LEFT);
+    $codigoSimple   = $codStr . '-' . $anio . '-' . $abrev; // 001-2025-UDS
+    $prefijoTipo    = ($tipoMemo === 'MULTIPLE') ? 'MEMORÁNDUM MÚLTIPLE' : 'MEMORÁNDUM CIRCULAR';
+    $codigoCompleto = $prefijoTipo . ' N° ' . $codigoSimple;
 
     // 4) Insertar Memorándum
-    // IdEstadoDocumento: usa el que corresponda a "NUEVO" o "REGISTRADO" (aquí 1)
     $ins = $pdo->prepare('
         INSERT INTO memorandums
         (IdAreaOrigen, TipoMemo, NumeroCorrelativo, `Año`,
@@ -85,15 +86,14 @@ try {
         'tipo'    => $tipoMemo,
         'corr'    => $nuevoCorrelativo,
         'anio'    => $anio,
-        'codigo'  => $codigoCompleto,  
+        'codigo'  => $codigoCompleto,
         'asunto'  => $asunto,
-        'folios'  => $numeroFolios,    
+        'folios'  => $numeroFolios,  // <-- siempre >= 1
         'usuario' => $usuarioId
     ]);
-    $idMemo = (int) $pdo->lastInsertId();
+    $idMemo = (int)$pdo->lastInsertId();
 
     // 5) Destinos + notificaciones
-    // Si tu tabla memorandum_destinos tiene Recibido con default 0, no es necesario pasarlo.
     $insDest = $pdo->prepare('
         INSERT INTO memorandum_destinos (IdMemo, IdAreaDestino)
         VALUES (:memo, :dest)
