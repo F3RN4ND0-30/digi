@@ -344,7 +344,13 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
                                                 <td><span class="badge-area"><?= htmlspecialchars($m['AreaOrigenNombre']) ?></span></td>
                                                 <td><input type="number" class="form-control form-control-sm memo-folios" min="<?= (int)$m['NumeroFolios'] ?>" value="<?= (int)$m['NumeroFolios'] ?>"></td>
                                                 <td><input type="text" class="form-control form-control-sm observacion-grande memo-obs" placeholder="Observación opcional..." maxlength="100"></td>
-                                                <td><input type="number" class="form-control form-control-sm input-mini memo-informe" placeholder="N° Informe" min="1"></td>
+
+                                                <td class="informe-input area-select" data-id-memo="<?= (int)$m['IdMemo'] ?>">
+                                                    <select class="select-informes area-pequena sel-informe">
+                                                        <option>Cargando...</option>
+                                                    </select>
+                                                </td>
+
                                                 <td class="accion-btn">
                                                     <form method="POST" action="../../backend/php/archivos/procesar_reenvio.php" class="form-responder-memo">
                                                         <input type="hidden" name="tipo" value="MEMO">
@@ -382,6 +388,7 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
             </div>
             <div class="modal-body tarjeta-body">
                 <input type="hidden" id="idDocumentoModal" name="id_documento">
+                <input type="hidden" id="idMemoModal" name="id_memo">
                 <input type="hidden" id="idAreaModal" value="<?= $_SESSION['dg_area_id'] ?>">
                 <div class="form-group">
                     <label for="buscarDocumento">Documento asociado:</label>
@@ -464,7 +471,10 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
             document.getElementById('resultadosDocumento').innerHTML = '';
             document.getElementById('tituloInforme').value = '';
             document.getElementById('nombreFinalInforme').value = '';
+            document.getElementById('idDocumentoModal').value = '';
+            document.getElementById('idMemoModal').value = '';
         }
+
         window.addEventListener('click', e => {
             const m = document.getElementById('modalCrearInforme');
             if (e.target === m) cerrarModalInforme();
@@ -474,70 +484,127 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
 
         function actualizarCorrelativo() {
             fetch('../../backend/php/archivos/obtener_correlativo_informe.php?area=' + idArea)
-                .then(r => r.json()).then(d => {
+                .then(r => r.json())
+                .then(d => {
                     const c = d.correlativo,
                         an = d.año,
                         t = document.getElementById('tituloInforme').value;
                     document.getElementById('nombreFinalInforme').value = `INFORME N°. ${c}-${an}-${t}`;
                 });
         }
+
         const buscarInput = document.getElementById('buscarDocumento');
         const resultadosLista = document.getElementById('resultadosDocumento');
+
         buscarInput?.addEventListener('input', function() {
             const q = this.value.trim();
             if (q.length < 2) {
                 resultadosLista.innerHTML = '';
                 return;
             }
+
             fetch(`../../backend/php/archivos/buscar_documentos.php?q=${encodeURIComponent(q)}`)
-                .then(r => r.json()).then(data => {
+                .then(r => r.json())
+                .then(data => {
                     resultadosLista.innerHTML = '';
+
                     data.forEach(doc => {
                         const li = document.createElement('li');
-                        li.textContent = `${doc.NumeroDocumento} - ${doc.Asunto}`;
+                        li.textContent = `${doc.NumeroDocumento || doc.CodigoMemo} - ${doc.Asunto}`;
+
                         li.onclick = () => {
-                            buscarInput.value = `${doc.NumeroDocumento} - ${doc.Asunto}`;
-                            document.getElementById('idDocumentoModal').value = doc.IdDocumentos;
+                            buscarInput.value = li.textContent;
+
+                            // Si empieza con "MEMO" o "MEMORÁNDUM" → es memo
+                            if ((doc.NumeroDocumento && doc.NumeroDocumento.toUpperCase().startsWith('MEMO')) ||
+                                (doc.CodigoMemo && doc.CodigoMemo.toUpperCase().startsWith('MEMO'))) {
+                                document.getElementById('idMemoModal').value = doc.IdMemo || doc.Id;
+                                document.getElementById('idDocumentoModal').value = '';
+                            } else {
+                                // Documento normal
+                                document.getElementById('idDocumentoModal').value = doc.IdDocumentos || doc.Id;
+                                document.getElementById('idMemoModal').value = '';
+                            }
+
                             resultadosLista.innerHTML = '';
                         };
+
                         resultadosLista.appendChild(li);
                     });
                 });
         });
+
         document.getElementById('tituloInforme')?.addEventListener('input', actualizarCorrelativo);
 
         function guardarInforme() {
-            const id_documento = document.getElementById('idDocumentoModal').value;
-            const id_area = document.getElementById('idAreaModal').value;
+            const id_documento = document.getElementById('idDocumentoModal').value.trim();
+            const id_memo = document.getElementById('idMemoModal').value.trim();
+            const id_area = document.getElementById('idAreaModal').value.trim();
             const titulo = document.getElementById('tituloInforme').value.trim();
-            if (!id_documento || !id_area || !titulo) {
+
+            // Log para depuración
+            console.log("Validando datos:", {
+                id_documento,
+                id_memo,
+                id_area,
+                titulo
+            });
+
+            // Verificación de campos necesarios
+            if ((!id_documento && !id_memo) || !id_area || !titulo) {
                 Toast.fire({
                     icon: 'warning',
                     title: 'Faltan datos para crear el informe'
                 });
                 return;
             }
+
+            // Datos que se enviarán al backend
+            const body = new URLSearchParams();
+            if (id_documento) body.append('id_documento', id_documento);
+            if (id_memo) body.append('id_memo', id_memo);
+            body.append('id_area', id_area);
+            body.append('titulo', titulo);
+
+            console.log("Iniciando la solicitud fetch...");
+            console.log("id_documento:", id_documento);
+            console.log("id_memo:", id_memo);
+            console.log("id_area:", id_area);
+            console.log("titulo:", titulo);
+
+            // Envío de la solicitud al servidor para crear el informe
             fetch('../../backend/php/archivos/crear_informe.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: `id_documento=${encodeURIComponent(id_documento)}&id_area=${encodeURIComponent(id_area)}&titulo=${encodeURIComponent(titulo)}`
-            }).then(r => r.json()).then(d => {
-                if (d.status === 'success') {
-                    document.getElementById('nombreFinalInforme').value = d.nombre_final;
-                    cerrarModalInforme();
-                    location.reload();
-                } else {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: body.toString()
+                })
+                .then(r => {
+                    console.log("Respuesta de la solicitud fetch recibida");
+                    return r.json();
+                })
+                .then(d => {
+                    if (d.status === 'success') {
+                        console.log("Informe creado con éxito");
+                        document.getElementById('nombreFinalInforme').value = d.nombre_final;
+                        cerrarModalInforme();
+                        location.reload();
+                    } else {
+                        console.log("Error al crear el informe: ", d.message);
+                        Toast.fire({
+                            icon: 'error',
+                            title: 'Error: ' + d.message
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error("Error en la solicitud fetch:", error);
                     Toast.fire({
                         icon: 'error',
-                        title: 'Error: ' + d.message
+                        title: 'Error al crear el informe'
                     });
-                }
-            }).catch(() => Toast.fire({
-                icon: 'error',
-                title: 'Error al crear el informe'
-            }));
+                });
         }
     </script>
 
@@ -594,6 +661,69 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
         initInformeSelects('#tab-docs');
     </script>
 
+    <!-- SELECTIZE PARA MEMOS -->
+    <script>
+        function initInformeMemoSelects(scopeSel) {
+            document.querySelectorAll(scopeSel + ' .informe-input').forEach(td => {
+                const idMemo = parseInt(td.dataset.idMemo || '0', 10);
+                console.log('Memo ID:', idMemo, td);
+                const select = td.querySelector('.select-informes');
+                if (!select) return;
+
+                if (idMemo > 0) {
+                    select.innerHTML = '<option>Cargando...</option>';
+                    fetch(`../../backend/php/archivos/obtener_informe_memo.php?id_memo=${idMemo}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            let opts = '';
+                            if (!Array.isArray(data) || data.length === 0) {
+                                opts = '<option value="">No hay informes</option>';
+                            } else {
+                                opts = '<option value=""></option>' + data.map(inf => `<option value="${inf.IdInforme}">${inf.NombreInforme}</option>`).join('');
+                            }
+                            select.innerHTML = opts;
+
+                            const $s = $(select);
+                            if ($s[0].selectize) $s[0].selectize.destroy();
+                            $s.selectize({
+                                allowEmptyOption: true,
+                                placeholder: 'Seleccione un informe',
+                                sortField: 'text',
+                                create: false,
+                                dropdownParent: 'body',
+                                onFocus: function() {
+                                    this.removeOption('');
+                                    this.refreshOptions(false);
+                                }
+                            });
+                        })
+                        .catch(() => {
+                            select.innerHTML = '<option value="">No hay informes</option>';
+                            $(select).selectize({
+                                allowEmptyOption: true
+                            });
+                        });
+                } else {
+                    select.innerHTML = '<option value="">No hay informes</option>';
+                    const $s = $(select);
+                    if ($s[0].selectize) $s[0].selectize.destroy();
+                    $s.selectize({
+                        allowEmptyOption: true,
+                        placeholder: 'No hay informes',
+                        sortField: 'text',
+                        create: false,
+                        dropdownParent: 'body'
+                    });
+                }
+            });
+        }
+
+        // Inicializa los selects solo en la sección de memos
+        initInformeMemoSelects('#tab-memos');
+    </script>
+
+
+    <!-- DataTables -->
     <script>
         const LANG_ES = {
             decimal: ",",
@@ -718,7 +848,8 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
                     $tr = $(form).closest('tr');
                 const fol = ($tr.find('.memo-folios').val() || '0').trim();
                 const obs = ($tr.find('.memo-obs').val() || '').trim();
-                const inf = ($tr.find('.memo-informe').val() || '').trim();
+                const inf = ($tr.find('.select-informes').val() || '').trim(); // <- Aquí estaba el error
+
                 if (!inf) return toast('Ingrese el N° de Informe para responder el memorándum.');
                 form.querySelector('input[name="numero_folios"]').value = fol;
                 form.querySelector('input[name="observacion"]').value = obs;
@@ -736,7 +867,8 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
                 }, 3000);
             });
 
-            // Mayúsculas inputs texto
+
+            // Mayúsculas
             document.querySelectorAll('input[type="text"], textarea').forEach(el => {
                 el.addEventListener('input', function() {
                     this.value = this.value.toUpperCase();
