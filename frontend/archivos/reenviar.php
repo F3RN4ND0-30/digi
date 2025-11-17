@@ -6,6 +6,7 @@ if (!isset($_SESSION['dg_id'])) {
 }
 require '../../backend/db/conexion.php';
 
+// Detectar móvil -> navbar/css
 $isMobile = false;
 if (isset($_SERVER['HTTP_USER_AGENT'])) {
     $isMobile = preg_match('/Mobile|Android|iP(hone|od|ad)/i', $_SERVER['HTTP_USER_AGENT']);
@@ -16,7 +17,7 @@ $navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
 $area_id = $_SESSION['dg_area_id'] ?? null;
 if (!$area_id) die('❌ No se pudo determinar el área del usuario.');
 
-/* ---------- Documentos recibidos ---------- */
+/* -------------------- DOCS recibidos -------------------- */
 $sqlDocs = "
     SELECT 
         m.IdMovimientoDocumento,
@@ -46,13 +47,14 @@ $stmt = $pdo->prepare($sqlDocs);
 $stmt->execute([$area_id]);
 $documentos_recibidos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-/* ---------- Memorándums recibidos ---------- */
+/* -------------------- MEMOS recibidos -------------------- */
 $sqlMemos = "
     SELECT
         m.IdMemo,
         m.CodigoMemo       AS NumeroDocumento,
         m.Asunto,
         m.TipoMemo,
+        m.NumeroFolios     AS NumeroFolios,
         m.IdAreaOrigen,
         ao.Nombre          AS AreaOrigenNombre,
         u.Nombres,
@@ -70,12 +72,12 @@ $stmtM = $pdo->prepare($sqlMemos);
 $stmtM->execute(['area' => $area_id]);
 $memos_recibidos = $stmtM->fetchAll(PDO::FETCH_ASSOC);
 
-/* ---------- Áreas ---------- */
+/* -------------------- Áreas -------------------- */
 $areas = $pdo->prepare("SELECT IdAreas, Nombre FROM areas WHERE IdAreas != ?");
 $areas->execute([$area_id]);
 $areas = $areas->fetchAll(PDO::FETCH_ASSOC);
 
-/* ---------- Flash (toast) ---------- */
+/* -------------------- Flash -------------------- */
 $flash_type = $_SESSION['flash_type'] ?? null;
 $flash_text = $_SESSION['flash_text'] ?? null;
 unset($_SESSION['flash_type'], $_SESSION['flash_text']);
@@ -140,36 +142,11 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
             display: block
         }
 
-        .numero-memo-wrapper {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            align-items: flex-start
-        }
-
-        .badge-num {
-            font-size: .80rem;
-            border-radius: 999px;
-            padding: .45rem .75rem
-        }
-
-        .badge-memo-tipo {
-            font-size: .72rem;
-            font-weight: 700;
-            border-radius: 999px;
-            padding: .25rem .6rem;
+        .cell-clip {
+            max-width: 280px;
             white-space: nowrap;
-            letter-spacing: .2px
-        }
-
-        .badge-memo-circular {
-            background: #0ea5a4;
-            color: #fff
-        }
-
-        .badge-memo-multiple {
-            background: #7c3aed;
-            color: #fff
+            overflow: hidden;
+            text-overflow: ellipsis
         }
 
         .badge-area {
@@ -211,6 +188,24 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
 
         .input-mini {
             max-width: 180px
+        }
+
+        /* Pill que envuelve todo el código de memo, permite salto de línea sin desbordar */
+        .badge-num-wrap {
+            display: inline-block;
+            max-width: 240px;
+            white-space: normal;
+            line-height: 1.15;
+            border-radius: 999px;
+            padding: .45rem .75rem;
+            font-size: .80rem;
+        }
+
+        /* ya existía para DOCS */
+        .badge-num {
+            font-size: .80rem;
+            border-radius: 999px;
+            padding: .45rem .75rem
         }
     </style>
 </head>
@@ -258,7 +253,7 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
                                             <tr data-id-doc="<?= (int)$d['IdDocumentos'] ?>">
                                                 <td><span class="badge badge-num bg-primary"><?= htmlspecialchars($d['NumeroDocumento']) ?></span></td>
                                                 <td>
-                                                    <div class="text-truncate" title="<?= htmlspecialchars($d['Asunto']) ?>"><?= htmlspecialchars($d['Asunto']) ?></div>
+                                                    <div class="cell-clip" title="<?= htmlspecialchars($d['Asunto']) ?>"><?= htmlspecialchars($d['Asunto']) ?></div>
                                                 </td>
                                                 <td>
                                                     <div class="user-info-mini"><i class="fas fa-user-circle"></i><span><?= htmlspecialchars($d['Nombres'] . ' ' . $d['ApellidoPat']) ?></span></div>
@@ -279,7 +274,6 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
                                                     </select>
                                                 </td>
                                                 <td class="accion-btn">
-                                                    <!-- Reenviar DOC -->
                                                     <form method="POST" action="../../backend/php/archivos/procesar_reenvio.php" class="form-reenviar">
                                                         <input type="hidden" name="tipo" value="DOC">
                                                         <input type="hidden" name="id_documento" value="<?= (int)$d['IdDocumentos'] ?>">
@@ -289,8 +283,6 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
                                                         <input type="hidden" name="id_informe" value="">
                                                         <button type="submit" class="btn btn-success btn-sm btn-reenviar"><i class="fas fa-share"></i> Reenviar</button>
                                                     </form>
-
-                                                    <!-- Finalizar DOC -->
                                                     <form method="POST" action="../../backend/php/archivos/finalizar_documento.php" class="finalizar-form btn-protegido-form">
                                                         <input type="hidden" name="id_documento" value="<?= (int)$d['IdDocumentos'] ?>">
                                                         <input type="hidden" name="numero_folios" value="">
@@ -299,8 +291,6 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
                                                         <input type="hidden" name="nueva_area" value="">
                                                         <button type="submit" class="btn btn-danger btn-sm btn-protegido" style="margin-top:5px;">Finalizar</button>
                                                     </form>
-
-                                                    <!-- Observar DOC -->
                                                     <form method="POST" action="../../backend/php/archivos/observacion_documento.php" class="observacion-form btn-protegido-form">
                                                         <input type="hidden" name="id_documento" value="<?= (int)$d['IdDocumentos'] ?>">
                                                         <input type="hidden" name="numero_folios" value="">
@@ -341,25 +331,18 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
                                         <?php foreach ($memos_recibidos as $m): ?>
                                             <tr data-id-memo="<?= (int)$m['IdMemo'] ?>" data-area-origen="<?= (int)$m['IdAreaOrigen'] ?>">
                                                 <td>
-                                                    <div class="numero-memo-wrapper">
-                                                        <?php
-                                                        $esMultiple = ($m['TipoMemo'] === 'MULTIPLE');
-                                                        $label = $esMultiple ? 'MEMORÁNDUM MÚLTIPLE' : 'MEMORÁNDUM CIRCULAR';
-                                                        $clase = $esMultiple ? 'badge-memo-multiple' : 'badge-memo-circular';
-                                                        ?>
-                                                        <span class="badge-memo-tipo <?= $clase ?>"><?= $label ?></span>
-                                                        <span class="badge badge-num bg-primary"><?= htmlspecialchars($m['NumeroDocumento']) ?></span>
-                                                    </div>
+                                                    <span class="badge-num-wrap bg-primary" title="<?= htmlspecialchars($m['NumeroDocumento']) ?>">
+                                                        <?= htmlspecialchars($m['NumeroDocumento']) ?>
+                                                    </span>
                                                 </td>
                                                 <td>
-                                                    <div class="text-truncate" title="<?= htmlspecialchars($m['Asunto']) ?>"><?= htmlspecialchars($m['Asunto']) ?></div>
+                                                    <div class="cell-clip" title="<?= htmlspecialchars($m['Asunto']) ?>"><?= htmlspecialchars($m['Asunto']) ?></div>
                                                 </td>
                                                 <td>
                                                     <div class="user-info-mini"><i class="fas fa-user-circle"></i><span><?= htmlspecialchars($m['Nombres'] . ' ' . $m['ApellidoPat']) ?></span></div>
                                                 </td>
                                                 <td><span class="badge-area"><?= htmlspecialchars($m['AreaOrigenNombre']) ?></span></td>
-
-                                                <td><input type="number" class="form-control form-control-sm memo-folios" min="0" value="0"></td>
+                                                <td><input type="number" class="form-control form-control-sm memo-folios" min="<?= (int)$m['NumeroFolios'] ?>" value="<?= (int)$m['NumeroFolios'] ?>"></td>
                                                 <td><input type="text" class="form-control form-control-sm observacion-grande memo-obs" placeholder="Observación opcional..." maxlength="100"></td>
 
                                                 <td class="informe-input area-select" data-id-memo="<?= (int)$m['IdMemo'] ?>">
@@ -369,7 +352,6 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
                                                 </td>
 
                                                 <td class="accion-btn">
-                                                    <!-- RESPONDER MEMO (envía al área origen, exige N° informe) -->
                                                     <form method="POST" action="../../backend/php/archivos/procesar_reenvio.php" class="form-responder-memo">
                                                         <input type="hidden" name="tipo" value="MEMO">
                                                         <input type="hidden" name="id_memo" value="<?= (int)$m['IdMemo'] ?>">
@@ -379,8 +361,6 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
                                                         <input type="hidden" name="id_informe" value="">
                                                         <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-reply"></i> Responder</button>
                                                     </form>
-
-                                                    <!-- FINALIZAR MEMO (como DOCS, sin responder) -->
                                                     <form method="POST" action="../../backend/php/archivos/finalizar_memo.php" class="finalizar-memo-form btn-protegido-form">
                                                         <input type="hidden" name="id_memo" value="<?= (int)$m['IdMemo'] ?>">
                                                         <button type="submit" class="btn btn-danger btn-sm btn-protegido" style="margin-top:5px;"><i class="fas fa-check"></i> Finalizar</button>
@@ -461,7 +441,6 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
     <script src="../../backend/js/notificaciones.js"></script>
 
     <script>
-        // Toast
         const Toast = Swal.mixin({
             toast: true,
             position: 'top-end',
@@ -629,7 +608,6 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
         }
     </script>
 
-    <!-- Selectize SOLO para DOCS -->
     <script>
         function initInformeSelects(scopeSel) {
             document.querySelectorAll(scopeSel + ' .informe-input').forEach(td => {
@@ -680,7 +658,7 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
                 }
             });
         }
-        initInformeSelects('#tab-docs'); // sólo DOCS
+        initInformeSelects('#tab-docs');
     </script>
 
     <!-- SELECTIZE PARA MEMOS -->
@@ -745,7 +723,68 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
     </script>
 
 
-    <!-- DataTables -->
+    <!-- SELECTIZE PARA MEMOS -->
+    <script>
+        function initInformeMemoSelects(scopeSel) {
+            document.querySelectorAll(scopeSel + ' .informe-input').forEach(td => {
+                const idMemo = parseInt(td.dataset.idMemo || '0', 10);
+                console.log('Memo ID:', idMemo, td);
+                const select = td.querySelector('.select-informes');
+                if (!select) return;
+
+                if (idMemo > 0) {
+                    select.innerHTML = '<option>Cargando...</option>';
+                    fetch(`../../backend/php/archivos/obtener_informe_memo.php?id_memo=${idMemo}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            let opts = '';
+                            if (!Array.isArray(data) || data.length === 0) {
+                                opts = '<option value="">No hay informes</option>';
+                            } else {
+                                opts = '<option value=""></option>' + data.map(inf => `<option value="${inf.IdInforme}">${inf.NombreInforme}</option>`).join('');
+                            }
+                            select.innerHTML = opts;
+
+                            const $s = $(select);
+                            if ($s[0].selectize) $s[0].selectize.destroy();
+                            $s.selectize({
+                                allowEmptyOption: true,
+                                placeholder: 'Seleccione un informe',
+                                sortField: 'text',
+                                create: false,
+                                dropdownParent: 'body',
+                                onFocus: function() {
+                                    this.removeOption('');
+                                    this.refreshOptions(false);
+                                }
+                            });
+                        })
+                        .catch(() => {
+                            select.innerHTML = '<option value="">No hay informes</option>';
+                            $(select).selectize({
+                                allowEmptyOption: true
+                            });
+                        });
+                } else {
+                    select.innerHTML = '<option value="">No hay informes</option>';
+                    const $s = $(select);
+                    if ($s[0].selectize) $s[0].selectize.destroy();
+                    $s.selectize({
+                        allowEmptyOption: true,
+                        placeholder: 'No hay informes',
+                        sortField: 'text',
+                        create: false,
+                        dropdownParent: 'body'
+                    });
+                }
+            });
+        }
+
+        // Inicializa los selects solo en la sección de memos
+        initInformeMemoSelects('#tab-memos');
+    </script>
+
+
     <script>
         const LANG_ES = {
             decimal: ",",
@@ -802,7 +841,6 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
         });
     </script>
 
-    <!-- Sincroniza valores y envíos -->
     <script>
         function toast(msg, type = 'warning') {
             Toast.fire({
@@ -810,7 +848,6 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
                 title: msg
             });
         }
-
         $(function() {
             // Selectize DOC áreas
             $('#tab-docs .sel-area').each(function() {
@@ -848,12 +885,10 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
                 const inf = ($tr.find('.sel-informe').val() || '').trim();
                 if (!area) return toast('Seleccione el área de destino');
                 if (!fol || Number(fol) < 1) return toast('Ingrese un número de folios válido');
-
                 form.querySelector('input[name="nueva_area"]').value = area;
                 form.querySelector('input[name="numero_folios"]').value = fol;
                 form.querySelector('input[name="observacion"]').value = obs;
                 form.querySelector('input[name="id_informe"]').value = inf;
-
                 const btn = form.querySelector('button[type="submit"]');
                 const old = btn.innerHTML;
                 btn.disabled = true;
@@ -867,7 +902,7 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
                 }, 3000);
             });
 
-            // Responder MEMO (N° Informe OBLIGATORIO)
+            // Responder MEMO (exige N° informe)
             $(document).on('submit', '.form-responder-memo', function(e) {
                 e.preventDefault();
                 const form = this,
@@ -877,11 +912,9 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
                 const inf = ($tr.find('.select-informes').val() || '').trim(); // <- Aquí estaba el error
 
                 if (!inf) return toast('Ingrese el N° de Informe para responder el memorándum.');
-
                 form.querySelector('input[name="numero_folios"]').value = fol;
                 form.querySelector('input[name="observacion"]').value = obs;
                 form.querySelector('input[name="id_informe"]').value = inf;
-
                 const btn = form.querySelector('button[type="submit"]');
                 const old = btn.innerHTML;
                 btn.disabled = true;
@@ -896,7 +929,8 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
             });
 
 
-            // Mayúsculas
+
+            // Mayúsculas inputs texto
             document.querySelectorAll('input[type="text"], textarea').forEach(el => {
                 el.addEventListener('input', function() {
                     this.value = this.value.toUpperCase();
@@ -904,7 +938,7 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
             });
         });
 
-        // Modal Password (compartido)
+        // Modal password (compartido)
         let formularioActual = null;
 
         function cerrarModalPassword() {
@@ -955,8 +989,7 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
                         errorDiv.innerText = 'Contraseña incorrecta';
                         errorDiv.style.display = 'block';
                     }
-                })
-                .catch(() => {
+                }).catch(() => {
                     errorDiv.innerText = 'Error de conexión';
                     errorDiv.style.display = 'block';
                 });

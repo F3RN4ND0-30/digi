@@ -12,11 +12,10 @@ require_once '../util/notificaciones_util.php';
 $area_destino = $_SESSION['dg_area_id'] ?? null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $tipo = $_POST['tipo'] ?? 'DOC';
+    $tipo   = $_POST['tipo'] ?? 'DOC';
+    $foliosPost = isset($_POST['folios']) ? max(0, (int)$_POST['folios']) : null;
 
-    /* ======================================================
-       FLUJO DOCUMENTO (igual que ya tenías)
-       ====================================================== */
+    /* ================= DOC ================= */
     if ($tipo === 'DOC') {
         $id_movimiento = $_POST['id_movimiento'] ?? null;
 
@@ -24,38 +23,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->beginTransaction();
             try {
                 $stmt2 = $pdo->prepare("
-                    SELECT md.IdDocumentos, md.AreaOrigen, d.NumeroDocumento, d.IdEstadoDocumento
+                    SELECT md.IdDocumentos, md.AreaOrigen,
+                           d.NumeroDocumento, d.IdEstadoDocumento, d.NumeroFolios
                     FROM movimientodocumento md
                     JOIN documentos d ON d.IdDocumentos = md.IdDocumentos
                     WHERE md.IdMovimientoDocumento = ?
                 ");
                 $stmt2->execute([$id_movimiento]);
                 $datos = $stmt2->fetch(PDO::FETCH_ASSOC);
-
                 if (!$datos) {
                     throw new Exception("No se encontró el documento asociado al movimiento.");
                 }
-
-                if ($datos['IdEstadoDocumento'] == 4) { // BLOQUEADO
+                if ((int)$datos['IdEstadoDocumento'] === 4) {
                     $pdo->rollBack();
                     $_SESSION['mensaje'] = "⚠️ No se puede recepcionar un documento con estado 'Bloqueado'.";
                     header("Location: ../../../frontend/archivos/recepcion.php");
                     exit();
                 }
 
-                $id_documento     = $datos['IdDocumentos'];
-                $area_origen      = $datos['AreaOrigen'];
+                // Guardar folios para reenvío
+                $folios = $foliosPost ?? (int)$datos['NumeroFolios'];
+                $_SESSION['folios_actual'] = max(0, (int)$folios);
+
+                $id_documento     = (int)$datos['IdDocumentos'];
+                $area_origen      = (int)$datos['AreaOrigen'];
                 $numero_documento = $datos['NumeroDocumento'];
 
-                // 2. Marcar como recibido en movimiento
                 $stmt = $pdo->prepare("UPDATE movimientodocumento SET Recibido = 1 WHERE IdMovimientoDocumento = ?");
                 $stmt->execute([$id_movimiento]);
 
-                // 3. Actualizar estado del documento a "Recibido" (3)
                 $stmt3 = $pdo->prepare("UPDATE documentos SET IdEstadoDocumento = 3, IdAreaFinal = ? WHERE IdDocumentos = ?");
                 $stmt3->execute([$area_destino, $id_documento]);
 
-                // 4. Notificación al área de origen
                 $mensaje = "El documento N° $numero_documento ha sido recepcionado.";
                 crearNotificacion($pdo, $area_origen, $mensaje);
 
@@ -73,12 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 
-    /* ======================================================
-       FLUJO MEMORÁNDUM
-       - Marca Recibido = 1 en memorandum_destinos para esta área
-       - Si ya no quedan destinos con Recibido = 0 => memo IdEstadoDocumento = 3 (RECIBIDO)
-       - Notifica al área de origen
-       ====================================================== */
+    /* ================= MEMO ================= */
     if ($tipo === 'MEMO') {
         $id_memo = $_POST['id_memo'] ?? null;
 
@@ -90,43 +84,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $pdo->beginTransaction();
         try {
-            // Info del memo
-            $stmt = $pdo->prepare("SELECT IdAreaOrigen, CodigoMemo FROM memorandums WHERE IdMemo = ?");
+            $stmt = $pdo->prepare("SELECT IdAreaOrigen, CodigoMemo, NumeroFolios FROM memorandums WHERE IdMemo = ?");
             $stmt->execute([$id_memo]);
             $memo = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$memo) {
                 throw new Exception("Memorándum no encontrado.");
             }
 
-            // 1) Marcar ESTE destino como recibido (si aún no lo estaba)
+            // Guardar folios para reenvío
+            $folios = $foliosPost ?? (int)$memo['NumeroFolios'];
+            $_SESSION['folios_actual'] = max(0, (int)$folios);
+
             $updDest = $pdo->prepare("
                 UPDATE memorandum_destinos
                 SET Recibido = 1
                 WHERE IdMemo = ? AND IdAreaDestino = ? AND Recibido = 0
             ");
             $updDest->execute([$id_memo, $area_destino]);
-
-            // Si no afectó filas, probablemente ya estaba recepcionado
             if ($updDest->rowCount() === 0) {
                 throw new Exception("Este memorándum ya fue recepcionado por tu área.");
             }
 
-            // 2) ¿Quedan destinos sin recibir?
             $cnt = $pdo->prepare("
-                SELECT COUNT(*) 
-                FROM memorandum_destinos 
+                SELECT COUNT(*) FROM memorandum_destinos
                 WHERE IdMemo = ? AND Recibido = 0
             ");
             $cnt->execute([$id_memo]);
             $restantes = (int)$cnt->fetchColumn();
 
             if ($restantes === 0) {
-                // Nadie más pendiente -> marcar memo como RECIBIDO (IdEstadoDocumento = 3)
                 $upd = $pdo->prepare("UPDATE memorandums SET IdEstadoDocumento = 3 WHERE IdMemo = ?");
                 $upd->execute([$id_memo]);
             }
-            
-            // 3) Notificar al área de origen
+
             $codigo  = $memo['CodigoMemo'];
             $mensaje = "El memorándum N° $codigo ha sido recepcionado.";
             crearNotificacion($pdo, (int)$memo['IdAreaOrigen'], $mensaje);
@@ -142,7 +132,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 
-    // Tipo desconocido
     $_SESSION['mensaje'] = "❌ Tipo no soportado.";
     header("Location: ../../../frontend/archivos/recepcion.php");
     exit();
