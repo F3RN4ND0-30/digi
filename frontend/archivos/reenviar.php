@@ -722,7 +722,6 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
         initInformeMemoSelects('#tab-memos');
     </script>
 
-
     <!-- SELECTIZE PARA MEMOS -->
     <script>
         function initInformeMemoSelects(scopeSel) {
@@ -929,8 +928,7 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
             });
 
 
-
-            // Mayúsculas inputs texto
+            // Mayúsculas
             document.querySelectorAll('input[type="text"], textarea').forEach(el => {
                 el.addEventListener('input', function() {
                     this.value = this.value.toUpperCase();
