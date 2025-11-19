@@ -37,6 +37,46 @@ unset($_SESSION['mensaje']);
 
 //Obtener tipo de objetos (CD, USB, etc)
 $tipos_objeto = $pdo->query("SELECT IdTipoObjeto, Descripcion FROM tipo_objeto")->fetchAll(PDO::FETCH_ASSOC);
+
+// =================================================================
+// LÓGICA PARA OBTENER EL ÚLTIMO INFORME POR ÁREA
+// =================================================================
+$ultimo_informe = null;
+
+if (!empty($area_id)) {
+
+    $sql_ultimo_informe = "SELECT 
+                                NombreInforme, Asunto, FechaEmision, Año FROM informes 
+                            WHERE 
+                                IdArea = ? 
+                            ORDER BY 
+                                FechaEmision DESC, IdInforme DESC 
+                            LIMIT 1";
+
+    $stmt_informe = $pdo->prepare($sql_ultimo_informe);
+    $stmt_informe->execute([$area_id]);
+
+    $ultimo_informe = $stmt_informe->fetch(PDO::FETCH_ASSOC);
+}
+// =================================================================
+// NUEVA LÓGICA: OBTENER ABREVIATURA DEL ÁREA
+// =================================================================
+$anio = date("Y"); // Asignar el año actual por defecto
+$abreviatura_area = 'DEF'; // Valor por defecto si no se encuentra
+if (!empty($area_id)) {
+    $stmt_abreviatura = $pdo->prepare("SELECT Abreviatura FROM areas WHERE IdAreas = ?");
+    $stmt_abreviatura->execute([$area_id]);
+    $result = $stmt_abreviatura->fetchColumn();
+
+    if ($result) {
+        $abreviatura_area = $result;
+    }
+}
+$prefijo_base = "INFORME N°."; 
+$sufijo_dinamico = "-" . $anio . "-MPP-" . $abreviatura_area;
+
+$valor_automatico = $prefijo_base . $sufijo_dinamico;
+$longitud_prefijo_fijo = strlen($prefijo_base);
 ?>
 
 <!DOCTYPE html>
@@ -69,6 +109,17 @@ $tipos_objeto = $pdo->query("SELECT IdTipoObjeto, Descripcion FROM tipo_objeto")
         <main class="contenido-principal">
             <div class="tarjeta tarjeta-formulario">
                 <h2><i class="fas fa-plus-circle"></i> Registrar nuevo documento</h2>
+                <?php if (!empty($ultimo_informe)) : ?>
+                    <div class="info-ultimo-documento">
+                        <label for="ultimo_doc_input" class="label-ultimo-doc">
+                            <i class="fas fa-history"></i> Último Informe Creado (<?= htmlspecialchars($ultimo_informe['NombreInforme']) ?>)
+                        </label>
+                    </div>
+                <?php else : ?>
+                    <div class="info-ultimo-documento no-data">
+                        <label><i class="fas fa-info-circle"></i> No hay informes previos para el Área <?= htmlspecialchars($area_id) ?></label>
+                    </div>
+                <?php endif; ?>
 
                 <?php if (!empty($mensaje)) : ?>
                     <?php
@@ -81,7 +132,14 @@ $tipos_objeto = $pdo->query("SELECT IdTipoObjeto, Descripcion FROM tipo_objeto")
                     <div class="form-grid">
                         <div class="form-group">
                             <label><i class="fas fa-hashtag"></i> Nombre de Documento:</label>
-                            <input type="text" name="numero" required placeholder="Ej: DOC-2025-001">
+                            <input
+                                type="text"
+                                name="numero"
+                                required
+                                placeholder="Ej: INFORME N°.123-MPP-RH"
+                                value="<?= htmlspecialchars($valor_automatico) ?>"
+
+                                onfocus="this.setSelectionRange(<?= $longitud_prefijo_fijo ?>, <?= $longitud_prefijo_fijo ?>);">
                         </div>
 
                         <div class="form-group">

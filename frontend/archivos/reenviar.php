@@ -722,8 +722,68 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
         initInformeMemoSelects('#tab-memos');
     </script>
 
+    <!-- SELECTIZE PARA MEMOS -->
+    <script>
+        function initInformeMemoSelects(scopeSel) {
+            document.querySelectorAll(scopeSel + ' .informe-input').forEach(td => {
+                const idMemo = parseInt(td.dataset.idMemo || '0', 10);
+                console.log('Memo ID:', idMemo, td);
+                const select = td.querySelector('.select-informes');
+                if (!select) return;
 
-    <!-- DataTables -->
+                if (idMemo > 0) {
+                    select.innerHTML = '<option>Cargando...</option>';
+                    fetch(`../../backend/php/archivos/obtener_informe_memo.php?id_memo=${idMemo}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            let opts = '';
+                            if (!Array.isArray(data) || data.length === 0) {
+                                opts = '<option value="">No hay informes</option>';
+                            } else {
+                                opts = '<option value=""></option>' + data.map(inf => `<option value="${inf.IdInforme}">${inf.NombreInforme}</option>`).join('');
+                            }
+                            select.innerHTML = opts;
+
+                            const $s = $(select);
+                            if ($s[0].selectize) $s[0].selectize.destroy();
+                            $s.selectize({
+                                allowEmptyOption: true,
+                                placeholder: 'Seleccione un informe',
+                                sortField: 'text',
+                                create: false,
+                                dropdownParent: 'body',
+                                onFocus: function() {
+                                    this.removeOption('');
+                                    this.refreshOptions(false);
+                                }
+                            });
+                        })
+                        .catch(() => {
+                            select.innerHTML = '<option value="">No hay informes</option>';
+                            $(select).selectize({
+                                allowEmptyOption: true
+                            });
+                        });
+                } else {
+                    select.innerHTML = '<option value="">No hay informes</option>';
+                    const $s = $(select);
+                    if ($s[0].selectize) $s[0].selectize.destroy();
+                    $s.selectize({
+                        allowEmptyOption: true,
+                        placeholder: 'No hay informes',
+                        sortField: 'text',
+                        create: false,
+                        dropdownParent: 'body'
+                    });
+                }
+            });
+        }
+
+        // Inicializa los selects solo en la sección de memos
+        initInformeMemoSelects('#tab-memos');
+    </script>
+
+
     <script>
         const LANG_ES = {
             decimal: ",",
