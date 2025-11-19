@@ -15,7 +15,7 @@
   --bg-white: #ffffff;
   --bg-light: #f8f9fa;
   --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08); 
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
   --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.15);
   --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.2);
