@@ -172,7 +172,7 @@
         <div class="footer-content">
             <div class="footer-section">
                 <h4>Municipalidad Provincial de Pisco</h4>
-                <p>Unidad de Gestión Documental</p>
+                <p>Unidad de Sistemas</p>
             </div>
             <div class="footer-section">
                 <p>
