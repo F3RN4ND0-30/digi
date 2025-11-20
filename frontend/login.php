@@ -370,13 +370,13 @@ if (rand(1, 100) === 1) {
                         </div>
                     </div>
 
-                    <div class="opciones-formulario">
+                    <!-- <div class="opciones-formulario">
                         <label class="contenedor-checkbox">
                             <input type="checkbox" name="remember" value="1">
                             <span class="marca-checkbox"></span>
                             Mantener sesión activa
                         </label>
-                    </div>
+                    </div> -->
 
                     <button type="submit" class="boton-login" id="botonLogin">
                         <span class="texto-boton">
