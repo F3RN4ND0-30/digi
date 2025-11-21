@@ -935,6 +935,11 @@ body::after {
   margin-bottom: 2rem;
 }
 
+.volver {
+  color: white;
+  text-decoration: none;
+}
+
 .contenedor-checkbox {
   display: flex;
   align-items: center;
