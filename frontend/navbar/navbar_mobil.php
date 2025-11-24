@@ -33,7 +33,7 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
         <div style="text-align: center; margin-bottom: 15px;">
             <strong><?= $user_name ?></strong>
         </div>
-        <a href="../sisvis/escritorio.php"><i class="fas fa-home"></i> Inicio</a>
+        <a href="../sisvis/escritorio"><i class="fas fa-home"></i> Inicio</a>
         <div class="nav-dropdown">
             <a href="#" class="nav-link dropdown-toggle">
                 <i class="fas fa-th-large"></i>
@@ -49,23 +49,23 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
                         GESTIÓN DOCUMENTAL
                     </h6>
                     <div class="column-items">
-                        <a href="../archivos/registrar.php" class="module-item <?= ($current_page === 'registrar') ? 'active' : '' ?>">
+                        <a href="../archivos/registrar" class="module-item <?= ($current_page === 'registrar') ? 'active' : '' ?>">
                             <i class="fas fa-plus-circle"></i>
                             <span>Registrar</span>
                         </a>
-                        <a href="../archivos/recepcion.php" class="module-item <?= ($current_page === 'recepcion') ? 'active' : '' ?>">
+                        <a href="../archivos/recepcion" class="module-item <?= ($current_page === 'recepcion') ? 'active' : '' ?>">
                             <i class="fas fa-inbox"></i>
                             <span>Recepción</span>
                         </a>
-                        <a href="../archivos/enviados.php" class="module-item <?= ($current_page === 'enviados') ? 'active' : '' ?>">
+                        <a href="../archivos/enviados" class="module-item <?= ($current_page === 'enviados') ? 'active' : '' ?>">
                             <i class="fas fa-paper-plane"></i>
                             <span>Enviados</span>
                         </a>
-                        <a href="../archivos/reenviar.php" class="module-item <?= ($current_page === 'reenviar') ? 'active' : '' ?>">
+                        <a href="../archivos/reenviar" class="module-item <?= ($current_page === 'reenviar') ? 'active' : '' ?>">
                             <i class="fas fa-share"></i>
                             <span>Reenviar/Finalizar</span>
                         </a>
-                        <a href="../seguimiento/busqueda.php" class="module-item <?= ($current_page === 'busqueda') ? 'active' : '' ?>">
+                        <a href="../seguimiento/busqueda" class="module-item <?= ($current_page === 'busqueda') ? 'active' : '' ?>">
                             <i class="fas fa-route"></i>
                             <span>Seguimiento</span>
                         </a>
@@ -80,7 +80,7 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
                             ADMINISTRACIÓN
                         </h6>
                         <div class="column-items">
-                            <a href="../gestusuarios/usuarios.php" class="module-item <?= ($current_page === 'usuarios') ? 'active' : '' ?>">
+                            <a href="../gestusuarios/usuarios" class="module-item <?= ($current_page === 'usuarios') ? 'active' : '' ?>">
                                 <i class="fas fa-users"></i>
                                 <span>Usuarios</span>
                             </a>
@@ -96,7 +96,7 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
                             SUPERVISIÓN
                         </h6>
                         <div class="column-items">
-                            <a href="../defensoria/supervision.php" class="module-item <?= ($current_page === 'supervision') ? 'active' : '' ?>">
+                            <a href="../defensoria/supervision" class="module-item <?= ($current_page === 'supervision') ? 'active' : '' ?>">
                                 <i class="fas fa-shield"></i>
                                 <span>Supervisión</span>
                             </a>
@@ -106,8 +106,8 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
 
             </div>
         </div>
-        <a href="../configuracion/perfil.php"><i class="fas fa-cog"></i> Configuración</a>
-        <a href="../logout.php" onclick="return confirm('¿Está seguro que desea cerrar sesión?')"><i class="fas fa-sign-out-alt"></i> Salir</a>
+        <a href="../configuracion/perfil"><i class="fas fa-cog"></i> Configuración</a>
+        <a href="../logout" onclick="return confirm('¿Está seguro que desea cerrar sesión?')"><i class="fas fa-sign-out-alt"></i> Salir</a>
     </div>
 
     <!-- Lista Notificaciones -->

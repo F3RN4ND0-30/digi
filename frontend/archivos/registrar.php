@@ -265,7 +265,7 @@ $longitud_prefijo_fijo = strlen($prefijo_base);
                     <button class="btn-si" onclick="seleccionarExterior('SI')">Sí</button>
                     <button class="btn-no" onclick="seleccionarExterior('NO')">No</button>
                 </div>
-                <a href="../sisvis/escritorio.php" class="btn-link">Regresar al inicio</a>
+                <a href="../sisvis/escritorio" class="btn-link">Regresar al inicio</a>
             </div>
         </div>
     <?php endif; ?>
