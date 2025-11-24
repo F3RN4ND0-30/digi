@@ -15,7 +15,7 @@
   --bg-white: #ffffff;
   --bg-light: #f8f9fa;
   --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08); 
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
   --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.15);
   --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.2);
@@ -177,6 +177,7 @@ body::after {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
   transition: var(--transition);
+  max-width: 200px; /* Limitar ancho máximo */
 }
 
 .muni-logo:hover {
@@ -188,6 +189,7 @@ body::after {
   height: 45px;
   width: auto;
   display: block;
+  max-width: 100%; /* Asegurar que no se salga */
 }
 
 /* Header con Acceso */
@@ -196,6 +198,7 @@ body::after {
   top: 20px;
   right: 20px;
   z-index: 1000;
+  max-width: 250px; /* Limitar ancho máximo */
 }
 
 .login-btn {
@@ -212,6 +215,9 @@ body::after {
   box-shadow: var(--shadow-md);
   transition: var(--transition);
   border: 2px solid transparent;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .login-btn:hover {
@@ -222,6 +228,7 @@ body::after {
 
 .login-btn i {
   font-size: 1.2rem;
+  flex-shrink: 0; /* Evitar que el icono se comprima */
 }
 
 /* Container Principal */
@@ -841,5 +848,30 @@ body::after {
 
   .help-box {
     padding: 35px 25px;
+  }
+}
+
+/* ==== Ajustes finos para móviles muy pequeños (320–375px) ==== */
+@media (max-width: 400px) {
+  /* Más espacio respirando dentro del recuadro morado */
+  .help-box {
+    padding: 32px 18px;
+  }
+
+  /* Los contactos uno debajo de otro y centrados */
+  .contact-info {
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  /* Los “cuadritos” ocupan todo el ancho disponible sin salirse */
+  .contact-link {
+    width: 100%;
+    max-width: 260px;
+    margin: 0 auto;
+    justify-content: center;
+    box-sizing: border-box;
+    padding: 10px 16px;
   }
 }
