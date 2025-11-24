@@ -25,7 +25,7 @@ require '../../backend/db/conexion.php';
 
 <body>
     <!-- Botón Volver al Inicio -->
-    <a href="../../index.php" class="btn-volver">
+    <a href="../../" class="btn-volver">
         <i class="fas fa-home"></i>
         <span>Volver al Inicio</span>
     </a>
