@@ -22,7 +22,7 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
         <!-- Navegación Principal -->
         <div class="navbar-nav">
             <!-- Inicio -->
-            <a href="../sisvis/escritorio.php" class="nav-link <?= ($current_page === 'escritorio') ? 'active' : '' ?>">
+            <a href="../sisvis/escritorio" class="nav-link <?= ($current_page === 'escritorio') ? 'active' : '' ?>">
                 <i class="fas fa-home"></i>
                 <span>Inicio</span>
             </a>
@@ -43,27 +43,27 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
                             GESTIÓN DOCUMENTAL
                         </h6>
                         <div class="column-items">
-                            <a href="../archivos/registrar.php" class="module-item <?= ($current_page === 'registrar') ? 'active' : '' ?>">
+                            <a href="../archivos/registrar" class="module-item <?= ($current_page === 'registrar') ? 'active' : '' ?>">
                                 <i class="fas fa-plus-circle"></i>
                                 <span>Registrar</span>
                             </a>
-                            <a href="../archivos/memorandums.php" class="module-item <?= ($current_page === 'memorandums') ? 'active' : '' ?>">
+                            <a href="../archivos/memorandums" class="module-item <?= ($current_page === 'memorandums') ? 'active' : '' ?>">
                                 <i class="fas fa-file"></i>
                                 <span>Memorandums</span>
                             </a>
-                            <a href="../archivos/recepcion.php" class="module-item <?= ($current_page === 'recepcion') ? 'active' : '' ?>">
+                            <a href="../archivos/recepcion" class="module-item <?= ($current_page === 'recepcion') ? 'active' : '' ?>">
                                 <i class="fas fa-inbox"></i>
                                 <span>Recepción</span>
                             </a>
-                            <a href="../archivos/enviados.php" class="module-item <?= ($current_page === 'enviados') ? 'active' : '' ?>">
+                            <a href="../archivos/enviados" class="module-item <?= ($current_page === 'enviados') ? 'active' : '' ?>">
                                 <i class="fas fa-paper-plane"></i>
                                 <span>Enviados</span>
                             </a>
-                            <a href="../archivos/reenviar.php" class="module-item <?= ($current_page === 'reenviar') ? 'active' : '' ?>">
+                            <a href="../archivos/reenviar" class="module-item <?= ($current_page === 'reenviar') ? 'active' : '' ?>">
                                 <i class="fas fa-share"></i>
                                 <span>Reenviar/Finalizar</span>
                             </a>
-                            <a href="../seguimiento/busqueda.php" class="module-item <?= ($current_page === 'busqueda') ? 'active' : '' ?>">
+                            <a href="../seguimiento/busqueda" class="module-item <?= ($current_page === 'busqueda') ? 'active' : '' ?>">
                                 <i class="fas fa-route"></i>
                                 <span>Seguimiento</span>
                             </a>
@@ -78,7 +78,7 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
                                 ADMINISTRACIÓN
                             </h6>
                             <div class="column-items">
-                                <a href="../gestusuarios/usuarios.php" class="module-item <?= ($current_page === 'usuarios') ? 'active' : '' ?>">
+                                <a href="../gestusuarios/usuarios" class="module-item <?= ($current_page === 'usuarios') ? 'active' : '' ?>">
                                     <i class="fas fa-users"></i>
                                     <span>Usuarios</span>
                                 </a>
@@ -94,7 +94,7 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
                                 SUPERVISIÓN
                             </h6>
                             <div class="column-items">
-                                <a href="../defensoria/supervision.php" class="module-item <?= ($current_page === 'supervision') ? 'active' : '' ?>">
+                                <a href="../defensoria/supervision" class="module-item <?= ($current_page === 'supervision') ? 'active' : '' ?>">
                                     <i class="fas fa-shield"></i>
                                     <span>Supervisión</span>
                                 </a>
@@ -106,7 +106,7 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
             </div>
 
             <!-- Configuración -->
-            <a href="../reportes/reporte.php" class="nav-link <?= ($current_page === 'reporte') ? 'active' : '' ?>">
+            <a href="../reportes/reporte" class="nav-link <?= ($current_page === 'reporte') ? 'active' : '' ?>">
                 <i class="fas fa-file-alt"></i>
                 <span>Reportes</span>
             </a>
