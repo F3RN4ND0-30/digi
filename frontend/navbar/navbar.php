@@ -151,7 +151,7 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
             </div>
 
             <!-- Configuración -->
-            <a href="../configuracion/perfil.php" class="nav-link <?= ($current_page === 'configuracion' || $current_page === 'perfil') ? 'active' : '' ?>">
+            <a href="../configuracion/perfil" class="nav-link <?= ($current_page === 'configuracion' || $current_page === 'perfil') ? 'active' : '' ?>">
                 <i class="fas fa-cog"></i>
             </a>
 
