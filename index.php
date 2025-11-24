@@ -20,7 +20,7 @@
 
     <!-- Header con Acceso Administrativo -->
     <div class="header">
-        <a href="frontend/login.php" class="login-btn">
+        <a href="frontend/login" class="login-btn">
             <i class="fas fa-user-shield"></i>
             Acceso Administrativo
         </a>
