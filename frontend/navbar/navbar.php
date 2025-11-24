@@ -151,12 +151,12 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
             </div>
 
             <!-- Configuración -->
-            <a href="../configuracion/perfil.php" class="nav-link <?= ($current_page === 'configuracion' || $current_page === 'perfil') ? 'active' : '' ?>">
+            <a href="../configuracion/perfil" class="nav-link <?= ($current_page === 'configuracion' || $current_page === 'perfil') ? 'active' : '' ?>">
                 <i class="fas fa-cog"></i>
             </a>
 
             <!-- Botón de Salir -->
-            <a href="../logout.php" class="nav-link logout-btn" onclick="return confirm('¿Está seguro que desea cerrar sesión?')">
+            <a href="../logout" class="nav-link logout-btn" onclick="return confirm('¿Está seguro que desea cerrar sesión?')">
                 <i class="fas fa-sign-out-alt"></i>
             </a>
         </div>
