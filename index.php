@@ -57,7 +57,7 @@ header("Content-Security-Policy: $csp");
 
     <!-- Header con Acceso Administrativo -->
     <div class="header">
-        <a href="frontend/login.php" class="login-btn">
+        <a href="frontend/login" class="login-btn">
             <i class="fas fa-user-shield"></i>
             <span>Acceso Administrativo</span>
         </a>
@@ -96,7 +96,7 @@ header("Content-Security-Policy: $csp");
 
             <!-- Botones de Acción principales -->
             <div class="action-section">
-                <a href="frontend/consultas/seguimiento_tramite.php" class="action-btn btn-outline-action">
+                <a href="frontend/consultas/seguimiento_tramite" class="action-btn btn-outline-action">
                     <i class="fas fa-route"></i>
                     <span>Seguimiento de Trámite</span>
                 </a>
