@@ -1,0 +1,8 @@
+RewriteEngine On
+
+# Ignorar archivos y carpetas existentes
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Redirigir cualquier URL sin extensión a .php
+RewriteRule ^([a-zA-Z0-9/_-]+)$ $1.php [L,QSA]
