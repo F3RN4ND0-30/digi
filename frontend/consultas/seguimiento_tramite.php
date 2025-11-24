@@ -142,7 +142,7 @@ require '../../backend/db/conexion.php';
                         DNI o RUC
                     </label>
                     <input
-                        type="text"
+                        type="number"
                         id="dniRuc"
                         class="input-field"
                         placeholder="Ingresa tu DNI o RUC"
