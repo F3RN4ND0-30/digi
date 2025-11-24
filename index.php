@@ -35,7 +35,7 @@ header("Content-Security-Policy: $csp");
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DIGI - Sistema de Gestión Documental | Municipalidad Provincial de Pisco</title>
+    <title>DIGI - MPP</title>
 
     <!-- Fuentes e iconos -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -71,7 +71,7 @@ header("Content-Security-Policy: $csp");
             <div class="hero-section">
                 <div class="logo-container">
                     <div class="logo-circle">
-                        <i class="fas fa-file-contract"></i>
+                        <i class="fas fa-stamp"></i>
                     </div>
                 </div>
 
