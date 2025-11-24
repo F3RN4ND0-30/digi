@@ -156,7 +156,7 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
             </a>
 
             <!-- Botón de Salir -->
-            <a href="../logout.php" class="nav-link logout-btn" onclick="return confirm('¿Está seguro que desea cerrar sesión?')">
+            <a href="../logout" class="nav-link logout-btn" onclick="return confirm('¿Está seguro que desea cerrar sesión?')">
                 <i class="fas fa-sign-out-alt"></i>
             </a>
         </div>
