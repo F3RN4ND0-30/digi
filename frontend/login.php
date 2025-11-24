@@ -386,10 +386,6 @@ if (rand(1, 100) === 1) {
                             <div class="spinner"></div>
                         </div>
                     </button>
-
-
-                    <a href="../index.php" class="volver">volver al inicio</a>
-
                 </form>
 
                 <div class="pie-login">
