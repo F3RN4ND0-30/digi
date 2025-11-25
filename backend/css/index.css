@@ -63,8 +63,7 @@ body {
   height: 100%;
   z-index: 0;
   pointer-events: none;
-  background-image: 
-        /* Halos de luz suaves */ radial-gradient(
+  background-image: radial-gradient(
       circle at 15% 25%,
       rgba(139, 92, 246, 0.2) 0%,
       transparent 40%
@@ -79,12 +78,11 @@ body {
       rgba(99, 102, 241, 0.1) 0%,
       transparent 50%
     ),
-    /* Estrellas pequeñas */
-      radial-gradient(
-        1.5px 1.5px at 30% 20%,
-        rgba(255, 255, 255, 0.8),
-        transparent
-      ),
+    radial-gradient(
+      1.5px 1.5px at 30% 20%,
+      rgba(255, 255, 255, 0.8),
+      transparent
+    ),
     radial-gradient(1px 1px at 70% 40%, rgba(255, 255, 255, 0.6), transparent),
     radial-gradient(1px 1px at 50% 70%, rgba(255, 255, 255, 0.7), transparent),
     radial-gradient(
@@ -177,7 +175,7 @@ body::after {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
   transition: var(--transition);
-  max-width: 200px; /* Limitar ancho máximo */
+  max-width: 200px;
 }
 
 .muni-logo:hover {
@@ -189,7 +187,7 @@ body::after {
   height: 45px;
   width: auto;
   display: block;
-  max-width: 100%; /* Asegurar que no se salga */
+  max-width: 100%;
 }
 
 /* Header con Acceso */
@@ -198,7 +196,7 @@ body::after {
   top: 20px;
   right: 20px;
   z-index: 1000;
-  max-width: 250px; /* Limitar ancho máximo */
+  max-width: 250px;
 }
 
 .login-btn {
@@ -228,7 +226,7 @@ body::after {
 
 .login-btn i {
   font-size: 1.2rem;
-  flex-shrink: 0; /* Evitar que el icono se comprima */
+  flex-shrink: 0;
 }
 
 /* Container Principal */
@@ -252,13 +250,13 @@ body::after {
 .hero-section {
   text-align: center;
   margin-bottom: 60px;
-  animation: fadeInUp 0.6s ease-out; /* Animación más rápida */
+  animation: fadeInUp 0.6s ease-out;
 }
 
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(20px); /* Menos movimiento */
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
@@ -280,7 +278,6 @@ body::after {
   align-items: center;
   justify-content: center;
   box-shadow: 0 20px 60px rgba(139, 92, 246, 0.4);
-  /* Animación simplificada */
   animation: logoFloat 4s ease-in-out infinite;
   position: relative;
 }
@@ -312,19 +309,19 @@ body::after {
 
 .main-title {
   font-size: 5.5rem;
-  font-weight: 700; /* Reducido de 900 a 700 */
+  font-weight: 700;
   margin-bottom: 10px;
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 12px;
-  letter-spacing: 3px; /* Más espacio entre letras */
+  letter-spacing: 3px;
 }
 
 .title-letter {
   display: inline-block;
   color: #ffffff;
-  font-weight: 700; /* Reducido de 900 a 700 */
+  font-weight: 700;
   text-shadow: 0 0 15px rgba(255, 255, 255, 0.9),
     0 0 30px rgba(139, 92, 246, 0.7), 0 3px 10px rgba(0, 0, 0, 0.4);
   animation: letterBounce 3s ease-in-out infinite;
@@ -357,7 +354,7 @@ body::after {
 .title-separator {
   display: inline-block;
   color: #ffffff;
-  font-weight: 200; /* Más delgado el separador */
+  font-weight: 200;
   margin: 0 10px;
   text-shadow: 0 0 15px rgba(255, 255, 255, 1), 0 3px 8px rgba(0, 0, 0, 0.4);
   animation: separatorGlow 2s ease-in-out infinite;
@@ -370,7 +367,7 @@ body::after {
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-12px); /* Reducido de -15px */
+    transform: translateY(-12px);
   }
 }
 
@@ -394,13 +391,13 @@ body::after {
   font-size: 1.5rem;
   color: #ffffff;
   margin-bottom: 25px;
-  font-weight: 500; /* Reducido de 600 a 500 */
+  font-weight: 500;
   text-shadow: 0 0 8px rgba(255, 255, 255, 0.4), 0 2px 6px rgba(0, 0, 0, 0.3);
   letter-spacing: 0.5px;
 }
 
 .main-description {
-  font-size: 1.1rem; /* Ligeramente reducido */
+  font-size: 1.1rem;
   color: #1f2937;
   max-width: 720px;
   margin: 0 auto;
@@ -411,7 +408,7 @@ body::after {
   backdrop-filter: blur(8px);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
   border: 2px solid rgba(255, 255, 255, 0.6);
-  font-weight: 400; /* Reducido de 500 a 400 */
+  font-weight: 400;
 }
 
 /* Botones de Acción */
@@ -439,6 +436,7 @@ body::after {
   overflow: hidden;
 }
 
+/* Efecto brillo */
 .action-btn::before {
   content: "";
   position: absolute;
@@ -487,6 +485,31 @@ body::after {
   font-size: 1.4rem;
 }
 
+/* Botón principal de Seguimiento: versión azul */
+.action-btn-main {
+  cursor: pointer;
+  border-radius: 999px;
+  padding-inline: 42px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+  border: 2px solid #60a5fa;
+
+  box-shadow: 0 12px 26px rgba(37, 99, 235, 0.45);
+}
+
+/* Icono del botón */
+.action-btn-main i {
+  color: #bfdbfe; /* azul clarito para el icono */
+}
+
+/* Hover / focus (más clarito, pero sin glow exagerado) */
+.action-btn-main:hover,
+.action-btn-main:focus-visible {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  transform: translateY(-3px);
+  box-shadow: 0 16px 32px rgba(37, 99, 235, 0.55);
+}
+
 /* Cómo Funciona */
 .how-it-works {
   margin-bottom: 80px;
@@ -521,7 +544,7 @@ body::after {
   padding: 40px 30px;
   border-radius: var(--radius-lg);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease, box-shadow 0.2s ease; /* Simplificado */
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   position: relative;
   text-align: center;
   backdrop-filter: blur(10px);
@@ -529,7 +552,7 @@ body::after {
 }
 
 .step-item:hover {
-  transform: translateY(-5px); /* Reducido de -8px */
+  transform: translateY(-5px);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
 }
 
@@ -679,6 +702,7 @@ body::after {
   flex-wrap: wrap;
 }
 
+/* Cuadritos de contacto (teléfono y correo) */
 .contact-link {
   display: flex;
   align-items: center;
@@ -691,6 +715,9 @@ body::after {
   font-weight: 600;
   transition: var(--transition);
   border: 2px solid rgba(255, 255, 255, 0.3);
+  flex-wrap: wrap; /* permite que el texto haga salto de línea */
+  word-break: break-word; /* por si el correo es muy largo */
+  text-align: left;
 }
 
 .contact-link:hover {
@@ -700,6 +727,8 @@ body::after {
 
 .contact-link i {
   font-size: 1.2rem;
+  min-width: 20px;
+  text-align: center;
 }
 
 /* Footer */
@@ -849,29 +878,35 @@ body::after {
   .help-box {
     padding: 35px 25px;
   }
+
+  /* En pantallas muy chicas ocultamos el tooltip para que no estorbe */
+  .action-btn-main::after {
+    display: none;
+  }
 }
 
-/* ==== Ajustes finos para móviles muy pequeños (320–375px) ==== */
+/* Ajustes finos para móviles muy pequeños (320–375px) */
 @media (max-width: 400px) {
-  /* Más espacio respirando dentro del recuadro morado */
   .help-box {
     padding: 32px 18px;
   }
 
-  /* Los contactos uno debajo de otro y centrados */
   .contact-info {
     flex-direction: column;
     align-items: center;
     gap: 12px;
   }
 
-  /* Los “cuadritos” ocupan todo el ancho disponible sin salirse */
   .contact-link {
     width: 100%;
-    max-width: 260px;
+    max-width: 270px;
     margin: 0 auto;
     justify-content: center;
-    box-sizing: border-box;
-    padding: 10px 16px;
+    padding: 10px 14px;
+    font-size: 0.9rem;
+  }
+
+  .contact-link i {
+    font-size: 1.05rem;
   }
 }

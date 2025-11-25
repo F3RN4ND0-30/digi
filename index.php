@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 // Evita que el navegador intente adivinar tipos de archivo
 header('X-Content-Type-Options: nosniff');
@@ -16,18 +17,16 @@ header('Referrer-Policy: no-referrer-when-downgrade');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
 
+// ---------- CONTENT SECURITY POLICY (CSP) ----------
 $csp  = "default-src 'self'; ";
 $csp .= "script-src 'self' https://cdnjs.cloudflare.com; ";
 $csp .= "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; ";
-
 $csp .= "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; ";
-
 $csp .= "img-src 'self' data:; ";
 $csp .= "connect-src 'self';";
 
 header("Content-Security-Policy: $csp");
 ?>
-
 
 <!DOCTYPE html>
 <html lang="es">
@@ -96,7 +95,8 @@ header("Content-Security-Policy: $csp");
 
             <!-- Botones de Acción principales -->
             <div class="action-section">
-                <a href="frontend/consultas/seguimiento_tramite.php" class="action-btn btn-outline-action">
+                <a href="frontend/consultas/seguimiento_tramite.php"
+                    class="action-btn action-btn-main">
                     <i class="fas fa-route"></i>
                     <span>Seguimiento de Trámite</span>
                 </a>
@@ -168,11 +168,11 @@ header("Content-Security-Policy: $csp");
                     <p>Si no encuentras tu documento o tienes dudas contáctanos:</p>
 
                     <div class="contact-info">
-                        <a href="tel:056532000" class="contact-link">
-                            <i class="fas fa-phone"></i> (056) 53-2000
+                        <a href="tel:056655069" class="contact-link">
+                            <i class="fas fa-phone"></i> (056) 65-5069
                         </a>
-                        <a href="mailto:mesapartes@munipisco.gob.pe" class="contact-link">
-                            <i class="fas fa-envelope"></i> mesapartes@munipisco.gob.pe
+                        <a href="mailto:munipisco@munipisco.gob.pe" class="contact-link">
+                            <i class="fas fa-envelope"></i> munipisco@munipisco.gob.pe
                         </a>
                     </div>
                 </div>
@@ -191,7 +191,7 @@ header("Content-Security-Policy: $csp");
 
             <div class="footer-section">
                 <p><i class="fas fa-map-marker-alt"></i> Calle Ramón Aspíllaga N° 901 - Pisco</p>
-                <p><i class="fas fa-phone"></i> (056) 53-2000</p>
+                <p><i class="fas fa-phone"></i> (056) 65-5069</p>
             </div>
 
             <div class="footer-section">
