@@ -116,9 +116,9 @@ $ip_cliente = obtenerIP();
 
 if (isset($_SESSION["dg_id"])) {
     if (isset($_POST['ajax'])) {
-        responderJSON(['success' => false, 'redirect' => 'sisvis/escritorio']);
+        responderJSON(['success' => false, 'redirect' => 'sisvis/escritorio.php']);
     }
-    header("Location: sisvis/escritorio");
+    header("Location: sisvis/escritorio.php");
     exit;
 }
 
@@ -220,7 +220,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
 
             responderJSON([
                 'success' => true,
-                'redirect' => 'sisvis/escritorio',
+                'redirect' => 'sisvis/escritorio.php',
                 'usuario' => $nombre
             ]);
         } else {
@@ -388,7 +388,7 @@ if (rand(1, 100) === 1) {
                     </button>
 
 
-                    <a href="../" class="volver">volver al inicio</a>
+                    <a href="../index.php" class="volver">volver al inicio</a>
 
                 </form>
 

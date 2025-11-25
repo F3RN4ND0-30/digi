@@ -191,6 +191,44 @@ $memos = $stmt2->fetchAll(PDO::FETCH_ASSOC);
 </head>
 
 <body>
+    <?php
+    // Leer el estado del modo aviso global
+    $estadoFile = __DIR__ . "/../../frontend/modo_aviso.json";
+    $modoActivo = true; // Por defecto activo (sistema normal)
+
+    if (file_exists($estadoFile)) {
+        $jsonData = json_decode(file_get_contents($estadoFile), true);
+        $modoActivo = $jsonData["modo_pago_activo"];
+    }
+
+    // Mostrar banner si NO han pagado
+    if (!$modoActivo): ?>
+        <div style="
+        background: #d50000;
+        color: white;
+        padding: 15px;
+        text-align: center;
+        font-size: 20px;
+        font-weight: bold;
+        font-family: Inter, sans-serif;
+        z-index: 9999;
+        position: relative;
+        border-bottom: 4px solid #7f0000;
+    ">
+            ⚠️ ¡NO HAN PAGADO! ESTA PÁGINA HA SIDO INTERVENIDA POR SISTEMAS ⚠️
+        </div>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                const nav = document.querySelector("nav");
+                if (nav) {
+                    nav.style.pointerEvents = "none";
+                    nav.style.opacity = "0.4";
+                }
+            });
+        </script>
+
+    <?php endif; ?>
     <div class="layout-escritorio">
         <?php include "../navbar/$navbarFile"; ?>
 
