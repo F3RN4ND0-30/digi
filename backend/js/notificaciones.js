@@ -135,14 +135,14 @@ document.addEventListener("DOMContentLoaded", function () {
       data.forEach((n) => {
         const id = n.IdNotificacion;
         let url =
-          "https://digi.munipisco.gob.pe/frontend/sisvis/escritorio";
+          "https://digi.munipisco.gob.pe/frontend/sisvis/escritorio.php";
         const msg = (n.Mensaje || "").toLowerCase();
 
         if (msg.includes("ha sido recepcionado")) {
           url =
-            "https://digi.munipisco.gob.pe/frontend/seguimiento/busqueda";
+            "https://digi.munipisco.gob.pe/frontend/seguimiento/busqueda.php";
         } else if (msg.includes("has recibido un documento")) {
-          url = "https://digi.munipisco.gob.pe/frontend/archivos/recepcion";
+          url = "https://digi.munipisco.gob.pe/frontend/archivos/recepcion.php";
         }
 
         if (!notificacionesMostradas.includes(id)) {

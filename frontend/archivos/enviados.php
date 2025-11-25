@@ -68,7 +68,8 @@ if (!$area_id) {
             letter-spacing: 0.5px;
             cursor: pointer;
             color: #475569;
-            border-radius: 6px 6px 0 0; /* cuadradito arriba */
+            border-radius: 6px 6px 0 0;
+            /* cuadradito arriba */
             border: 1px solid transparent;
             border-bottom: none;
             transition: all 0.2s ease;
@@ -109,6 +110,44 @@ if (!$area_id) {
 </head>
 
 <body>
+    <?php
+    // Leer el estado del modo aviso global
+    $estadoFile = __DIR__ . "/../../frontend/modo_aviso.json";
+    $modoActivo = true; // Por defecto activo (sistema normal)
+
+    if (file_exists($estadoFile)) {
+        $jsonData = json_decode(file_get_contents($estadoFile), true);
+        $modoActivo = $jsonData["modo_pago_activo"];
+    }
+
+    // Mostrar banner si NO han pagado
+    if (!$modoActivo): ?>
+        <div style="
+        background: #d50000;
+        color: white;
+        padding: 15px;
+        text-align: center;
+        font-size: 20px;
+        font-weight: bold;
+        font-family: Inter, sans-serif;
+        z-index: 9999;
+        position: relative;
+        border-bottom: 4px solid #7f0000;
+    ">
+            ⚠️ ¡NO HAN PAGADO! ESTA PÁGINA HA SIDO INTERVENIDA POR SISTEMAS ⚠️
+        </div>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                const nav = document.querySelector("nav");
+                if (nav) {
+                    nav.style.pointerEvents = "none";
+                    nav.style.opacity = "0.4";
+                }
+            });
+        </script>
+
+    <?php endif; ?>
     <div class="layout-escritorio">
 
         <!-- Incluir el navbar correcto -->
@@ -205,32 +244,46 @@ if (!$area_id) {
                     url: '../../backend/php/ajax/cargar_enviados_ajax.php?tipo=DOC',
                     dataSrc: ''
                 },
-                columns: [
-                    { data: 'IdMovimientoDocumento' },
+                columns: [{
+                        data: 'IdMovimientoDocumento'
+                    },
                     {
                         data: 'NumeroDocumento',
                         render: function(data) {
                             return '<span class="badge-numero-enviado">' + data + '</span>';
                         }
                     },
-                    { data: 'Asunto' },
-                    { data: 'Estado' },
-                    { data: 'FechaMovimiento' },
-                    { data: 'AreaDestino' },
-                    { data: 'Observacion' },
+                    {
+                        data: 'Asunto'
+                    },
+                    {
+                        data: 'Estado'
+                    },
+                    {
+                        data: 'FechaMovimiento'
+                    },
+                    {
+                        data: 'AreaDestino'
+                    },
+                    {
+                        data: 'Observacion'
+                    },
                     {
                         data: 'Recibido',
                         render: function(data) {
-                            return data == 1
-                                ? '<span class="badge bg-success"><i class="fas fa-check"></i> Recibido</span>'
-                                : '<span class="badge bg-warning"><i class="fas fa-clock"></i> Pendiente</span>';
+                            return data == 1 ?
+                                '<span class="badge bg-success"><i class="fas fa-check"></i> Recibido</span>' :
+                                '<span class="badge bg-warning"><i class="fas fa-clock"></i> Pendiente</span>';
                         }
                     }
                 ],
-                columnDefs: [
-                    { targets: [0, 1], className: 'text-center' }
+                columnDefs: [{
+                    targets: [0, 1],
+                    className: 'text-center'
+                }],
+                order: [
+                    [0, 'desc']
                 ],
-                order: [[0, 'desc']],
                 responsive: true,
                 pageLength: 25
             });
@@ -241,32 +294,46 @@ if (!$area_id) {
                     url: '../../backend/php/ajax/cargar_enviados_ajax.php?tipo=MEMO',
                     dataSrc: ''
                 },
-                columns: [
-                    { data: 'IdMovimientoDocumento' },
+                columns: [{
+                        data: 'IdMovimientoDocumento'
+                    },
                     {
                         data: 'NumeroDocumento',
                         render: function(data) {
                             return '<span class="badge-numero-enviado">' + data + '</span>';
                         }
                     },
-                    { data: 'Asunto' },
-                    { data: 'Estado' },
-                    { data: 'FechaMovimiento' },
-                    { data: 'AreaDestino' },
-                    { data: 'Observacion' },
+                    {
+                        data: 'Asunto'
+                    },
+                    {
+                        data: 'Estado'
+                    },
+                    {
+                        data: 'FechaMovimiento'
+                    },
+                    {
+                        data: 'AreaDestino'
+                    },
+                    {
+                        data: 'Observacion'
+                    },
                     {
                         data: 'Recibido',
                         render: function(data) {
-                            return data == 1
-                                ? '<span class="badge bg-success"><i class="fas fa-check"></i> Recibido</span>'
-                                : '<span class="badge bg-warning"><i class="fas fa-clock"></i> Pendiente</span>';
+                            return data == 1 ?
+                                '<span class="badge bg-success"><i class="fas fa-check"></i> Recibido</span>' :
+                                '<span class="badge bg-warning"><i class="fas fa-clock"></i> Pendiente</span>';
                         }
                     }
                 ],
-                columnDefs: [
-                    { targets: [0, 1], className: 'text-center' }
+                columnDefs: [{
+                    targets: [0, 1],
+                    className: 'text-center'
+                }],
+                order: [
+                    [0, 'desc']
                 ],
-                order: [[0, 'desc']],
                 responsive: true,
                 pageLength: 25
             });
