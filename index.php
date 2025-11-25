@@ -98,7 +98,7 @@ header("Content-Security-Policy: $csp");
                 <a href="frontend/consultas/seguimiento_tramite.php"
                     class="action-btn action-btn-main">
                     <i class="fas fa-route"></i>
-                    <span>Seguimiento de Trámite</span>
+                    <span>Seguimiento de Trámite. Aquí</span>
                 </a>
             </div>
 
@@ -169,7 +169,7 @@ header("Content-Security-Policy: $csp");
 
                     <div class="contact-info">
                         <a href="tel:056655069" class="contact-link">
-                            <i class="fas fa-phone"></i> (056) 65-5069
+                            <i class="fas fa-phone"></i> (056) 655069
                         </a>
                         <a href="mailto:munipisco@munipisco.gob.pe" class="contact-link">
                             <i class="fas fa-envelope"></i> munipisco@munipisco.gob.pe
