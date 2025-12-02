@@ -278,7 +278,7 @@ $navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
                     {
                         data: null,
                         render: function(data, type, row) {
-                            if (row.IdEstadoDocumento == 8) return '🚫 Bloqueado';
+                            if (row.IdEstadoDocumento == 8) return '🚫 Observado';
                             if (row.Finalizado == 1) return '🏁 Finalizado';
                             if (row.Recibido == 1) return '✅ Recibido';
                             return '⏳ Pendiente';
@@ -373,7 +373,7 @@ $navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
                         let estadoClass, estadoTexto;
                         if (finalizado == 1 && index === data.movimientos.length - 1) {
                             estadoClass = idEstado == 8 ? 'estado-bloqueado' : 'estado-finalizado';
-                            estadoTexto = idEstado == 8 ? '🚫 Bloqueado' : '🏁 Finalizado';
+                            estadoTexto = idEstado == 8 ? '🚫 Observado' : '🏁 Finalizado';
                         } else {
                             estadoClass = mov.Recibido == 1 ? 'estado-recibido' : 'estado-pendiente';
                             estadoTexto = mov.Recibido == 1 ? '✅ Recibido' : '⏳ Pendiente';

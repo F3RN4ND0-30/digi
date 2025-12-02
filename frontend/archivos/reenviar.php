@@ -1037,6 +1037,61 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
             }
         });
     </script>
+    <script>
+        $(document).on('submit', '.finalizar-form', function(e) {
+            e.preventDefault();
+            const form = this;
+            const $tr = $(form).closest('tr');
+
+            // Capturar datos desde los inputs visibles en la tabla
+            const fol = ($tr.find('.inp-folios').val() || '').trim();
+            const obs = ($tr.find('.inp-obs').val() || '').trim();
+            const inf = ($tr.find('.sel-informe').val() || '').trim();
+
+            if (!fol || Number(fol) < 1) {
+                toast('Ingrese número de folios válido');
+                return;
+            }
+
+            // Rellenar los inputs hidden
+            form.querySelector('input[name="numero_folios"]').value = fol;
+            form.querySelector('input[name="observacion"]').value = obs;
+            form.querySelector('input[name="id_informe"]').value = inf;
+            form.querySelector('input[name="nueva_area"]').value = ""; // Finalizar: no cambia de área
+
+            // CONFIRMACIÓN DE PASSWORD
+            formularioActual = form;
+            document.getElementById('modalPassword').style.display = 'flex';
+        });
+    </script>
+    <script>
+        $(document).on('submit', '.observacion-form', function(e) {
+            e.preventDefault();
+            const form = this;
+            const $tr = $(form).closest('tr');
+
+            // Capturar datos desde los inputs visibles en la tabla
+            const fol = ($tr.find('.inp-folios').val() || '').trim();
+            const obs = ($tr.find('.inp-obs').val() || '').trim();
+            const inf = ($tr.find('.sel-informe').val() || '').trim();
+
+            if (!fol || Number(fol) < 1) {
+                toast('Ingrese número de folios válido');
+                return;
+            }
+
+            // Rellenar los inputs hidden
+            form.querySelector('input[name="numero_folios"]').value = fol;
+            form.querySelector('input[name="observacion"]').value = obs;
+            form.querySelector('input[name="id_informe"]').value = inf;
+            form.querySelector('input[name="nueva_area"]').value = ""; // Finalizar: no cambia de área
+
+            // CONFIRMACIÓN DE PASSWORD
+            formularioActual = form;
+            document.getElementById('modalPassword').style.display = 'flex';
+        });
+    </script>
+
 </body>
 
 </html>
