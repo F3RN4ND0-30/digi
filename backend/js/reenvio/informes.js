@@ -131,8 +131,8 @@ function cargarInformesEnTabla() {
                     container.appendChild(span);
 
                     // Ocultar botón si ya existe informe
-                    const btn = td.querySelector(".btn-crear-informe");
-                    if (btn) btn.style.display = 'none';
+                    //const btn = td.querySelector(".btn-crear-informe");
+                    //if (btn) btn.style.display = 'none';
                 } else {
                     td.dataset.informe = ""; // No hay informe
                 }
