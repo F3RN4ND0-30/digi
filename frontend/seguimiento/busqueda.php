@@ -410,8 +410,14 @@ $navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
             fetch(`../../backend/php/memorandum/seguimiento_memo_modal.php?id_memo=${idMemo}`)
                 .then(res => res.json())
                 .then(data => {
-                    if (data.error) return document.getElementById('contenidoSeguimiento').innerHTML = `<div class="sin-movimientos">Error: ${data.error}</div>`;
-                    if (!data.movimientos.length) return document.getElementById('contenidoSeguimiento').innerHTML = '<div class="sin-movimientos">No se encontraron movimientos.</div>';
+                    if (data.error) {
+                        document.getElementById('contenidoSeguimiento').innerHTML = `<div class="sin-movimientos">Error: ${data.error}</div>`;
+                        return;
+                    }
+                    if (!data.movimientos.length) {
+                        document.getElementById('contenidoSeguimiento').innerHTML = '<div class="sin-movimientos">No se encontraron movimientos.</div>';
+                        return;
+                    }
 
                     let html = `<table class="tabla-seguimiento">
                 <thead>
@@ -425,8 +431,23 @@ $navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
                 <tbody>`;
 
                     data.movimientos.forEach(mov => {
-                        const estadoTexto = mov.Recibido == 1 ? '✅ Recibido' : '⏳ Pendiente';
-                        const estadoClass = mov.Recibido == 1 ? 'estado-recibido' : 'estado-pendiente';
+                        let estadoTexto = '';
+                        let estadoClass = '';
+
+                        if (mov.Recibido == 1) {
+                            estadoTexto = '✅ Recibido';
+                            estadoClass = 'estado-recibido';
+                        } else if (mov.Recibido == 2) {
+                            estadoTexto = '✅ Finalizado';
+                            estadoClass = 'estado-finalizado';
+                        } else if (mov.Recibido == 3) {
+                            estadoTexto = '📩 Respondido';
+                            estadoClass = 'estado-respondido';
+                        } else {
+                            estadoTexto = '⏳ Pendiente';
+                            estadoClass = 'estado-pendiente';
+                        }
+
                         html += `<tr>
                     <td>${mov.AreaOrigen}</td>
                     <td>${mov.AreaDestino}</td>

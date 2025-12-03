@@ -28,10 +28,25 @@ $sqlDocs = "
         d.IdUsuarios,
         d.IdAreaFinal,
         u.Nombres,
-        u.ApellidoPat
+        u.ApellidoPat,
+
+        -- 🔥 INFORME
+        i.IdInforme,
+        i.NombreInforme AS NombreInforme
+
     FROM movimientodocumento m
     INNER JOIN documentos d ON m.IdDocumentos = d.IdDocumentos
     INNER JOIN usuarios   u ON d.IdUsuarios   = u.IdUsuarios
+
+    -- 🔥 TRAE SOLO EL ÚLTIMO INFORME DEL DOCUMENTO
+    LEFT JOIN informes i 
+        ON i.IdDocumento = d.IdDocumentos
+        AND i.IdInforme = (
+            SELECT MAX(i2.IdInforme)
+            FROM informes i2
+            WHERE i2.IdDocumento = d.IdDocumentos
+        )
+
     WHERE m.AreaDestino = ?
       AND m.Recibido = 1
       AND d.Finalizado = 0
@@ -41,6 +56,7 @@ $sqlDocs = "
           FROM movimientodocumento m3
           WHERE m3.IdDocumentos = d.IdDocumentos
       )
+
     ORDER BY m.IdMovimientoDocumento DESC
 ";
 $stmt = $pdo->prepare($sqlDocs);
@@ -58,14 +74,30 @@ $sqlMemos = "
         m.IdAreaOrigen,
         ao.Nombre          AS AreaOrigenNombre,
         u.Nombres,
-        u.ApellidoPat
+        u.ApellidoPat,
+
+        -- 🔥 INFORME DEL MEMO
+        i.IdInforme,
+        i.NombreInforme AS NombreInforme
+
     FROM memorandums m
     INNER JOIN memorandum_destinos md ON md.IdMemo = m.IdMemo
     INNER JOIN areas ao               ON ao.IdAreas = m.IdAreaOrigen
     INNER JOIN usuarios u             ON u.IdUsuarios = m.IdUsuarioEmisor
+
+    -- 🔥 ÚLTIMO INFORME DEL MEMO
+    LEFT JOIN informes i
+        ON i.IdMemo = m.IdMemo
+        AND i.IdInforme = (
+            SELECT MAX(i2.IdInforme)
+            FROM informes i2
+            WHERE i2.IdMemo = m.IdMemo
+        )
+
     WHERE md.IdAreaDestino = :area
       AND md.Recibido = 1
       AND m.IdEstadoDocumento IN (1,2,3,6)
+
     ORDER BY m.IdMemo DESC
 ";
 $stmtM = $pdo->prepare($sqlMemos);
@@ -256,9 +288,10 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
             <div class="tarjeta">
                 <div class="tarjeta-header" style="justify-content:space-between;align-items:center">
                     <h2 class="mb-0"><i class="fas fa-share"></i> Reenviar Documentos</h2>
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCrearInforme" onclick="abrirModalInforme()">
-                        <i class="fas fa-file-alt"></i> Crear Informe
-                    </button>
+                    <span id="correlativoLabel" data-area="<?= $_SESSION['dg_area_id'] ?>" class="badge bg-purple"
+                        style="font-size:1rem;padding:.6rem .9rem;background:#6c5ce7;color:white;">
+                        Siguiente Informe: CARGANDO...
+                    </span>
                 </div>
 
                 <div class="tarjeta-body">
@@ -289,7 +322,11 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
                                     <tbody>
                                         <?php foreach ($documentos_recibidos as $d): ?>
                                             <tr data-id-doc="<?= (int)$d['IdDocumentos'] ?>">
-                                                <td><span class="badge badge-num bg-primary"><?= htmlspecialchars($d['NumeroDocumento']) ?></span></td>
+                                                <td data-id-documento="<?= htmlspecialchars($d['IdDocumentos']) ?>">
+                                                    <span class="badge badge-num bg-primary">
+                                                        <?= htmlspecialchars($d['NumeroDocumento']) ?>
+                                                    </span>
+                                                </td>
                                                 <td>
                                                     <div class="cell-clip" title="<?= htmlspecialchars($d['Asunto']) ?>"><?= htmlspecialchars($d['Asunto']) ?></div>
                                                 </td>
@@ -306,11 +343,20 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
                                                 </td>
                                                 <td><input type="number" class="form-control form-control-sm inp-folios" min="<?= (int)$d['NumeroFolios'] ?>" value="<?= (int)$d['NumeroFolios'] ?>"></td>
                                                 <td><input type="text" class="form-control form-control-sm observacion-grande inp-obs" placeholder="Observación opcional..." maxlength="100"></td>
-                                                <td class="informe-input area-select" data-id-documento="<?= (int)$d['IdDocumentos'] ?>">
-                                                    <select class="select-informes area-pequena sel-informe">
-                                                        <option>Cargando...</option>
-                                                    </select>
+                                                <td class="informe-input"
+                                                    data-id-documento="<?= (int)$d['IdDocumentos'] ?>"
+                                                    data-informe="<?= $d['IdInforme'] ?? '' ?>">
+
+                                                    <!-- Botón para crear informe -->
+                                                    <button class="btn btn-outline-primary btn-sm btn-crear-informe">
+                                                        <i class="fas fa-plus"></i> Crear Informe
+                                                    </button>
+
+                                                    <!-- Espacio donde se mostrará el nombre del informe después de crearlo -->
+                                                    <div class="informes-previos"></div>
+
                                                 </td>
+
                                                 <td class="accion-btn">
                                                     <form method="POST" action="../../backend/php/archivos/procesar_reenvio.php" class="form-reenviar">
                                                         <input type="hidden" name="tipo" value="DOC">
@@ -318,13 +364,13 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
                                                         <input type="hidden" name="nueva_area" value="">
                                                         <input type="hidden" name="numero_folios" value="">
                                                         <input type="hidden" name="observacion" value="">
-                                                        <input type="hidden" name="id_informe" value="">
+                                                        <input type="hidden" name="id_informe" value="<?= $d['IdInforme'] ?? '' ?>">
                                                         <button type="submit" class="btn btn-success btn-sm btn-reenviar"><i class="fas fa-share"></i> Reenviar</button>
                                                     </form>
                                                     <form method="POST" action="../../backend/php/archivos/finalizar_documento.php" class="finalizar-form btn-protegido-form">
                                                         <input type="hidden" name="id_documento" value="<?= (int)$d['IdDocumentos'] ?>">
                                                         <input type="hidden" name="numero_folios" value="">
-                                                        <input type="hidden" name="id_informe" value="">
+                                                        <input type="hidden" name="id_informe" value="<?= $d['IdInforme'] ?? '' ?>">
                                                         <input type="hidden" name="observacion" value="">
                                                         <input type="hidden" name="nueva_area" value="">
                                                         <button type="submit" class="btn btn-danger btn-sm btn-protegido" style="margin-top:5px;">Finalizar</button>
@@ -332,7 +378,7 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
                                                     <form method="POST" action="../../backend/php/archivos/observacion_documento.php" class="observacion-form btn-protegido-form">
                                                         <input type="hidden" name="id_documento" value="<?= (int)$d['IdDocumentos'] ?>">
                                                         <input type="hidden" name="numero_folios" value="">
-                                                        <input type="hidden" name="id_informe" value="">
+                                                        <input type="hidden" name="id_informe" value="<?= $d['IdInforme'] ?? '' ?>">
                                                         <input type="hidden" name="observacion" value="">
                                                         <input type="hidden" name="nueva_area" value="">
                                                         <button type="submit" class="btn btn-observacion btn-sm btn-protegido" style="margin-top:5px;">Observar</button>
@@ -383,10 +429,18 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
                                                 <td><input type="number" class="form-control form-control-sm memo-folios" min="<?= (int)$m['NumeroFolios'] ?>" value="<?= (int)$m['NumeroFolios'] ?>"></td>
                                                 <td><input type="text" class="form-control form-control-sm observacion-grande memo-obs" placeholder="Observación opcional..." maxlength="100"></td>
 
-                                                <td class="informe-input area-select" data-id-memo="<?= (int)$m['IdMemo'] ?>">
-                                                    <select class="select-informes area-pequena sel-informe">
-                                                        <option>Cargando...</option>
-                                                    </select>
+                                                <td class="informe-input"
+                                                    data-id-memo="<?= (int)$m['IdMemo'] ?>"
+                                                    data-informe="<?= $m['IdInforme'] ?? '' ?>">
+
+                                                    <!-- Botón para crear informe -->
+                                                    <button class="btn btn-outline-primary btn-sm btn-crear-informe">
+                                                        <i class="fas fa-plus"></i> Crear Informe
+                                                    </button>
+
+                                                    <!-- Espacio donde se mostrará el nombre del informe después de crearlo -->
+                                                    <div class="informes-previos"></div>
+
                                                 </td>
 
                                                 <td class="accion-btn">
@@ -415,38 +469,6 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
                 </div>
             </div>
         </main>
-    </div>
-
-    <!-- Modal Crear Informe -->
-    <div id="modalCrearInforme" class="modal-overlay" style="display:none;">
-        <div class="modal-contenido tarjeta-modal animar-entrada">
-            <div class="modal-header tarjeta-header">
-                <h3><i class="fas fa-file-alt"></i> Crear Informe</h3>
-                <button class="close-modal" onclick="cerrarModalInforme()">&times;</button>
-            </div>
-            <div class="modal-body tarjeta-body">
-                <input type="hidden" id="idDocumentoModal" name="id_documento">
-                <input type="hidden" id="idMemoModal" name="id_memo">
-                <input type="hidden" id="idAreaModal" value="<?= $_SESSION['dg_area_id'] ?>">
-                <div class="form-group">
-                    <label for="buscarDocumento">Documento asociado:</label>
-                    <input type="text" id="buscarDocumento" placeholder="Escriba número o asunto..." autocomplete="off">
-                    <ul id="resultadosDocumento" class="resultados-lista"></ul>
-                </div>
-                <div class="form-group">
-                    <label for="tituloInforme">Nombre del informe:</label>
-                    <input type="text" id="tituloInforme" placeholder="Ingrese el título..." autocomplete="off">
-                </div>
-                <div class="form-group">
-                    <label for="nombreFinalInforme">Nombre final:</label>
-                    <input type="text" id="nombreFinalInforme" readonly>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="cerrarModalInforme()">Cancelar</button>
-                <button class="btn btn-success" onclick="guardarInforme()">Guardar Informe</button>
-            </div>
-        </div>
     </div>
 
     <!-- Modal Password -->
@@ -478,619 +500,12 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
     <script src="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/js/standalone/selectize.min.js"></script>
     <script src="../../backend/js/notificaciones.js"></script>
 
-    <script>
-        const Toast = Swal.mixin({
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false,
-            timer: 2500,
-            timerProgressBar: true,
-            didOpen: t => {
-                if (t && t.parentElement) t.parentElement.style.zIndex = '300000';
-            }
-        });
-        <?php if ($flash_text): ?>
-            Toast.fire({
-                icon: '<?= $flash_type === 'success' ? 'success' : 'error' ?>',
-                title: <?= json_encode($flash_text) ?>
-            });
-        <?php endif; ?>
-    </script>
+    <!-- SCRIPTS NECESARIOS -->
 
-    <script>
-        function abrirModalInforme() {
-            document.getElementById('modalCrearInforme').style.display = 'flex';
-            actualizarCorrelativo();
-        }
-
-        function cerrarModalInforme() {
-            document.getElementById('modalCrearInforme').style.display = 'none';
-            document.getElementById('buscarDocumento').value = '';
-            document.getElementById('resultadosDocumento').innerHTML = '';
-            document.getElementById('tituloInforme').value = '';
-            document.getElementById('nombreFinalInforme').value = '';
-            document.getElementById('idDocumentoModal').value = '';
-            document.getElementById('idMemoModal').value = '';
-        }
-
-        window.addEventListener('click', e => {
-            const m = document.getElementById('modalCrearInforme');
-            if (e.target === m) cerrarModalInforme();
-        });
-
-        let idArea = <?= (int)$_SESSION['dg_area_id'] ?>;
-
-        function actualizarCorrelativo() {
-            fetch('../../backend/php/archivos/obtener_correlativo_informe.php?area=' + idArea)
-                .then(r => r.json())
-                .then(d => {
-                    const c = d.correlativo,
-                        an = d.año,
-                        t = document.getElementById('tituloInforme').value;
-                    document.getElementById('nombreFinalInforme').value = `INFORME N°. ${c}-${an}-${t}`;
-                });
-        }
-
-        const buscarInput = document.getElementById('buscarDocumento');
-        const resultadosLista = document.getElementById('resultadosDocumento');
-
-        buscarInput?.addEventListener('input', function() {
-            const q = this.value.trim();
-            if (q.length < 2) {
-                resultadosLista.innerHTML = '';
-                return;
-            }
-
-            fetch(`../../backend/php/archivos/buscar_documentos.php?q=${encodeURIComponent(q)}`)
-                .then(r => r.json())
-                .then(data => {
-                    resultadosLista.innerHTML = '';
-
-                    data.forEach(doc => {
-                        const li = document.createElement('li');
-                        li.textContent = `${doc.NumeroDocumento || doc.CodigoMemo} - ${doc.Asunto}`;
-
-                        li.onclick = () => {
-                            buscarInput.value = li.textContent;
-
-                            // Si empieza con "MEMO" o "MEMORÁNDUM" → es memo
-                            if ((doc.NumeroDocumento && doc.NumeroDocumento.toUpperCase().startsWith('MEMO')) ||
-                                (doc.CodigoMemo && doc.CodigoMemo.toUpperCase().startsWith('MEMO'))) {
-                                document.getElementById('idMemoModal').value = doc.IdMemo || doc.Id;
-                                document.getElementById('idDocumentoModal').value = '';
-                            } else {
-                                // Documento normal
-                                document.getElementById('idDocumentoModal').value = doc.IdDocumentos || doc.Id;
-                                document.getElementById('idMemoModal').value = '';
-                            }
-
-                            resultadosLista.innerHTML = '';
-                        };
-
-                        resultadosLista.appendChild(li);
-                    });
-                });
-        });
-
-        document.getElementById('tituloInforme')?.addEventListener('input', actualizarCorrelativo);
-
-        function guardarInforme() {
-            const id_documento = document.getElementById('idDocumentoModal').value.trim();
-            const id_memo = document.getElementById('idMemoModal').value.trim();
-            const id_area = document.getElementById('idAreaModal').value.trim();
-            const titulo = document.getElementById('tituloInforme').value.trim();
-
-            // Log para depuración
-            console.log("Validando datos:", {
-                id_documento,
-                id_memo,
-                id_area,
-                titulo
-            });
-
-            // Verificación de campos necesarios
-            if ((!id_documento && !id_memo) || !id_area || !titulo) {
-                Toast.fire({
-                    icon: 'warning',
-                    title: 'Faltan datos para crear el informe'
-                });
-                return;
-            }
-
-            // Datos que se enviarán al backend
-            const body = new URLSearchParams();
-            if (id_documento) body.append('id_documento', id_documento);
-            if (id_memo) body.append('id_memo', id_memo);
-            body.append('id_area', id_area);
-            body.append('titulo', titulo);
-
-            console.log("Iniciando la solicitud fetch...");
-            console.log("id_documento:", id_documento);
-            console.log("id_memo:", id_memo);
-            console.log("id_area:", id_area);
-            console.log("titulo:", titulo);
-
-            // Envío de la solicitud al servidor para crear el informe
-            fetch('../../backend/php/archivos/crear_informe.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    body: body.toString()
-                })
-                .then(r => {
-                    console.log("Respuesta de la solicitud fetch recibida");
-                    return r.json();
-                })
-                .then(d => {
-                    if (d.status === 'success') {
-                        console.log("Informe creado con éxito");
-                        document.getElementById('nombreFinalInforme').value = d.nombre_final;
-                        cerrarModalInforme();
-                        location.reload();
-                    } else {
-                        console.log("Error al crear el informe: ", d.message);
-                        Toast.fire({
-                            icon: 'error',
-                            title: 'Error: ' + d.message
-                        });
-                    }
-                })
-                .catch(error => {
-                    console.error("Error en la solicitud fetch:", error);
-                    Toast.fire({
-                        icon: 'error',
-                        title: 'Error al crear el informe'
-                    });
-                });
-        }
-    </script>
-
-    <script>
-        function initInformeSelects(scopeSel) {
-            document.querySelectorAll(scopeSel + ' .informe-input').forEach(td => {
-                const idDocumento = parseInt(td.dataset.idDocumento || '0', 10);
-                const select = td.querySelector('.select-informes');
-                if (!select) return;
-                if (idDocumento > 0) {
-                    select.innerHTML = '<option>Cargando...</option>';
-                    fetch(`../../backend/php/archivos/obtener_informes.php?id_documento=${idDocumento}`)
-                        .then(res => res.json()).then(data => {
-                            let opts = '';
-                            if (!Array.isArray(data) || data.length === 0) {
-                                opts = '<option value="">No hay informes</option>';
-                            } else {
-                                opts = '<option value=""></option>' + data.map(inf => `<option value="${inf.IdInforme}">${inf.NombreInforme}</option>`).join('');
-                            }
-                            select.innerHTML = opts;
-                            const $s = $(select);
-                            if ($s[0].selectize) $s[0].selectize.destroy();
-                            $s.selectize({
-                                allowEmptyOption: true,
-                                placeholder: 'Seleccione un informe',
-                                sortField: 'text',
-                                create: false,
-                                dropdownParent: 'body',
-                                onFocus: function() {
-                                    this.removeOption('');
-                                    this.refreshOptions(false);
-                                }
-                            });
-                        }).catch(() => {
-                            select.innerHTML = '<option value="">No hay informes</option>';
-                            $(select).selectize({
-                                allowEmptyOption: true
-                            });
-                        });
-                } else {
-                    select.innerHTML = '<option value="">No hay informes</option>';
-                    const $s = $(select);
-                    if ($s[0].selectize) $s[0].selectize.destroy();
-                    $s.selectize({
-                        allowEmptyOption: true,
-                        placeholder: 'No hay informes',
-                        sortField: 'text',
-                        create: false,
-                        dropdownParent: 'body'
-                    });
-                }
-            });
-        }
-        initInformeSelects('#tab-docs');
-    </script>
-
-    <!-- SELECTIZE PARA MEMOS -->
-    <script>
-        function initInformeMemoSelects(scopeSel) {
-            document.querySelectorAll(scopeSel + ' .informe-input').forEach(td => {
-                const idMemo = parseInt(td.dataset.idMemo || '0', 10);
-                console.log('Memo ID:', idMemo, td);
-                const select = td.querySelector('.select-informes');
-                if (!select) return;
-
-                if (idMemo > 0) {
-                    select.innerHTML = '<option>Cargando...</option>';
-                    fetch(`../../backend/php/archivos/obtener_informe_memo.php?id_memo=${idMemo}`)
-                        .then(res => res.json())
-                        .then(data => {
-                            let opts = '';
-                            if (!Array.isArray(data) || data.length === 0) {
-                                opts = '<option value="">No hay informes</option>';
-                            } else {
-                                opts = '<option value=""></option>' + data.map(inf => `<option value="${inf.IdInforme}">${inf.NombreInforme}</option>`).join('');
-                            }
-                            select.innerHTML = opts;
-
-                            const $s = $(select);
-                            if ($s[0].selectize) $s[0].selectize.destroy();
-                            $s.selectize({
-                                allowEmptyOption: true,
-                                placeholder: 'Seleccione un informe',
-                                sortField: 'text',
-                                create: false,
-                                dropdownParent: 'body',
-                                onFocus: function() {
-                                    this.removeOption('');
-                                    this.refreshOptions(false);
-                                }
-                            });
-                        })
-                        .catch(() => {
-                            select.innerHTML = '<option value="">No hay informes</option>';
-                            $(select).selectize({
-                                allowEmptyOption: true
-                            });
-                        });
-                } else {
-                    select.innerHTML = '<option value="">No hay informes</option>';
-                    const $s = $(select);
-                    if ($s[0].selectize) $s[0].selectize.destroy();
-                    $s.selectize({
-                        allowEmptyOption: true,
-                        placeholder: 'No hay informes',
-                        sortField: 'text',
-                        create: false,
-                        dropdownParent: 'body'
-                    });
-                }
-            });
-        }
-
-        // Inicializa los selects solo en la sección de memos
-        initInformeMemoSelects('#tab-memos');
-    </script>
-
-    <!-- SELECTIZE PARA MEMOS -->
-    <script>
-        function initInformeMemoSelects(scopeSel) {
-            document.querySelectorAll(scopeSel + ' .informe-input').forEach(td => {
-                const idMemo = parseInt(td.dataset.idMemo || '0', 10);
-                console.log('Memo ID:', idMemo, td);
-                const select = td.querySelector('.select-informes');
-                if (!select) return;
-
-                if (idMemo > 0) {
-                    select.innerHTML = '<option>Cargando...</option>';
-                    fetch(`../../backend/php/archivos/obtener_informe_memo.php?id_memo=${idMemo}`)
-                        .then(res => res.json())
-                        .then(data => {
-                            let opts = '';
-                            if (!Array.isArray(data) || data.length === 0) {
-                                opts = '<option value="">No hay informes</option>';
-                            } else {
-                                opts = '<option value=""></option>' + data.map(inf => `<option value="${inf.IdInforme}">${inf.NombreInforme}</option>`).join('');
-                            }
-                            select.innerHTML = opts;
-
-                            const $s = $(select);
-                            if ($s[0].selectize) $s[0].selectize.destroy();
-                            $s.selectize({
-                                allowEmptyOption: true,
-                                placeholder: 'Seleccione un informe',
-                                sortField: 'text',
-                                create: false,
-                                dropdownParent: 'body',
-                                onFocus: function() {
-                                    this.removeOption('');
-                                    this.refreshOptions(false);
-                                }
-                            });
-                        })
-                        .catch(() => {
-                            select.innerHTML = '<option value="">No hay informes</option>';
-                            $(select).selectize({
-                                allowEmptyOption: true
-                            });
-                        });
-                } else {
-                    select.innerHTML = '<option value="">No hay informes</option>';
-                    const $s = $(select);
-                    if ($s[0].selectize) $s[0].selectize.destroy();
-                    $s.selectize({
-                        allowEmptyOption: true,
-                        placeholder: 'No hay informes',
-                        sortField: 'text',
-                        create: false,
-                        dropdownParent: 'body'
-                    });
-                }
-            });
-        }
-
-        // Inicializa los selects solo en la sección de memos
-        initInformeMemoSelects('#tab-memos');
-    </script>
-
-
-    <script>
-        const LANG_ES = {
-            decimal: ",",
-            thousands: ".",
-            processing: "Procesando...",
-            search: "Buscar:",
-            lengthMenu: "Mostrar _MENU_ registros",
-            info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
-            infoEmpty: "Mostrando 0 a 0 de 0 registros",
-            infoFiltered: "(filtrado de _MAX_ registros totales)",
-            loadingRecords: "Cargando...",
-            zeroRecords: "No se encontraron resultados",
-            emptyTable: "Sin datos disponibles",
-            paginate: {
-                first: "Primero",
-                previous: "Anterior",
-                next: "Siguiente",
-                last: "Último"
-            },
-            aria: {
-                sortAscending: ": activar para ordenar ascendente",
-                sortDescending: ": activar para ordenar descendente"
-            }
-        };
-        let dtDocs, dtMemos;
-        $(function() {
-            const baseCfg = {
-                language: LANG_ES,
-                responsive: false,
-                autoWidth: true,
-                scrollX: true,
-                scrollCollapse: true,
-                pageLength: 25,
-                order: [
-                    [0, 'desc']
-                ]
-            };
-            dtDocs = $('#tablaDocs').DataTable(baseCfg);
-            dtMemos = $('#tablaMemos').DataTable(baseCfg);
-            $('.tab-btn').on('click', function() {
-                $('.tab-btn').removeClass('active');
-                $(this).addClass('active');
-                const t = $(this).data('target');
-                $('.tab-content').removeClass('active');
-                $(t).addClass('active');
-                setTimeout(() => {
-                    (t === '#tab-docs' ? dtDocs : dtMemos).columns.adjust();
-                }, 60);
-            });
-            $(window).on('resize', () => {
-                dtDocs.columns.adjust();
-                dtMemos.columns.adjust();
-            });
-        });
-    </script>
-
-    <script>
-        function toast(msg, type = 'warning') {
-            Toast.fire({
-                icon: type,
-                title: msg
-            });
-        }
-        $(function() {
-            // Selectize DOC áreas
-            $('#tab-docs .sel-area').each(function() {
-                const $s = $(this),
-                    btn = $s.closest('tr').find('.btn-reenviar');
-                $s.selectize({
-                    allowEmptyOption: true,
-                    placeholder: 'Seleccione una opción',
-                    sortField: 'text',
-                    create: false,
-                    dropdownParent: 'body',
-                    onFocus: function() {
-                        this.removeOption('');
-                        this.refreshOptions(false);
-                    },
-                    onChange: function(v) {
-                        if (v) {
-                            btn.prop('disabled', false).removeClass('btn-secondary').addClass('btn-success');
-                        } else {
-                            btn.prop('disabled', true).removeClass('btn-success').addClass('btn-secondary');
-                        }
-                    }
-                });
-                btn.addClass('btn-secondary').prop('disabled', true);
-            });
-
-            // Reenviar DOC
-            $(document).on('submit', '.form-reenviar', function(e) {
-                e.preventDefault();
-                const form = this,
-                    $tr = $(form).closest('tr');
-                const area = ($tr.find('.sel-area').val() || '').trim();
-                const fol = ($tr.find('.inp-folios').val() || '').trim();
-                const obs = ($tr.find('.inp-obs').val() || '').trim();
-                const inf = ($tr.find('.sel-informe').val() || '').trim();
-                if (!area) return toast('Seleccione el área de destino');
-                if (!fol || Number(fol) < 1) return toast('Ingrese un número de folios válido');
-                form.querySelector('input[name="nueva_area"]').value = area;
-                form.querySelector('input[name="numero_folios"]').value = fol;
-                form.querySelector('input[name="observacion"]').value = obs;
-                form.querySelector('input[name="id_informe"]').value = inf;
-                const btn = form.querySelector('button[type="submit"]');
-                const old = btn.innerHTML;
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
-                form.submit();
-                setTimeout(() => {
-                    if (btn.disabled) {
-                        btn.disabled = false;
-                        btn.innerHTML = old;
-                    }
-                }, 3000);
-            });
-
-            // Responder MEMO (exige N° informe)
-            $(document).on('submit', '.form-responder-memo', function(e) {
-                e.preventDefault();
-                const form = this,
-                    $tr = $(form).closest('tr');
-                const fol = ($tr.find('.memo-folios').val() || '0').trim();
-                const obs = ($tr.find('.memo-obs').val() || '').trim();
-                const inf = ($tr.find('.select-informes').val() || '').trim(); // <- Aquí estaba el error
-
-                if (!inf) return toast('Ingrese el N° de Informe para responder el memorándum.');
-                form.querySelector('input[name="numero_folios"]').value = fol;
-                form.querySelector('input[name="observacion"]').value = obs;
-                form.querySelector('input[name="id_informe"]').value = inf;
-                const btn = form.querySelector('button[type="submit"]');
-                const old = btn.innerHTML;
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
-                form.submit();
-                setTimeout(() => {
-                    if (btn.disabled) {
-                        btn.disabled = false;
-                        btn.innerHTML = old;
-                    }
-                }, 3000);
-            });
-
-
-            // Mayúsculas
-            document.querySelectorAll('input[type="text"], textarea').forEach(el => {
-                el.addEventListener('input', function() {
-                    this.value = this.value.toUpperCase();
-                });
-            });
-        });
-
-        // Modal password (compartido)
-        let formularioActual = null;
-
-        function cerrarModalPassword() {
-            document.getElementById('modalPassword').style.display = 'none';
-            document.getElementById('passwordInput').value = '';
-            document.getElementById('passwordError').style.display = 'none';
-        }
-
-        function togglePassword() {
-            const i = document.getElementById('passwordInput');
-            const ic = document.querySelector('.btn-toggle-pass i');
-            if (i.type === 'password') {
-                i.type = 'text';
-                ic.classList.replace('fa-eye', 'fa-eye-slash');
-            } else {
-                i.type = 'password';
-                ic.classList.replace('fa-eye-slash', 'fa-eye');
-            }
-        }
-
-        function enviarFormularioConPassword() {
-            if (!formularioActual) return;
-            formularioActual.submit();
-        }
-
-        function confirmarPassword() {
-            const password = document.getElementById('passwordInput').value.trim();
-            const errorDiv = document.getElementById('passwordError');
-            if (password === '') {
-                errorDiv.innerText = 'Ingrese su contraseña';
-                errorDiv.style.display = 'block';
-                return;
-            }
-            fetch('../../backend/php/verificar_password.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        password
-                    })
-                })
-                .then(r => r.json()).then(d => {
-                    if (d.success) {
-                        cerrarModalPassword();
-                        enviarFormularioConPassword();
-                    } else {
-                        errorDiv.innerText = 'Contraseña incorrecta';
-                        errorDiv.style.display = 'block';
-                    }
-                }).catch(() => {
-                    errorDiv.innerText = 'Error de conexión';
-                    errorDiv.style.display = 'block';
-                });
-        }
-        document.getElementById('passwordInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                confirmarPassword();
-            }
-        });
-    </script>
-    <script>
-        $(document).on('submit', '.finalizar-form', function(e) {
-            e.preventDefault();
-            const form = this;
-            const $tr = $(form).closest('tr');
-
-            // Capturar datos desde los inputs visibles en la tabla
-            const fol = ($tr.find('.inp-folios').val() || '').trim();
-            const obs = ($tr.find('.inp-obs').val() || '').trim();
-            const inf = ($tr.find('.sel-informe').val() || '').trim();
-
-            if (!fol || Number(fol) < 1) {
-                toast('Ingrese número de folios válido');
-                return;
-            }
-
-            // Rellenar los inputs hidden
-            form.querySelector('input[name="numero_folios"]').value = fol;
-            form.querySelector('input[name="observacion"]').value = obs;
-            form.querySelector('input[name="id_informe"]').value = inf;
-            form.querySelector('input[name="nueva_area"]').value = ""; // Finalizar: no cambia de área
-
-            // CONFIRMACIÓN DE PASSWORD
-            formularioActual = form;
-            document.getElementById('modalPassword').style.display = 'flex';
-        });
-    </script>
-    <script>
-        $(document).on('submit', '.observacion-form', function(e) {
-            e.preventDefault();
-            const form = this;
-            const $tr = $(form).closest('tr');
-
-            // Capturar datos desde los inputs visibles en la tabla
-            const fol = ($tr.find('.inp-folios').val() || '').trim();
-            const obs = ($tr.find('.inp-obs').val() || '').trim();
-            const inf = ($tr.find('.sel-informe').val() || '').trim();
-
-            if (!fol || Number(fol) < 1) {
-                toast('Ingrese número de folios válido');
-                return;
-            }
-
-            // Rellenar los inputs hidden
-            form.querySelector('input[name="numero_folios"]').value = fol;
-            form.querySelector('input[name="observacion"]').value = obs;
-            form.querySelector('input[name="id_informe"]').value = inf;
-            form.querySelector('input[name="nueva_area"]').value = ""; // Finalizar: no cambia de área
-
-            // CONFIRMACIÓN DE PASSWORD
-            formularioActual = form;
-            document.getElementById('modalPassword').style.display = 'flex';
-        });
-    </script>
+    <script src="../../backend/js/reenvio/informes.js"></script>
+    <script src="../../backend/js/reenvio/formularios.js"></script>
+    <script src="../../backend/js/reenvio/password.js"></script>
+    <script src="../../backend/js/reenvio/tablas.js"></script>
 
 </body>
 

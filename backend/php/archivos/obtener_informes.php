@@ -10,7 +10,7 @@ if (!isset($_GET['id_documento'])) {
 $id_documento = intval($_GET['id_documento']);
 $id_area = $_SESSION['dg_area_id'];
 
-// Obtener informes asignados al documento y creados por mi área
+// Obtener solo informes de esta área
 $stmt = $pdo->prepare("
     SELECT IdInforme, NombreInforme 
     FROM informes 
@@ -18,7 +18,6 @@ $stmt = $pdo->prepare("
     ORDER BY FechaEmision DESC
 ");
 $stmt->execute([$id_documento, $id_area]);
-
 $informes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 echo json_encode($informes);
