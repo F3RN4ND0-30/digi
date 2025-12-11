@@ -383,7 +383,7 @@ $navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
                     <td>${mov.DestinoNombre || mov.AreaDestino}</td>
                     <td class="fecha-cell">${mov.FechaMovimiento}</td>
                     <td>${mov.NumeroFolios || '-'}</td>
-                    <td>${mov.InformeNombre || '-'}</td>
+                    <td>${mov.InformeNombre || mov.NumeroDocumento || '-'}</td>
                     <td class="${estadoClass}">${estadoTexto}</td>
                     <td class="observacion-cell">${mov.Observacion || '-'}</td>
                 </tr>`;

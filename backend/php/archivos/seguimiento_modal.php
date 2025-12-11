@@ -12,7 +12,8 @@ if (!$id) {
 try {
     // 🔹 1. Obtener movimientos del documento
     $sql = "SELECT 
-            md.IdMovimientoDocumento, 
+            md.IdMovimientoDocumento,
+            md.IdDocumentos,
             md.AreaOrigen, 
             md.AreaDestino, 
             md.FechaMovimiento, 
@@ -22,11 +23,13 @@ try {
             md.Recibido,
             ao.Nombre AS OrigenNombre,
             ad.Nombre AS DestinoNombre,
-            af.NombreInforme AS InformeNombre
+            inf.NombreInforme AS InformeNombre,
+            doc.NumeroDocumento AS NumeroDocumento
         FROM movimientodocumento md
-        LEFT JOIN informes af ON md.IdInforme = af.IdInforme
+        LEFT JOIN informes inf ON md.IdInforme = inf.IdInforme
         LEFT JOIN areas ao ON md.AreaOrigen = ao.IdAreas
         LEFT JOIN areas ad ON md.AreaDestino = ad.IdAreas
+        LEFT JOIN documentos doc ON md.IdDocumentos = doc.IdDocumentos
         WHERE md.IdDocumentos = ?
         ORDER BY md.FechaMovimiento ASC";
 
