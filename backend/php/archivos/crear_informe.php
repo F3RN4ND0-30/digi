@@ -55,14 +55,11 @@ try {
     $max_correlativo = $stmt->fetchColumn();
     $correlativo = intval($max_correlativo) + 1;
 
-    // Debug: Imprimir el correlativo calculado
-    error_log("Correlativo calculado: $correlativo");
+    // Convertir a 3 dígitos: 001, 002, 003...
+    $correlativo_formateado = str_pad($correlativo, 3, '0', STR_PAD_LEFT);
 
     // Generar título
-    $titulo_final = "INFORME N°.{$correlativo}-{$año_actual}-MPP-{$area_abrev}";
-
-    // Debug: Imprimir el título final
-    error_log("Título final generado: $titulo_final");
+    $titulo_final = "INFORME N°.{$correlativo_formateado}-{$año_actual}-MPP-{$area_abrev}";
 
     // Insertar en informes
     $stmt = $pdo->prepare("
@@ -76,7 +73,7 @@ try {
         $id_area,
         $año_actual,
         $titulo_final,
-        $correlativo
+        $correlativo_formateado
     ]);
 
     // Commit de la transacción
@@ -101,7 +98,7 @@ try {
     // Devolver respuesta al frontend
     echo json_encode([
         'status' => 'success',
-        'correlativo' => $correlativo,
+        'correlativo' => $correlativo_formateado,
         'nombre_final' => $titulo_final,
         'id_informe' => $id_informe
     ]);

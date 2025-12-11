@@ -190,7 +190,7 @@ if ($areaInfo && !empty($areaInfo['Abreviatura'])) {
                                 disabled
                                 style="width:100%;padding:.6rem .75rem;border:1px solid #e2e8f0;border-radius:8px;background:#f1f5f9;color:#64748b;">
                             <small style="font-size:.8rem;color:#64748b;display:block;margin-top:.25rem;">
-                                Si no activas “Agregar”, se guardará 0 folios.
+                                Si no activas “Agregar”, se guardará 1 folios.
                             </small>
                         </div>
 

@@ -42,6 +42,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     try {
         $numero = trim($_POST['numero']);
+
+        // Detectar si el formato es tipo "INFORME N°.XX-2025-MPP-ALC"
+        $pattern = '/^(INFORME N°\.)\s*(\d+)\-(\d{4})\-MPP\-(.+)$/';
+
+        if (preg_match($pattern, $numero, $matches)) {
+
+            $prefijo = $matches[1];       // INFORME N°.
+            $num = $matches[2];           // Número ingresado
+            $anio = $matches[3];          // 2025
+            $area = $matches[4];          // ALC, LOG, ADM, etc.
+
+            // Convertir "1" → "001"
+            $num_formateado = str_pad($num, 3, '0', STR_PAD_LEFT);
+
+            // Reconstruir el número completo
+            $numero = "{$prefijo}{$num_formateado}-{$anio}-MPP-{$area}";
+        }
+
         $asunto = trim($_POST['asunto']);
         $dni_ruc = trim($_POST['dni_ruc'] ?? '');
         $nombre_contribuyente = trim($_POST['nombre_contribuyente'] ?? '');

@@ -16,4 +16,7 @@ $total = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
 
 $correlativo = $total + 1;
 
-echo json_encode(['correlativo' => $correlativo, 'año' => $año_actual]);
+// Formatear a 3 dígitos
+$correlativo_formateado = str_pad($correlativo, 3, '0', STR_PAD_LEFT);
+
+echo json_encode(['correlativo' => $correlativo_formateado, 'año' => $año_actual]);
