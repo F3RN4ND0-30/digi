@@ -128,6 +128,11 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
     <link rel="stylesheet" href="../../backend/css/archivos/reenviados.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <link href="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/css/selectize.default.css" rel="stylesheet" />
+    <!-- SweetAlert2 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.4.15/dist/sweetalert2.min.css">
+
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.4.15/dist/sweetalert2.min.js"></script>
     <link rel="icon" type="image/png" href="../../backend/img/logoPisco.png" />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -498,6 +503,7 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/js/standalone/selectize.min.js"></script>
+
     <script src="../../backend/js/notificaciones.js"></script>
 
     <!-- SCRIPTS NECESARIOS -->
