@@ -43,9 +43,15 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
                             GESTIÓN DOCUMENTAL
                         </h6>
                         <div class="column-items">
+                            <?php if ($user_role == 1 || $user_role == 3): ?>
+                            <a href="../archivos/registrar_exp.php" class="module-item <?= ($current_page === 'registrar_exp') ? 'active' : '' ?>">
+                                <i class="fas fa-plus-circle"></i>
+                                <span>Registrar Expedientes</span>
+                            </a>
+                            <?php endif; ?>
                             <a href="../archivos/registrar.php" class="module-item <?= ($current_page === 'registrar') ? 'active' : '' ?>">
                                 <i class="fas fa-plus-circle"></i>
-                                <span>Registrar</span>
+                                <span>Registrar Informes</span>
                             </a>
                             <a href="../archivos/memorandums.php" class="module-item <?= ($current_page === 'memorandums') ? 'active' : '' ?>">
                                 <i class="fas fa-file"></i>

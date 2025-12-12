@@ -189,7 +189,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Redirección final
-    header("Location: ../../../frontend/archivos/registrar.php");
+    // Redirección final SEGÚN exterior
+    if (isset($_POST['exterior']) && strtoupper($_POST['exterior']) === 'SI') {
+        header("Location: ../../../frontend/archivos/registrar_exp.php");
+    } else {
+        header("Location: ../../../frontend/archivos/registrar.php");
+    }
     exit();
 }

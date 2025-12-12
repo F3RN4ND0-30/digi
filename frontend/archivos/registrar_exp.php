@@ -198,11 +198,11 @@ $longitud_prefijo_fijo = strlen($prefijo_base);
                             </select>
                         </div>
 
-                        <?php if ($rol_id === 1 || $rol_id === 99): ?>
+                        <?php if ($rol_id === 1 || $rol_id === 3): ?>
                             <div class="form-group">
                                 <label><i class="fas fa-external-link-alt"></i> ¿Es exterior?</label>
-                                <?php if ($rol_id === 1 || $rol_id === 99): ?>
-                                    <input type="hidden" id="campoExterior" name="exterior" value="NO">
+                                <?php if ($rol_id === 1 || $rol_id === 3): ?>
+                                    <input type="hidden" id="campoExterior" name="exterior" value="SI">
                                 <?php else: ?>
                                     <select name="exterior" required>
                                         <option value="">Seleccione una opción</option>
@@ -215,7 +215,7 @@ $longitud_prefijo_fijo = strlen($prefijo_base);
                             <input type="hidden" name="exterior" value="NO" />
                         <?php endif; ?>
 
-                        <?php if ($rol_id === 1 || $rol_id === 99): ?>
+                        <?php if ($rol_id === 1 || $rol_id === 3): ?>
                             <div class="form-group">
                                 <label><i class="fas fa-id-card"></i> DNI o RUC del contribuyente:</label>
                                 <input
