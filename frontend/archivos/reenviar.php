@@ -513,6 +513,26 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
     <script src="../../backend/js/reenvio/password.js"></script>
     <script src="../../backend/js/reenvio/tablas.js"></script>
 
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+
+            document.querySelectorAll(".inp-folios").forEach(input => {
+
+                input.addEventListener("input", function() {
+                    let min = parseInt(this.min);
+                    let val = parseInt(this.value);
+
+                    // Si el valor es menor al mínimo, lo corregimos automáticamente
+                    if (val < min || isNaN(val)) {
+                        this.value = min;
+                    }
+                });
+
+            });
+
+        });
+    </script>
+
 </body>
 
 </html>
