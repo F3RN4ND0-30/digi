@@ -87,11 +87,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['mensaje'] = "❌ Debe seleccionar un área de destino.";
             throw new Exception("Validation Error");
         }
-        if (($rol_id === 1 || $rol_id === 3) && (empty($dni_ruc) || (!preg_match('/^\d{8}$|^\d{11}$|^\d{12,}$/', $dni_ruc)))) {
+        if (($rol_id === 1 || $rol_id === 3) && $exterior === 'SI' && (empty($dni_ruc) || (!preg_match('/^\d{8}$|^\d{11}$|^\d{12,}$/', $dni_ruc)))) {
             $_SESSION['mensaje'] = "❌ El número ingresado no es válido. Debe ser DNI (8), RUC (11) o mayor a 11 dígitos para casos de extranjeria.";
             throw new Exception("Validation Error");
         }
-        if (($rol_id === 1 || $rol_id === 3) && empty($nombre_contribuyente)) {
+        if (($rol_id === 1 || $rol_id === 3) && $exterior === 'SI' && empty($nombre_contribuyente)) {
             $_SESSION['mensaje'] = "❌ El nombre del contribuyente está vacío.";
             throw new Exception("Validation Error");
         }

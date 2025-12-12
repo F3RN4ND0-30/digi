@@ -170,14 +170,25 @@ $longitud_prefijo_fijo = strlen($prefijo_base);
                     <div class="form-grid">
                         <div class="form-group">
                             <label><i class="fas fa-hashtag"></i> Nombre de Documento:</label>
+
+                            <!-- Campo visible (NO editable) -->
                             <input
                                 type="text"
+                                id="nombre_documento"
                                 name="numero"
-                                required
-                                placeholder="Ej: INFORME N°.123-MPP-RH"
-                                value="<?= htmlspecialchars($valor_automatico) ?>"
+                                readonly
+                                style="background:#e9ecef; font-weight:bold;"
+                                value="<?= htmlspecialchars($valor_automatico) ?>">
 
-                                onfocus="this.setSelectionRange(<?= $longitud_prefijo_fijo ?>, <?= $longitud_prefijo_fijo ?>);">
+                            <!-- Campo donde solo se escribe el número -->
+                            <input
+                                type="number"
+                                id="solo_numero"
+                                placeholder="Ingrese solo número (máx. 3 dígitos)"
+                                min="1"
+                                max="999"
+                                maxlength="3"
+                                style="margin-top:5px;">
                         </div>
 
                         <div class="form-group">
@@ -347,6 +358,27 @@ $longitud_prefijo_fijo = strlen($prefijo_base);
             });
         });
     </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+
+            const inputVisible = document.getElementById("nombre_documento");
+            const inputNumero = document.getElementById("solo_numero");
+
+            const prefijo = "<?= $prefijo_base ?>";
+            const sufijo = "<?= $sufijo_dinamico ?>";
+
+            inputNumero.addEventListener("input", function() {
+
+                // 🔒 Limitar a 3 dígitos
+                this.value = this.value.slice(0, 3);
+
+                const numero = this.value;
+                inputVisible.value = prefijo + numero + sufijo;
+            });
+
+        });
+    </script>
+
     <script>
         $(document).ready(function() {
             // 1. Mostrar/Ocultar el menú móvil completo
