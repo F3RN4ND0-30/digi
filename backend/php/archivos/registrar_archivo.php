@@ -16,6 +16,7 @@ $usuario_id = $_SESSION['dg_id'];
 $consulta = $pdo->prepare("SELECT IdAreas, IdRol FROM usuarios WHERE IdUsuarios = ?");
 $consulta->execute([$usuario_id]);
 $usuario = $consulta->fetch(PDO::FETCH_ASSOC);
+$anio_actual = date('Y');
 
 if (!$usuario) {
     die("❌ Error: no se encontró el usuario o no tiene un área asignada.");
@@ -43,21 +44,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $numero = trim($_POST['numero']);
 
-        // Detectar si el formato es tipo "INFORME N°.XX-2025-MPP-ALC"
-        $pattern = '/^(INFORME N°\.)\s*(\d+)\-(\d{4})\-MPP\-(.+)$/';
+        // ===============================
+        // INFORME → 3 dígitos + MPP + AREA
+        // ===============================
+        $pattern_informe = '/^(INFORME N°\.)\s*(\d+)\-(\d{4})\-MPP\-(.+)$/';
 
-        if (preg_match($pattern, $numero, $matches)) {
+        // ===============================
+        // EXP → 8 dígitos + AÑO (SOLO)
+        // EXP. N°.00000001-2025
+        // ===============================
+        $pattern_exp = '/^(EXP\. N°\.)\s*(\d+)\-(\d{4})$/';
 
-            $prefijo = $matches[1];       // INFORME N°.
-            $num = $matches[2];           // Número ingresado
-            $anio = $matches[3];          // 2025
-            $area = $matches[4];          // ALC, LOG, ADM, etc.
+        if (preg_match($pattern_informe, $numero, $matches)) {
 
-            // Convertir "1" → "001"
+            $prefijo = $matches[1];
+            $num     = $matches[2];
+            $anio    = $matches[3];
+            $area    = $matches[4];
+
             $num_formateado = str_pad($num, 3, '0', STR_PAD_LEFT);
-
-            // Reconstruir el número completo
             $numero = "{$prefijo}{$num_formateado}-{$anio}-MPP-{$area}";
+        } elseif (preg_match($pattern_exp, $numero, $matches)) {
+
+            $prefijo = $matches[1];
+            $num     = $matches[2];
+            $anio    = $matches[3];
+
+            $num_formateado = str_pad($num, 8, '0', STR_PAD_LEFT);
+            $numero = "{$prefijo}{$num_formateado}-{$anio}";
         }
 
         $asunto = trim($_POST['asunto']);
@@ -111,8 +125,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // 1. INSERTAR DOCUMENTO
         $stmt = $pdo->prepare("INSERT INTO documentos 
-            (NumeroDocumento, Asunto, DniRuc, NombreContribuyente, NumeroFolios, IdEstadoDocumento, IdUsuarios, IdAreas, Exterior, IdAreaFinal, Finalizado, IdTipoObjeto) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            (NumeroDocumento, Asunto, DniRuc, NombreContribuyente, NumeroFolios, IdEstadoDocumento, IdUsuarios, IdAreas, Exterior, IdAreaFinal, Finalizado, IdTipoObjeto, Año) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
         $insert_ok = $stmt->execute([
             $numero,
@@ -126,7 +140,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $exterior_bool,
             $area_final,
             0, // No finalizado
-            $tipo_objeto
+            $tipo_objeto,
+            $anio_actual
         ]);
 
         if (!$insert_ok) {

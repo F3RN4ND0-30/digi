@@ -39,18 +39,20 @@ unset($_SESSION['mensaje']);
 $tipos_objeto = $pdo->query("SELECT IdTipoObjeto, Descripcion FROM tipo_objeto")->fetchAll(PDO::FETCH_ASSOC);
 
 // =================================================================
-// LÓGICA PARA OBTENER EL ÚLTIMO INFORME POR ÁREA
+// LÓGICA PARA OBTENER EL ÚLTIMO INFORME EXP POR ÁREA
 // =================================================================
 $ultimo_informe = null;
 
 if (!empty($area_id)) {
 
     $sql_ultimo_informe = "SELECT 
-                                NombreInforme, Asunto, FechaEmision, Año FROM informes 
+                                NumeroDocumento, Asunto, FechaIngreso, Año
+                            FROM documentos
                             WHERE 
-                                IdArea = ? 
+                                IdAreas = ?
+                                AND NumeroDocumento LIKE '%EXP.%'
                             ORDER BY 
-                                FechaEmision DESC, IdInforme DESC 
+                                FechaIngreso DESC, IdDocumentos DESC
                             LIMIT 1";
 
     $stmt_informe = $pdo->prepare($sql_ultimo_informe);
@@ -58,6 +60,7 @@ if (!empty($area_id)) {
 
     $ultimo_informe = $stmt_informe->fetch(PDO::FETCH_ASSOC);
 }
+
 // =================================================================
 // NUEVA LÓGICA: OBTENER ABREVIATURA DEL ÁREA
 // =================================================================
@@ -72,8 +75,8 @@ if (!empty($area_id)) {
         $abreviatura_area = $result;
     }
 }
-$prefijo_base = "INFORME N°.";
-$sufijo_dinamico = "-" . $anio . "-MPP-" . $abreviatura_area;
+$prefijo_base = "EXP. N°.";
+$sufijo_dinamico = "-" . $anio;
 
 $valor_automatico = $prefijo_base . $sufijo_dinamico;
 $longitud_prefijo_fijo = strlen($prefijo_base);
@@ -150,12 +153,12 @@ $longitud_prefijo_fijo = strlen($prefijo_base);
                 <?php if (!empty($ultimo_informe)) : ?>
                     <div class="info-ultimo-documento">
                         <label for="ultimo_doc_input" class="label-ultimo-doc">
-                            <i class="fas fa-history"></i> Último Informe Creado (<?= htmlspecialchars($ultimo_informe['NombreInforme']) ?>)
+                            <i class="fas fa-history"></i> Último Expediente Creado (<?= htmlspecialchars($ultimo_informe['NumeroDocumento']) ?>)
                         </label>
                     </div>
                 <?php else : ?>
                     <div class="info-ultimo-documento no-data">
-                        <label><i class="fas fa-info-circle"></i> No hay informes previos para el Área <?= htmlspecialchars($area_id) ?></label>
+                        <label><i class="fas fa-info-circle"></i> No hay expedientes previos para el Área <?= htmlspecialchars($area_id) ?></label>
                     </div>
                 <?php endif; ?>
 
@@ -170,14 +173,25 @@ $longitud_prefijo_fijo = strlen($prefijo_base);
                     <div class="form-grid">
                         <div class="form-group">
                             <label><i class="fas fa-hashtag"></i> Nombre de Documento:</label>
+
+                            <!-- Campo visible (NO editable) -->
                             <input
                                 type="text"
+                                id="nombre_documento"
                                 name="numero"
-                                required
-                                placeholder="Ej: INFORME N°.123-MPP-RH"
-                                value="<?= htmlspecialchars($valor_automatico) ?>"
+                                readonly
+                                style="background:#e9ecef; font-weight:bold;"
+                                value="<?= htmlspecialchars($valor_automatico) ?>">
 
-                                onfocus="this.setSelectionRange(<?= $longitud_prefijo_fijo ?>, <?= $longitud_prefijo_fijo ?>);">
+                            <!-- Campo donde solo se escribe el número -->
+                            <input
+                                type="number"
+                                id="solo_numero"
+                                placeholder="Ingrese solo número (máx. 8 dígitos)"
+                                min="1"
+                                max="999"
+                                maxlength="3"
+                                style="margin-top:5px;">
                         </div>
 
                         <div class="form-group">
@@ -202,6 +216,7 @@ $longitud_prefijo_fijo = strlen($prefijo_base);
                             <div class="form-group">
                                 <label><i class="fas fa-external-link-alt"></i> ¿Es exterior?</label>
                                 <?php if ($rol_id === 1 || $rol_id === 3): ?>
+                                    <input type="text" value="SI" disabled>
                                     <input type="hidden" id="campoExterior" name="exterior" value="SI">
                                 <?php else: ?>
                                     <select name="exterior" required>
@@ -223,8 +238,12 @@ $longitud_prefijo_fijo = strlen($prefijo_base);
                                     name="dni_ruc"
                                     id="dni_ruc"
                                     placeholder="Ingrese DNI, RUC o Extranjería(MANUAL)"
-                                    pattern="\d{8}|\d{11}|\d{12,}"
-                                    title="Debe ser DNI (8), RUC (11) o código especial (12 dígitos o más)">
+                                    pattern="^\d{8}$|^\d{11}$|^\d{12,}$"
+                                    title="Debe ser DNI (8 dígitos), RUC (11 dígitos) o código especial (12 dígitos o más)"
+                                    maxlength="20"
+                                    inputmode="numeric"
+                                    required
+                                    oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                             </div>
 
                             <div class="form-group">
@@ -345,6 +364,26 @@ $longitud_prefijo_fijo = strlen($prefijo_base);
                     $('.nav-dropdown').removeClass('active');
                 }
             });
+        });
+    </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+
+            const inputVisible = document.getElementById("nombre_documento");
+            const inputNumero = document.getElementById("solo_numero");
+
+            const prefijo = "<?= $prefijo_base ?>";
+            const sufijo = "<?= $sufijo_dinamico ?>";
+
+            inputNumero.addEventListener("input", function() {
+
+                // 🔒 Limitar a 3 dígitos
+                this.value = this.value.slice(0, 8);
+
+                const numero = this.value;
+                inputVisible.value = prefijo + numero + sufijo;
+            });
+
         });
     </script>
     <script>
