@@ -1,26 +1,31 @@
 <?php
 require '../../db/conexion.php';
 
-$dni_ruc    = $_GET['dni_ruc']    ?? '';
-$expediente = $_GET['expediente'] ?? '';
+$dni_ruc             = trim($_GET['dni_ruc'] ?? '');
+$expediente_num      = trim($_GET['expediente_num'] ?? ''); // 8 dígitos
+$anio                = trim($_GET['anio'] ?? '');
+$expediente_formato  = trim($_GET['expediente_formateado'] ?? '');
 
-$dni_ruc    = trim($dni_ruc);
-$expediente = trim($expediente);
+// Validación mínima
+if ($dni_ruc === '' || ($expediente_num === '' && $expediente_formato === '')) {
 
-// Si faltan datos, devolvemos vacío
-if ($dni_ruc === '' || $expediente === '') {
-
-    // Registrar auditoría incluso si el usuario no completó todo
-    registrarAuditoria($pdo, $dni_ruc, null, $expediente, "DATOS_INCOMPLETOS");
+    registrarAuditoria($pdo, $dni_ruc, null, $expediente_formato, "DATOS_INCOMPLETOS");
 
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode([]);
     exit;
 }
 
+/*
+  Construimos el LIKE:
+  Ejemplo final:
+  NumeroDocumento LIKE '%00000008-%'
+*/
+$likeExpediente = '%' . $expediente_num . '-%';
+
 $sql = "
     SELECT 
-        -- DATOS DEL DOCUMENTO
+        -- DOCUMENTO
         d.IdDocumentos,
         d.NumeroDocumento,
         d.Asunto,
@@ -32,7 +37,7 @@ $sql = "
         d.FechaIngreso,
         d.NumeroFolios           AS DocumentoFolios,
 
-        -- DATOS DEL MOVIMIENTO
+        -- MOVIMIENTO
         md.IdMovimientoDocumento,
         md.AreaOrigen,
         md.AreaDestino,
@@ -42,11 +47,11 @@ $sql = "
         md.Observacion,
         md.IdInforme,
 
-        -- NOMBRES DE ÁREAS
+        -- AREAS
         ao.Nombre                AS OrigenNombre,
         ad.Nombre                AS DestinoNombre,
 
-        -- INFORME 
+        -- INFORME
         inf.NombreInforme        AS InformeNombre
 
     FROM documentos d
@@ -60,37 +65,41 @@ $sql = "
         ON md.IdInforme = inf.IdInforme
 
     WHERE 
-        d.DniRuc           = :dni_ruc
-        AND d.NumeroDocumento = :expediente
-        AND d.Exterior     = 1        -- SOLO DOCUMENTOS EXTERNOS
+        d.DniRuc = :dni_ruc
+        AND d.Exterior = 1
+        AND d.Año = :anio
+        AND d.NumeroDocumento LIKE :expediente_like
 
     ORDER BY md.FechaMovimiento ASC
 ";
 
 $stmt = $pdo->prepare($sql);
 $stmt->bindParam(':dni_ruc', $dni_ruc, PDO::PARAM_STR);
-$stmt->bindParam(':expediente', $expediente, PDO::PARAM_STR);
+$stmt->bindParam(':anio', $anio, PDO::PARAM_INT);
+$stmt->bindParam(':expediente_like', $likeExpediente, PDO::PARAM_STR);
 $stmt->execute();
 
 $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Obtener nombre para auditoría (si existe)
+// Auditoría
 $nombreConsultado = $resultados[0]['NombreContribuyente'] ?? null;
-
-// Determinar resultado de la búsqueda
 $resultadoConsulta = empty($resultados) ? "NO_ENCONTRADO" : "ENCONTRADO";
 
-// Registrar auditoría
-registrarAuditoria($pdo, $dni_ruc, $nombreConsultado, $expediente, $resultadoConsulta);
+registrarAuditoria(
+    $pdo,
+    $dni_ruc,
+    $nombreConsultado,
+    $expediente_formato ?: $expediente_num . '-' . $anio,
+    $resultadoConsulta
+);
 
-// Devolver datos
+// Respuesta
 header('Content-Type: application/json; charset=utf-8');
 echo json_encode($resultados);
 
 
-
 /* ============================================================
-   ===============   FUNCIÓN DE AUDITORÍA   ===================
+   ================= FUNCIÓN AUDITORÍA ========================
    ============================================================ */
 function registrarAuditoria($pdo, $dni_ruc, $nombre, $expediente, $resultado)
 {
@@ -117,11 +126,11 @@ function registrarAuditoria($pdo, $dni_ruc, $nombre, $expediente, $resultado)
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
-        ':dni_ruc'   => $dni_ruc,
-        ':nombre'    => $nombre,
+        ':dni_ruc'    => $dni_ruc,
+        ':nombre'     => $nombre,
         ':expediente' => $expediente,
-        ':ip'        => $ip,
-        ':userAgent' => $userAgent,
-        ':resultado' => $resultado
+        ':ip'         => $ip,
+        ':userAgent'  => $userAgent,
+        ':resultado'  => $resultado
     ]);
 }

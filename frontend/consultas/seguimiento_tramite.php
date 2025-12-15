@@ -21,22 +21,99 @@ require '../../backend/db/conexion.php';
     <link rel="stylesheet" href="../../backend/css/seguimiento/seguimiento_tramite.css" />
 
     <link rel="icon" type="image/png" href="../../backend/img/logoPisco.png" />
+
+    <style>
+        /* Estilos mínimos para el select personalizado (puedes moverlos a tu CSS) */
+        .custom-select {
+            position: relative;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .year-display {
+            flex: 0 0 130px;
+            border: 2px solid #7c4dff;
+            border-radius: 8px;
+            padding: 10px 12px;
+            background: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .year-list {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            width: 160px;
+            max-height: 220px;
+            overflow-y: auto;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            z-index: 9999;
+            display: none;
+        }
+
+        .year-list.visible {
+            display: block;
+        }
+
+        .year-list button {
+            width: 100%;
+            padding: 8px 10px;
+            text-align: left;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .year-list button:hover {
+            background: rgba(0, 0, 0, 0.04);
+        }
+
+        /* Ajustes para el campo expediente */
+        .input-field.expediente {
+            width: 150px;
+            max-width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #e6e6e6;
+        }
+
+        /* Alineación del grupo pequeño */
+        .group-inline {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        /* Small helper text spacing */
+        .modal-body .form-small {
+            font-size: 13px;
+            color: #6b6b6b;
+            margin-top: 6px;
+        }
+    </style>
 </head>
 
 <body>
-    <!-- Botón Volver al Inicio -->
     <a href="../../index.php" class="btn-volver">
         <i class="fas fa-home"></i>
         <span>Volver al Inicio</span>
     </a>
 
-    <!-- Logo Municipal -->
     <div class="muni-logo-header">
         <img src="../../backend/img/munipisco.png" alt="Municipalidad Provincial de Pisco">
     </div>
 
     <div class="container-principal">
-        <!-- Header -->
         <div class="header-seguimiento">
             <div class="header-icon">
                 <i class="fas fa-route"></i>
@@ -45,10 +122,7 @@ require '../../backend/db/conexion.php';
             <p class="subtitulo">Consulta el estado actual de tu documento</p>
         </div>
 
-        <!-- Contenedor de Resultados (inicialmente oculto) -->
         <div id="contenedorResultados" class="resultados-container" style="display: none;">
-
-            <!-- Info del Documento -->
             <div class="documento-info-card">
                 <div class="info-header">
                     <i class="fas fa-file-alt"></i>
@@ -84,43 +158,29 @@ require '../../backend/db/conexion.php';
                 </div>
             </div>
 
-            <!-- Timeline de Movimientos -->
             <div class="timeline-header">
                 <i class="fas fa-clock"></i>
                 <h3>Historial de Movimientos</h3>
             </div>
 
-            <div id="timelineMovimientos" class="timeline-container">
-                <!-- Se llenará dinámicamente -->
-            </div>
+            <div id="timelineMovimientos" class="timeline-container"></div>
 
-            <!-- Botón para expandir/contraer historial cuando es largo -->
             <div id="historialAcciones" class="historial-acciones" style="display:none;">
-                <button id="btnToggleHistorial" type="button" class="btn-toggle-historial">
-                    Ver historial completo
-                </button>
+                <button id="btnToggleHistorial" type="button" class="btn-toggle-historial">Ver historial completo</button>
             </div>
 
-            <!-- Botón Nueva Búsqueda -->
             <div class="acciones-container">
                 <button onclick="nuevaBusqueda()" class="btn-nueva-busqueda">
-                    <i class="fas fa-search"></i>
-                    Nueva Búsqueda
+                    <i class="fas fa-search"></i> Nueva Búsqueda
                 </button>
             </div>
         </div>
 
-        <!-- Mensaje Sin Resultados -->
         <div id="sinResultados" class="sin-resultados" style="display: none;">
-            <div class="sin-resultados-icon">
-                <i class="fas fa-search-minus"></i>
-            </div>
+            <div class="sin-resultados-icon"><i class="fas fa-search-minus"></i></div>
             <h3>No se encontraron resultados</h3>
             <p>Verifica que el DNI/RUC y el número de expediente sean correctos</p>
-            <button onclick="nuevaBusqueda()" class="btn-reintentar">
-                <i class="fas fa-redo"></i>
-                Intentar de nuevo
-            </button>
+            <button onclick="nuevaBusqueda()" class="btn-reintentar"><i class="fas fa-redo"></i> Intentar de nuevo</button>
         </div>
     </div>
 
@@ -128,80 +188,117 @@ require '../../backend/db/conexion.php';
     <div id="modalBusqueda" class="modal-overlay">
         <div class="modal-busqueda">
             <div class="modal-header">
-                <div class="modal-icon">
-                    <i class="fas fa-search"></i>
-                </div>
+                <div class="modal-icon"><i class="fas fa-search"></i></div>
                 <h2>Buscar Documento</h2>
                 <p class="modal-subtitle">Ingresa tus datos para consultar el estado de tu trámite</p>
             </div>
 
             <div class="modal-body">
                 <div class="form-group">
-                    <label for="dniRuc">
-                        <i class="fas fa-id-card"></i>
-                        DNI o RUC
-                    </label>
-                    <input
-                        type="number"
-                        id="dniRuc"
-                        class="input-field"
-                        placeholder="Ingresa tu DNI o RUC"
-                        maxlength="11">
+                    <label for="dniRuc"><i class="fas fa-id-card"></i> DNI o RUC</label>
+                    <input type="number" id="dniRuc" class="input-field" placeholder="Ingresa tu DNI o RUC" maxlength="11" />
                 </div>
 
                 <div class="form-group">
-                    <label for="numeroExpediente">
-                        <i class="fas fa-file-alt"></i>
-                        Número de Expediente
-                    </label>
-                    <input
-                        type="text"
-                        id="numeroExpediente"
-                        class="input-field"
-                        placeholder="Ej: 2025-001234">
+                    <label for="numeroExpediente"><i class="fas fa-file-alt"></i> Número de Expediente</label>
+                    <div class="group-inline">
+                        <input
+                            type="text"
+                            id="numeroExpediente"
+                            class="input-field expediente"
+                            placeholder="00000008"
+                            maxlength="8"
+                            inputmode="numeric"
+                            pattern="\d{1,8}">
+                        <div class="custom-select" style="position:relative;">
+                            <div id="yearDisplay" class="year-display" role="button" tabindex="0" aria-haspopup="listbox" aria-expanded="false">
+                                <span id="selectedYear">2025</span>
+                                <i class="fas fa-caret-down"></i>
+                            </div>
+                            <div id="yearList" class="year-list" role="listbox" aria-label="Años">
+                                <!-- años generados por JS -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-small">Si tu expediente no incluye año, selecciona el año aquí.</div>
                 </div>
 
-                <button id="btnBuscarDocumento" class="btn-buscar">
-                    <i class="fas fa-search"></i>
-                    <span>Buscar Documento</span>
-                </button>
+                <button id="btnBuscarDocumento" class="btn-buscar"><i class="fas fa-search"></i> <span>Buscar Documento</span></button>
 
                 <div class="modal-footer">
-                    <p class="ayuda-text">
-                        <i class="fas fa-info-circle"></i>
-                        Si no conoces tu número de expediente, comunícate con Mesa de Partes
-                    </p>
+                    <p class="ayuda-text"><i class="fas fa-info-circle"></i> Si no conoces tu número de expediente, comunícate con Mesa de Partes</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Loading Overlay -->
+    <!-- Loading -->
     <div id="loadingOverlay" class="loading-overlay" style="display: none;">
-        <div class="loading-spinner">
-            <i class="fas fa-spinner fa-spin"></i>
+        <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i>
             <p>Buscando documento...</p>
         </div>
     </div>
 
-    <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <script>
-        const MAX_ITEMS_RESUMIDOS = 4; // cuántos movimientos se muestran siempre (el resto se colapsa)
+        const MAX_ITEMS_RESUMIDOS = 4;
         let datosGlobal = [];
 
-        // ==================== MOSTRAR MODAL AL CARGAR ====================
+        // poblado dinámico de años (desde actual hasta 2008)
+        (function populateYears() {
+            const yearList = document.getElementById('yearList');
+            const selectedYearEl = document.getElementById('selectedYear');
+            const currentYear = new Date().getFullYear();
+            let defaultYear = currentYear;
+            for (let y = currentYear; y >= 2008; y--) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.textContent = y;
+                btn.dataset.year = y;
+                btn.addEventListener('click', () => {
+                    selectedYearEl.textContent = y;
+                    toggleYearList(false);
+                });
+                yearList.appendChild(btn);
+                if (y === defaultYear) {
+                    selectedYearEl.textContent = y;
+                }
+            }
+        })();
+
+        const yearDisplay = document.getElementById('yearDisplay');
+        const yearList = document.getElementById('yearList');
+
+        function toggleYearList(forceState) {
+            const isVisible = yearList.classList.contains('visible');
+            const shouldShow = typeof forceState === 'boolean' ? forceState : !isVisible;
+            if (shouldShow) {
+                yearList.classList.add('visible');
+                yearDisplay.setAttribute('aria-expanded', 'true');
+            } else {
+                yearList.classList.remove('visible');
+                yearDisplay.setAttribute('aria-expanded', 'false');
+            }
+        }
+
+        yearDisplay.addEventListener('click', () => toggleYearList());
+        yearDisplay.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleYearList();
+            }
+        });
+        document.addEventListener('click', (e) => {
+            if (!yearDisplay.contains(e.target) && !yearList.contains(e.target)) toggleYearList(false);
+        });
+
         document.addEventListener("DOMContentLoaded", function() {
             document.getElementById("modalBusqueda").style.display = "flex";
-
-            // Focus automático en el primer input
             setTimeout(() => {
                 const dniInput = document.getElementById("dniRuc");
                 if (dniInput) dniInput.focus();
-            }, 500);
-
-            // Enter para buscar
+            }, 300);
             document.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter' && document.getElementById("modalBusqueda").style.display === "flex") {
                     document.getElementById("btnBuscarDocumento").click();
@@ -209,32 +306,42 @@ require '../../backend/db/conexion.php';
             });
         });
 
-        // ==================== FUNCIÓN BUSCAR ====================
+        // Buscar
         document.getElementById("btnBuscarDocumento").addEventListener("click", function() {
             let dniRuc = document.getElementById("dniRuc").value.trim();
-            let expediente = document.getElementById("numeroExpediente").value.trim();
+            let expedienteNum = document.getElementById("numeroExpediente").value.trim();
+            let anio = document.getElementById("selectedYear").textContent.trim();
 
-            if (dniRuc === "" || expediente === "") {
+            if (dniRuc === "" || expedienteNum === "") {
                 mostrarAlerta("Por favor, completa todos los campos", "warning");
                 return;
             }
 
-            // Mostrar loading
+            if (!/^\d{1,8}$/.test(expedienteNum)) {
+                mostrarAlerta("Número de expediente inválido. Sólo dígitos (máx. 8).", "warning");
+                return;
+            }
+
+            // rellenar con ceros a 8 dígitos
+            expedienteNum = expedienteNum.padStart(8, '0');
+
+            // construir string con el formato que tienes en BD
+            const expedienteFormateado = `EXP. N°.${expedienteNum}-${anio}`;
+
             document.getElementById("loadingOverlay").style.display = "flex";
             document.getElementById("modalBusqueda").style.display = "none";
 
-            // Petición AJAX
             $.ajax({
                 url: "../../backend/php/ajax/buscar_documento_publico.php",
                 method: "GET",
                 data: {
                     dni_ruc: dniRuc,
-                    expediente: expediente
+                    expediente: expedienteFormateado,
+                    anio: anio
                 },
                 dataType: "json",
                 success: function(response) {
                     document.getElementById("loadingOverlay").style.display = "none";
-
                     if (response && response.length > 0) {
                         datosGlobal = response;
                         mostrarResultados(response);
@@ -250,32 +357,22 @@ require '../../backend/db/conexion.php';
             });
         });
 
-        // ==================== MOSTRAR RESULTADOS ====================
         function mostrarResultados(datos) {
             document.getElementById("sinResultados").style.display = "none";
-
-            // Ordenar por fecha ASC (primero ingreso, último estado actual)
             datos.sort((a, b) => new Date(a.FechaMovimiento) - new Date(b.FechaMovimiento));
-
             const primerRegistro = datos[0];
             const ultimoRegistro = datos[datos.length - 1];
 
-            // Ficha del documento
             document.getElementById("infoExpediente").textContent = primerRegistro.NumeroDocumento || "-";
             document.getElementById("infoAsunto").textContent = primerRegistro.Asunto || "-";
             document.getElementById("infoContribuyente").textContent = primerRegistro.NombreContribuyente || "-";
             document.getElementById("infoFechaIngreso").textContent = formatearFecha(primerRegistro.FechaIngreso) || "-";
-            // Folios del DOCUMENTO (no del movimiento)
             document.getElementById("infoFolios").textContent = primerRegistro.DocumentoFolios || "-";
 
-            // Estado actual (semáforo) usando el último movimiento
             const estadoActualInfo = obtenerEstadoInfo(ultimoRegistro, true);
             actualizarEstadoActual(estadoActualInfo);
-
-            // Crear timeline
             construirTimeline(datos);
 
-            // Mostrar contenedor con animación
             const contenedor = document.getElementById("contenedorResultados");
             contenedor.style.display = "block";
             setTimeout(() => {
@@ -283,69 +380,38 @@ require '../../backend/db/conexion.php';
             }, 50);
         }
 
-        // Construir timeline con opción de colapsar historial
         function construirTimeline(datos) {
             const timeline = document.getElementById("timelineMovimientos");
             timeline.innerHTML = "";
-
             const muchosMovimientos = datos.length > MAX_ITEMS_RESUMIDOS;
 
             datos.forEach((mov, index) => {
                 const esUltimo = (index === datos.length - 1);
                 const estadoInfo = obtenerEstadoInfo(mov, esUltimo);
-
                 const item = document.createElement("div");
                 item.className = `timeline-item ${estadoInfo.clase}`;
-
-                // Si hay muchos movimientos, los más antiguos se marcan como colapsables
-                if (muchosMovimientos && index < datos.length - MAX_ITEMS_RESUMIDOS) {
-                    item.classList.add("timeline-item--colapsado");
-                }
-
+                if (muchosMovimientos && index < datos.length - MAX_ITEMS_RESUMIDOS) item.classList.add("timeline-item--colapsado");
                 const foliosMovimiento = mov.MovimientoFolios ? ` (${mov.MovimientoFolios} folios)` : "";
 
                 item.innerHTML = `
-                    <div class="timeline-marker">
-                        <i class="${estadoInfo.icono}"></i>
-                    </div>
+                    <div class="timeline-marker"><i class="${estadoInfo.icono}"></i></div>
                     <div class="timeline-content">
                         <div class="timeline-header-content">
                             <h4>${mov.OrigenNombre || 'Área no especificada'}</h4>
-                            <span class="timeline-badge ${estadoInfo.badgeClass}">
-                                ${estadoInfo.texto}
-                            </span>
+                            <span class="timeline-badge ${estadoInfo.badgeClass}">${estadoInfo.texto}</span>
                         </div>
                         <div class="timeline-details">
-                            <div class="detail-item">
-                                <i class="fas fa-arrow-right"></i>
-                                <span><strong>Destino:</strong> ${mov.DestinoNombre || 'No especificado'}</span>
-                            </div>
-                            <div class="detail-item">
-                                <i class="fas fa-calendar"></i>
-                                <span><strong>Fecha:</strong> ${formatearFecha(mov.FechaMovimiento)}${foliosMovimiento}</span>
-                            </div>
-                            ${mov.InformeNombre ? `
-                            <div class="detail-item">
-                                <i class="fas fa-file-invoice"></i>
-                                <span><strong>Informe:</strong> ${mov.InformeNombre}</span>
-                            </div>
-                            ` : ''}
-                            ${mov.Observacion ? `
-                            <div class="detail-item observacion">
-                                <i class="fas fa-comment"></i>
-                                <span><strong>Observación:</strong> ${mov.Observacion}</span>
-                            </div>
-                            ` : ''}
+                            <div class="detail-item"><i class="fas fa-arrow-right"></i><span><strong>Destino:</strong> ${mov.DestinoNombre || 'No especificado'}</span></div>
+                            <div class="detail-item"><i class="fas fa-calendar"></i><span><strong>Fecha:</strong> ${formatearFecha(mov.FechaMovimiento)}${foliosMovimiento}</span></div>
+                            ${mov.InformeNombre ? `<div class="detail-item"><i class="fas fa-file-invoice"></i><span><strong>Informe:</strong> ${mov.InformeNombre}</span></div>` : ''}
+                            ${mov.Observacion ? `<div class="detail-item observacion"><i class="fas fa-comment"></i><span><strong>Observación:</strong> ${mov.Observacion}</span></div>` : ''}
                         </div>
-                    </div>
-                `;
-
+                    </div>`;
                 timeline.appendChild(item);
             });
 
             const historialAcciones = document.getElementById("historialAcciones");
             const btnToggle = document.getElementById("btnToggleHistorial");
-
             if (datos.length > MAX_ITEMS_RESUMIDOS) {
                 historialAcciones.style.display = "flex";
                 btnToggle.textContent = "Ver historial completo";
@@ -355,26 +421,21 @@ require '../../backend/db/conexion.php';
             }
         }
 
-        // Alterna entre mostrar todo el historial o resumido
         function toggleHistorial() {
             const btnToggle = document.getElementById("btnToggleHistorial");
             const itemsColapsados = document.querySelectorAll(".timeline-item--colapsado");
             const estaExpandido = btnToggle.dataset.expanded === "1";
-
             if (estaExpandido) {
-                // Volver a colapsar
                 itemsColapsados.forEach(item => item.classList.remove("timeline-item--visible"));
                 btnToggle.textContent = "Ver historial completo";
                 btnToggle.dataset.expanded = "0";
             } else {
-                // Mostrar todos
                 itemsColapsados.forEach(item => item.classList.add("timeline-item--visible"));
                 btnToggle.textContent = "Ver menos movimientos";
                 btnToggle.dataset.expanded = "1";
             }
         }
 
-        // ==================== OBTENER INFO DE ESTADO ====================
         function obtenerEstadoInfo(mov, esUltimo) {
             let info = {
                 texto: "",
@@ -382,7 +443,6 @@ require '../../backend/db/conexion.php';
                 clase: "",
                 badgeClass: ""
             };
-
             if (esUltimo) {
                 if (mov.IdEstadoDocumento == 8) {
                     info.texto = "Bloqueado";
@@ -418,26 +478,22 @@ require '../../backend/db/conexion.php';
                     info.badgeClass = "badge-procesado";
                 }
             }
-
             return info;
         }
 
-        // Actualiza la pastilla de "Estado actual" en la ficha superior
         function actualizarEstadoActual(estadoInfo) {
             const pill = document.getElementById("infoEstado");
             pill.textContent = estadoInfo.texto;
-            pill.className = "estado-pill"; // reset
+            pill.className = "estado-pill";
             pill.classList.add(`estado-pill--${estadoInfo.clase || 'pendiente'}`);
         }
 
-        // ==================== MOSTRAR SIN RESULTADOS ====================
         function mostrarSinResultados() {
             document.getElementById("contenedorResultados").style.display = "none";
             document.getElementById("contenedorResultados").classList.remove("show");
             document.getElementById("sinResultados").style.display = "flex";
         }
 
-        // ==================== NUEVA BÚSQUEDA ====================
         function nuevaBusqueda() {
             document.getElementById("contenedorResultados").style.display = "none";
             document.getElementById("contenedorResultados").classList.remove("show");
@@ -450,12 +506,10 @@ require '../../backend/db/conexion.php';
             }, 300);
         }
 
-        // ==================== FORMATEAR FECHA ====================
         function formatearFecha(fechaStr) {
             if (!fechaStr) return "-";
             const fecha = new Date(fechaStr);
-            if (isNaN(fecha.getTime())) return fechaStr; // por si viene en otro formato
-
+            if (isNaN(fecha.getTime())) return fechaStr;
             const opciones = {
                 year: 'numeric',
                 month: 'long',
@@ -466,7 +520,6 @@ require '../../backend/db/conexion.php';
             return fecha.toLocaleDateString('es-PE', opciones);
         }
 
-        // ==================== MOSTRAR ALERTA SIMPLE ====================
         function mostrarAlerta(mensaje, tipo) {
             alert(mensaje);
         }
