@@ -312,6 +312,7 @@ require '../../backend/db/conexion.php';
             let expedienteNum = document.getElementById("numeroExpediente").value.trim();
             let anio = document.getElementById("selectedYear").textContent.trim();
 
+            // Validaciones
             if (dniRuc === "" || expedienteNum === "") {
                 mostrarAlerta("Por favor, completa todos los campos", "warning");
                 return;
@@ -322,22 +323,21 @@ require '../../backend/db/conexion.php';
                 return;
             }
 
-            // rellenar con ceros a 8 dígitos
+            // Rellenar con ceros a 8 dígitos
             expedienteNum = expedienteNum.padStart(8, '0');
 
-            // construir string con el formato que tienes en BD
-            const expedienteFormateado = `EXP. N°.${expedienteNum}-${anio}`;
-
+            // Mostrar el overlay de carga
             document.getElementById("loadingOverlay").style.display = "flex";
             document.getElementById("modalBusqueda").style.display = "none";
 
+            // Realizar la solicitud AJAX
             $.ajax({
                 url: "../../backend/php/ajax/buscar_documento_publico.php",
                 method: "GET",
                 data: {
-                    dni_ruc: dniRuc,
-                    expediente: expedienteFormateado,
-                    anio: anio
+                    dni_ruc: dniRuc, // Enviar dni_ruc
+                    expediente_num: expedienteNum, // Enviar solo el número de expediente
+                    anio: anio // Enviar el año
                 },
                 dataType: "json",
                 success: function(response) {
@@ -356,6 +356,7 @@ require '../../backend/db/conexion.php';
                 }
             });
         });
+
 
         function mostrarResultados(datos) {
             document.getElementById("sinResultados").style.display = "none";

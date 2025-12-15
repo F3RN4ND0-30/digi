@@ -11,6 +11,10 @@ if ($dni_ruc === '' || ($expediente_num === '' && $expediente_formato === '')) {
 
     registrarAuditoria($pdo, $dni_ruc, null, $expediente_formato, "DATOS_INCOMPLETOS");
 
+    // Mostrar en el log de errores PHP
+    error_log("Datos incompletos: DNI/RUC: $dni_ruc, Expediente: $expediente_num, Año: $anio");
+
+    // Enviar una respuesta vacía
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode([]);
     exit;
@@ -93,10 +97,12 @@ registrarAuditoria(
     $resultadoConsulta
 );
 
+// Mostrar en el log de errores PHP los datos enviados
+error_log("Consulta realizada con los siguientes parámetros: DNI/RUC: $dni_ruc, Expediente: $expediente_num, Año: $anio");
+
 // Respuesta
 header('Content-Type: application/json; charset=utf-8');
 echo json_encode($resultados);
-
 
 /* ============================================================
    ================= FUNCIÓN AUDITORÍA ========================
