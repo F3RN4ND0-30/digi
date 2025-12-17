@@ -189,7 +189,7 @@ $longitud_prefijo_fijo = strlen($prefijo_base);
                                 id="solo_numero"
                                 placeholder="Ingrese solo número (máx. 8 dígitos)"
                                 min="1"
-                                max="999"
+                                max="99999999"
                                 maxlength="3"
                                 style="margin-top:5px;">
                         </div>
