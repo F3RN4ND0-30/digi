@@ -1,3 +1,7 @@
+/* ====================================================
+   busqueda.css — actualizado (tabla modal / badges / z-index)
+   ==================================================== */
+
 /* Variables */
 :root {
   --busqueda-primary: #6c5ce7;
@@ -12,27 +16,45 @@
   --busqueda-transition: all 0.3s ease-in-out;
 }
 
+/* Reset y cuerpo */
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
 body {
   font-family: "Inter", "Poppins", sans-serif;
   background: linear-gradient(-45deg, #6c5ce7, #a29bfe, #81ecec, #74b9ff);
   background-size: 400% 400%;
   animation: gradientMove 20s ease infinite;
-  margin: 0;
-  padding: 0;
   color: var(--busqueda-text);
 }
 
+/* Animaciones */
 @keyframes gradientMove {
   0% {
     background-position: 0% 50%;
   }
-
   50% {
     background-position: 100% 50%;
   }
-
   100% {
     background-position: 0% 50%;
+  }
+}
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -43,15 +65,12 @@ body {
   min-height: 100vh;
   position: relative;
 }
-
 .contenido-principal {
   flex: 1;
   padding: 2rem;
   background: rgba(248, 250, 252, 0.95);
   backdrop-filter: blur(10px);
 }
-
-/* Tarjeta contenedora */
 .container {
   background: var(--busqueda-white);
   padding: 2rem;
@@ -59,22 +78,9 @@ body {
   box-shadow: var(--busqueda-shadow);
   max-width: 1500px;
   margin: 0 auto;
-  animation: fadeInUp 0.6s ease forwards;
+  animation: fadeInUp 0.6s forwards;
   position: relative;
 }
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 h2 {
   font-size: 1.5rem;
   font-weight: 700;
@@ -93,35 +99,32 @@ h2 {
   transition: var(--busqueda-transition);
   background: var(--busqueda-white);
 }
-
 #inputBusqueda:focus {
   border-color: var(--busqueda-primary);
   outline: none;
   box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.1);
 }
 
-/* Tabla */
+/* Tabla principal */
 #tablaResultados_wrapper {
   overflow-x: auto;
   width: 100%;
 }
-
 table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.95rem;
   background: var(--busqueda-white);
   min-width: 600px;
-  /* Ajustable según las columnas */
 }
-
 table thead {
-  background: linear-gradient(135deg,
-      var(--busqueda-primary),
-      var(--busqueda-primary-dark));
+  background: linear-gradient(
+    135deg,
+    var(--busqueda-primary),
+    var(--busqueda-primary-dark)
+  );
   color: var(--busqueda-white);
 }
-
 table th,
 table td {
   padding: 1rem;
@@ -129,11 +132,9 @@ table td {
   vertical-align: middle;
   border-bottom: 1px solid var(--busqueda-border);
 }
-
 table tbody tr:nth-child(even) {
   background: rgba(108, 92, 231, 0.02);
 }
-
 table tbody tr:hover {
   background: rgba(108, 92, 231, 0.08);
   transform: translateY(-1px);
@@ -141,62 +142,30 @@ table tbody tr:hover {
   transition: var(--busqueda-transition);
 }
 
-/* Botón de seguimiento */
+/* Botón seguimiento */
 .btn-seguimiento {
-  background: linear-gradient(135deg,
-      var(--busqueda-primary),
-      var(--busqueda-primary-dark));
+  background: linear-gradient(
+    135deg,
+    var(--busqueda-primary),
+    var(--busqueda-primary-dark)
+  );
   color: var(--busqueda-white);
   padding: 0.5rem 1rem;
   border-radius: 8px;
   font-weight: 600;
   font-size: 0.85rem;
-  display: inline-block;
-  text-decoration: none;
-  transition: var(--busqueda-transition);
   border: none;
+  cursor: pointer;
 }
-
 .btn-seguimiento:hover {
-  background: linear-gradient(135deg, #5548e0, #453ad4);
-  transform: scale(1.05);
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+  transform: scale(1.03);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .contenido-principal {
-    padding: 1rem;
-  }
-
-  .container {
-    padding: 1.25rem;
-  }
-
-  table th,
-  table td {
-    padding: 0.75rem 0.5rem;
-    font-size: 0.85rem;
-  }
-
-  #inputBusqueda {
-    font-size: 0.9rem;
-  }
-
-  .btn-seguimiento {
-    font-size: 0.8rem;
-    padding: 0.4rem 0.75rem;
-  }
-
-  h2 {
-    font-size: 1.25rem;
-  }
-}
-
-/* Estilos del Modal de Seguimiento */
+/* Modal seguimiento */
 .modal-seguimiento {
   position: fixed;
-  z-index: 1000;
+  z-index: 99999;
   left: 0;
   top: 0;
   width: 100%;
@@ -207,151 +176,202 @@ table tbody tr:hover {
   align-items: center;
   justify-content: center;
 }
-
 .modal-content-seguimiento {
-  background-color: var(--busqueda-white);
+  background: var(--busqueda-white);
   padding: 0;
   border-radius: var(--busqueda-radius);
-  width: 90%;
-  max-width: 1000px;
-  max-height: 90vh;
+  width: 92%;
+  max-width: 1200px;
+  max-height: 92vh;
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  animation: modalSlideIn 0.3s ease-out;
+  animation: modalSlideIn 0.28s ease-out;
+  display: flex;
+  flex-direction: column;
 }
-
-@keyframes modalSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-50px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 .modal-header-seguimiento {
-  background: linear-gradient(135deg,
-      var(--busqueda-primary),
-      var(--busqueda-primary-dark));
+  background: linear-gradient(
+    135deg,
+    var(--busqueda-primary),
+    var(--busqueda-primary-dark)
+  );
   color: var(--busqueda-white);
-  padding: 20px;
+  padding: 18px 22px;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
-
 .modal-header-seguimiento h3 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.35rem;
   font-weight: 600;
 }
-
 .close-modal {
   background: none;
   border: none;
   color: var(--busqueda-white);
-  font-size: 2rem;
+  font-size: 1.8rem;
   cursor: pointer;
-  padding: 0;
   width: 40px;
   height: 40px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: var(--busqueda-transition);
 }
-
 .close-modal:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .modal-body-seguimiento {
-  padding: 20px;
-  max-height: 70vh;
-  overflow-y: auto;
+  padding: 18px;
+  overflow: auto;
+  flex: 1;
 }
 
-.loading {
-  text-align: center;
-  padding: 40px;
-  color: #666;
-  font-size: 1.1rem;
-}
-
+/* Tabla seguimiento (más ancha y con min-width para scroll horizontal si hace falta) */
 .tabla-seguimiento {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 15px;
+  margin-top: 6px;
   background: var(--busqueda-white);
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  min-width: 1000px;
 }
-
 .tabla-seguimiento th,
 .tabla-seguimiento td {
-  padding: 15px 12px;
+  padding: 14px 12px;
   text-align: left;
   border-bottom: 1px solid var(--busqueda-border);
+  vertical-align: middle;
 }
-
-/* .tabla-seguimiento td:nth-child(6) {
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  overflow: hidden;
-} */
-
 .tabla-seguimiento th {
-  background: linear-gradient(135deg,
-      var(--busqueda-primary),
-      var(--busqueda-primary-dark));
+  background: linear-gradient(
+    135deg,
+    var(--busqueda-primary),
+    var(--busqueda-primary-dark)
+  );
   color: var(--busqueda-white);
   font-weight: 600;
   font-size: 0.9rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
-
 .tabla-seguimiento tr:hover {
-  background-color: rgba(108, 92, 231, 0.05);
+  background-color: rgba(108, 92, 231, 0.03);
 }
 
+/* Informe badge */
+.badge-informe {
+  display: inline-block;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #8f7af7, #bda9ff);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.82rem;
+  box-shadow: 0 6px 14px rgba(108, 92, 231, 0.18);
+  white-space: normal;
+  max-width: 320px;
+  text-align: center;
+  line-height: 1.1;
+  word-wrap: break-word;
+}
+
+/* Ajustes específicos para columnas */
+.tabla-seguimiento td.informes-cell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+}
+.tabla-seguimiento td.folios-cell {
+  text-align: center;
+  min-width: 90px;
+}
+.tabla-seguimiento td.fecha-cell {
+  font-family: "Courier New", monospace;
+  font-size: 0.9rem;
+  color: var(--busqueda-text);
+  min-width: 180px;
+}
+.tabla-seguimiento td.observacion-cell {
+  max-width: 240px;
+  word-wrap: break-word;
+  white-space: pre-line;
+}
+
+/* ------------------------------
+   AJUSTE: Estado perfectamente centrado
+   ------------------------------
+   (reemplaza la regla anterior; fuerza centrado vertical,
+   controla padding y alinea el contenido interno)
+*/
+.tabla-seguimiento td.estado-cell {
+  /* forzamos un flex container en la celda para centrar su contenido */
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  /* padding consistente por fila */
+  padding-top: 14px !important;
+  padding-bottom: 14px !important;
+
+  /* evitar que la celda colapse si hay elementos altos en otras columnas */
+  min-width: 120px;
+  vertical-align: middle !important;
+  height: auto;
+}
+
+/* aseguramos que el contenido del estado (las clases .estado-*) sea inline-flex
+   y se centre dentro de la celda sin empujar hacia arriba */
+.tabla-seguimiento td.estado-cell > .estado-recibido,
+.tabla-seguimiento td.estado-cell > .estado-pendiente,
+.tabla-seguimiento td.estado-cell > .estado-finalizado,
+.tabla-seguimiento td.estado-cell > .estado-respondido,
+.tabla-seguimiento td.estado-cell > .estado-bloqueado {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  line-height: 1;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+
+/* colores / estilos de estado (ícono + texto) */
 .estado-recibido {
   color: var(--busqueda-success);
   font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 5px;
 }
-
 .estado-pendiente {
   color: #ffc107;
   font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 5px;
 }
-
 .estado-finalizado {
-  color: red;
+  color: #e74c3c;
   font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 5px;
 }
-
 .estado-bloqueado {
   color: #0056b3;
   font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 5px;
+}
+.estado-respondido {
+  color: #6c5ce7;
+  font-weight: 600;
 }
 
+/* pequeña regla para que el badge no rompa layout: */
+.tabla-seguimiento td .badge-informe {
+  display: inline-block;
+  vertical-align: middle;
+  word-break: break-word;
+  white-space: normal;
+}
+
+/* Sin movimientos */
 .sin-movimientos {
   text-align: center;
   padding: 40px;
@@ -359,53 +379,30 @@ table tbody tr:hover {
   font-style: italic;
 }
 
-.observacion-cell {
-  max-width: 200px;
-  word-wrap: break-word;
-  white-space: pre-line;
-}
-
-.fecha-cell {
-  font-family: "Courier New", monospace;
-  font-size: 0.9rem;
-  color: var(--busqueda-text);
-}
-
-
-body,
-html {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  overflow-x: hidden;
-  box-sizing: border-box;
-}
-
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-@media (max-width: 768px) {
-  .contenido-principal {
-    padding: 1rem;
+/* Responsive */
+@media (max-width: 1024px) {
+  .modal-content-seguimiento {
+    max-width: 95%;
   }
-
+  .tabla-seguimiento {
+    min-width: 900px;
+  }
+  .badge-informe {
+    max-width: 260px;
+  }
+}
+@media (max-width: 768px) {
   .container {
     padding: 1.25rem;
   }
-
   #inputBusqueda {
     width: 100%;
     font-size: 0.95rem;
   }
-
   h2 {
     font-size: 1.2rem;
     text-align: center;
   }
-
   .btn-seguimiento {
     width: 100%;
     text-align: center;
@@ -413,29 +410,20 @@ html {
     padding: 0.5rem;
     margin-top: 0.5rem;
   }
-
-  .table-wrapper {
-    overflow-x: auto;
-  }
-
-  table {
-    font-size: 0.85rem;
-    min-width: 600px;
-  }
-
-  table th,
-  table td {
-    padding: 0.6rem 0.5rem;
-  }
-
   .modal-content-seguimiento {
-    width: 95%;
-    margin: 0 auto;
+    width: 98%;
+    max-width: 98%;
   }
-
+  .tabla-seguimiento {
+    min-width: 750px;
+    font-size: 0.9rem;
+  }
   .tabla-seguimiento th,
   .tabla-seguimiento td {
     padding: 10px;
-    font-size: 0.8rem;
+  }
+  .badge-informe {
+    max-width: 200px;
+    font-size: 0.78rem;
   }
 }
