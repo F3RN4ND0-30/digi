@@ -286,6 +286,7 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
         </script>
 
     <?php endif; ?>
+
     <div class="layout-escritorio">
         <?php include "../navbar/$navbarFile"; ?>
 
@@ -519,11 +520,20 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
             document.querySelectorAll(".inp-folios").forEach(input => {
 
                 input.addEventListener("input", function() {
-                    let min = parseInt(this.min);
+                    let min = parseInt(this.min) || 0;
+
+                    // Eliminar cualquier carácter que no sea número
+                    this.value = this.value.replace(/\D/g, '');
+
+                    // Limitar a máximo 5 dígitos
+                    if (this.value.length > 5) {
+                        this.value = this.value.slice(0, 5);
+                    }
+
                     let val = parseInt(this.value);
 
-                    // Si el valor es menor al mínimo, lo corregimos automáticamente
-                    if (val < min || isNaN(val)) {
+                    // Si es menor al mínimo o inválido, asignar el mínimo
+                    if (isNaN(val) || val < min) {
                         this.value = min;
                     }
                 });
@@ -532,6 +542,28 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
 
         });
     </script>
+
+    <?php if (isset($_GET['sw']) && $_GET['sw'] === 'carta' && !empty($_GET['nombre'])): ?>
+        <script>
+            Swal.fire({
+                icon: 'success',
+                title: 'Documento observado',
+                html: 'Se generó la carta:<br><strong><?= htmlspecialchars($_GET['nombre']) ?></strong>',
+                confirmButtonText: 'Aceptar'
+            });
+        </script>
+    <?php endif; ?>
+
+    <?php if (isset($_GET['sw']) && $_GET['sw'] === 'observado'): ?>
+        <script>
+            Swal.fire({
+                icon: 'info',
+                title: 'Documento observado',
+                text: 'El documento fue observado correctamente.',
+                confirmButtonText: 'Aceptar'
+            });
+        </script>
+    <?php endif; ?>
 
 </body>
 
