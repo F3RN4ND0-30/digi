@@ -18,14 +18,17 @@ try {
             md.AreaDestino, 
             md.FechaMovimiento, 
             md.NumeroFolios, 
-            md.IdInforme, 
+            md.IdInforme,
+            md.IdCarta, 
             md.Observacion, 
             md.Recibido,
             ao.Nombre AS OrigenNombre,
             ad.Nombre AS DestinoNombre,
             inf.NombreInforme AS InformeNombre,
+            car.NombreCarta AS CartaNombre,
             doc.NumeroDocumento AS NumeroDocumento
         FROM movimientodocumento md
+        LEFT JOIN cartas car ON md.IdCarta = car.IdCarta
         LEFT JOIN informes inf ON md.IdInforme = inf.IdInforme
         LEFT JOIN areas ao ON md.AreaOrigen = ao.IdAreas
         LEFT JOIN areas ad ON md.AreaDestino = ad.IdAreas
