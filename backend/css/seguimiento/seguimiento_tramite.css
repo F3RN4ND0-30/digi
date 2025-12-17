@@ -557,6 +557,15 @@ body::before {
   color: white;
 }
 
+.timeline-item.observado .timeline-marker {
+  background: #0056b3;
+  box-shadow: 0 0 0 4px rgba(18, 57, 233, 0.2);
+}
+
+.timeline-item.observado .timeline-marker i {
+  color: white;
+}
+
 .timeline-item.finalizado .timeline-marker {
   background: var(--primary);
   box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.2);
@@ -641,6 +650,11 @@ body::before {
 .badge-bloqueado {
   background: rgba(214, 48, 49, 0.2);
   color: var(--danger);
+}
+
+.badge-observado {
+  background: rgba(46, 17, 214, 0.2);
+  color: #0056b3;
 }
 
 .badge-procesado {
