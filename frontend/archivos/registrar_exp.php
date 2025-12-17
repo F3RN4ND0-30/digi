@@ -189,7 +189,7 @@ $longitud_prefijo_fijo = strlen($prefijo_base);
                                 id="solo_numero"
                                 placeholder="Ingrese solo número (máx. 8 dígitos)"
                                 min="1"
-                                max="999"
+                                max="99999999"
                                 maxlength="3"
                                 style="margin-top:5px;">
                         </div>
@@ -286,7 +286,7 @@ $longitud_prefijo_fijo = strlen($prefijo_base);
 
                         <div class="form-group">
                             <label><i class="fas fa-copy"></i> Número de folios:</label>
-                            <input type="number" name="numero_folios" min="1" placeholder="Ej: 3">
+                            <input type="number" name="numero_folios" min="1" max="99999" placeholder="Ej: 3" oninput="this.value = this.value.slice(0, 5)">
                         </div>
 
                         <div class="form-group">
