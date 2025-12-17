@@ -299,12 +299,11 @@ table tbody tr:hover {
   border-bottom: 1px solid var(--busqueda-border);
 }
 
-.tabla-seguimiento td:nth-child(6) {
+/* .tabla-seguimiento td:nth-child(6) {
   white-space: nowrap;
-  /* evita salto de línea */
   text-overflow: ellipsis;
   overflow: hidden;
-}
+} */
 
 .tabla-seguimiento th {
   background: linear-gradient(135deg,
