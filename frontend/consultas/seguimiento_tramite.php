@@ -405,6 +405,7 @@ require '../../backend/db/conexion.php';
                             <div class="detail-item"><i class="fas fa-arrow-right"></i><span><strong>Destino:</strong> ${mov.DestinoNombre || 'No especificado'}</span></div>
                             <div class="detail-item"><i class="fas fa-calendar"></i><span><strong>Fecha:</strong> ${formatearFecha(mov.FechaMovimiento)}${foliosMovimiento}</span></div>
                             ${mov.InformeNombre ? `<div class="detail-item"><i class="fas fa-file-invoice"></i><span><strong>Informe:</strong> ${mov.InformeNombre}</span></div>` : ''}
+                            ${mov.CartaNombre ? `<div class="detail-item"><i class="fa-solid fa-envelopes-bulk"></i><span><strong>Carta:</strong> ${mov.CartaNombre}</span></div>` : ''}
                             ${mov.Observacion ? `<div class="detail-item observacion"><i class="fas fa-comment"></i><span><strong>Observación:</strong> ${mov.Observacion}</span></div>` : ''}
                         </div>
                     </div>`;
@@ -446,9 +447,14 @@ require '../../backend/db/conexion.php';
             };
             if (esUltimo) {
                 if (mov.IdEstadoDocumento == 8) {
+                    info.texto = "Observado";
+                    info.icono = "fa-solid fa-eye";
+                    info.clase = "observado";
+                    info.badgeClass = "badge-observado";
+                } else if (mov.IdEstadoDocumento == 4) {
                     info.texto = "Bloqueado";
-                    info.icono = "fas fa-ban";
-                    info.clase = "bloqueado";
+                    info.icono = "fas-solid fa-ban";
+                    info.clase = "Bloqueado";
                     info.badgeClass = "badge-bloqueado";
                 } else if (mov.Finalizado == 1) {
                     info.texto = "Finalizado";

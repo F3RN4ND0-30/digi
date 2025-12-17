@@ -50,13 +50,17 @@ $sql = "
         md.Recibido,
         md.Observacion,
         md.IdInforme,
+        md.IdCarta,
 
         -- AREAS
         ao.Nombre                AS OrigenNombre,
         ad.Nombre                AS DestinoNombre,
 
         -- INFORME
-        inf.NombreInforme        AS InformeNombre
+        inf.NombreInforme        AS InformeNombre,
+
+        -- CARTA
+        car.NombreCarta        AS CartaNombre
 
     FROM documentos d
     INNER JOIN movimientodocumento md 
@@ -67,6 +71,8 @@ $sql = "
         ON md.AreaDestino = ad.IdAreas
     LEFT JOIN informes inf 
         ON md.IdInforme = inf.IdInforme
+    LEFT JOIN cartas car
+        ON md.IdCarta = car.IdCarta
 
     WHERE 
         d.DniRuc = :dni_ruc
