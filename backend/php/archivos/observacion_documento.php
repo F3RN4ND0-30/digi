@@ -32,6 +32,8 @@ $documento_id  = intval($documento_id);
 $numero_folios = $numero_folios ? intval($numero_folios) : null;
 $id_informe    = $id_informe ? intval($id_informe) : null;
 
+$observacion   = trim($_POST['observacion'] ?? '');
+
 $id_carta = null;
 
 try {

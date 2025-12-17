@@ -11,6 +11,7 @@ require '../../db/conexion.php';
 $documento_id = $_POST['id_documento'] ?? null;
 $numero_folios = $_POST['numero_folios'] ?? null;
 $id_informe = $_POST['id_informe'] ?? null;
+$observacion   = trim($_POST['observacion'] ?? '');
 $area_usuario = $_SESSION['dg_area_id'] ?? null;
 
 if (!$documento_id || !$area_usuario) {
@@ -57,7 +58,6 @@ try {
         VALUES (?, ?, ?, NOW(), ?, 1, ?, ?)
     ");
 
-    $observacion = "Documento finalizado";
     $stmtInsert->execute([$documento_id, $area_usuario, $area_usuario, $observacion, $numero_folios, $id_informe]);
 
     header("Location: ../../../frontend/archivos/reenviar.php?msg=Documento finalizado correctamente");
