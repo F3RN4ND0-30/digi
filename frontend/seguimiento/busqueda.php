@@ -383,7 +383,11 @@ $navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
                     <td>${mov.DestinoNombre || mov.AreaDestino}</td>
                     <td class="fecha-cell">${mov.FechaMovimiento}</td>
                     <td>${mov.NumeroFolios || '-'}</td>
-                    <td>${mov.InformeNombre || mov.NumeroDocumento || '-'}</td>
+                    <td>
+                        <span class="badge-numero-enviado">
+                          ${mov.InformeNombre || mov.NumeroDocumento}
+                        </span>
+                    </td>
                     <td class="${estadoClass}">${estadoTexto}</td>
                     <td class="observacion-cell">${mov.Observacion || '-'}</td>
                 </tr>`;
@@ -404,27 +408,46 @@ $navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
         function verSeguimientoMemo(idMemo) {
             const modal = document.getElementById('modalSeguimiento');
             modal.style.display = 'flex';
-            document.getElementById('tituloModal').textContent = `Trazabilidad del Memorándum N° ${idMemo}`;
-            document.getElementById('contenidoSeguimiento').innerHTML = '<div class="loading">Cargando datos...</div>';
+            document.getElementById('tituloModal').textContent =
+                `Trazabilidad del Memorándum N° ${idMemo}`;
+            document.getElementById('contenidoSeguimiento').innerHTML =
+                '<div class="loading">Cargando datos...</div>';
 
             fetch(`../../backend/php/memorandum/seguimiento_memo_modal.php?id_memo=${idMemo}`)
                 .then(res => res.json())
                 .then(data => {
+
                     if (data.error) {
-                        document.getElementById('contenidoSeguimiento').innerHTML = `<div class="sin-movimientos">Error: ${data.error}</div>`;
-                        return;
-                    }
-                    if (!data.movimientos.length) {
-                        document.getElementById('contenidoSeguimiento').innerHTML = '<div class="sin-movimientos">No se encontraron movimientos.</div>';
+                        document.getElementById('contenidoSeguimiento').innerHTML =
+                            `<div class="sin-movimientos">Error: ${data.error}</div>`;
                         return;
                     }
 
-                    let html = `<table class="tabla-seguimiento">
+                    if (!data.movimientos || !data.movimientos.length) {
+                        document.getElementById('contenidoSeguimiento').innerHTML =
+                            '<div class="sin-movimientos">No se encontraron movimientos.</div>';
+                        return;
+                    }
+
+                    // ---------------------------
+                    // 🔹 INFORME (SI EXISTE)
+                    // ---------------------------
+                    let informeHtml = 'No ha sido creado';
+                    if (data.informe && data.informe.NombreInforme) {
+                        informeHtml = `
+                    <span class="badge-numero-enviado">
+                        ${data.informe.NombreInforme}
+                    </span>`;
+                    }
+
+                    let html = `
+            <table class="tabla-seguimiento">
                 <thead>
                     <tr>
                         <th>Área Origen</th>
                         <th>Área Destino</th>
                         <th>Fecha de Emisión</th>
+                        <th>Informe</th>
                         <th>Estado</th>
                     </tr>
                 </thead>
@@ -438,7 +461,7 @@ $navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
                             estadoTexto = '✅ Recibido';
                             estadoClass = 'estado-recibido';
                         } else if (mov.Recibido == 2) {
-                            estadoTexto = '✅ Finalizado';
+                            estadoTexto = '🏁 Finalizado';
                             estadoClass = 'estado-finalizado';
                         } else if (mov.Recibido == 3) {
                             estadoTexto = '📩 Respondido';
@@ -448,20 +471,26 @@ $navbarCss  = $isMobile ? 'navbar_mobil.css' : 'navbar.css';
                             estadoClass = 'estado-pendiente';
                         }
 
-                        html += `<tr>
+                        html += `
+                <tr>
                     <td>${mov.AreaOrigen}</td>
                     <td>${mov.AreaDestino}</td>
                     <td class="fecha-cell">${mov.FechaEmision}</td>
+                    <td>${informeHtml}</td>
                     <td class="${estadoClass}">${estadoTexto}</td>
                 </tr>`;
                     });
 
-                    html += '</tbody></table>';
+                    html += `
+                </tbody>
+            </table>`;
+
                     document.getElementById('contenidoSeguimiento').innerHTML = html;
                 })
                 .catch(err => {
                     console.error(err);
-                    document.getElementById('contenidoSeguimiento').innerHTML = '<div class="sin-movimientos">Error al cargar los datos.</div>';
+                    document.getElementById('contenidoSeguimiento').innerHTML =
+                        '<div class="sin-movimientos">Error al cargar los datos.</div>';
                 });
         }
 
