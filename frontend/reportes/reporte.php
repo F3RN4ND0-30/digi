@@ -5,6 +5,11 @@ if (!isset($_SESSION['dg_id'])) {
     header("Location: ../login.php");
     exit();
 }
+// Obtener el rol del usuario desde la sesión
+$rolUsuario = $_SESSION['dg_rol'] ?? null;
+
+// Si el rol es 1 o 5, se mostrará la opción "Expedientes"
+$mostrarExpedientes = in_array($rolUsuario, [1, 5]);
 
 require '../../backend/db/conexion.php';
 
@@ -31,6 +36,7 @@ $tipoReporte = $_GET['tipo'] ?? 'documentos'; // 'documentos' o 'memorandums'
 
 $documentos = [];
 $memorandums = [];
+$expedientes = [];
 
 if ($areaFiltro !== '') {
     if ($tipoReporte === 'documentos') {
@@ -68,6 +74,23 @@ if ($areaFiltro !== '') {
         $stmt = $pdo->prepare($sql);
         $stmt->execute([$areaFiltro]);
         $memorandums = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } elseif ($tipoReporte === 'expedientes') {
+        // Consulta para documentos
+        $sql = "SELECT d.NumeroDocumento, DATE(d.FechaIngreso) as Fecha, TIME(d.FechaIngreso) as Hora, d.NombreContribuyente, d.Asunto,
+                a.Nombre AS AreaOrigen, ad.Nombre AS AreaDestino, d.NumeroFolios
+                FROM documentos d
+                LEFT JOIN areas a ON d.IdAreas = a.IdAreas
+                LEFT JOIN areas ad ON (
+                    SELECT md.AreaDestino
+                    FROM movimientodocumento md
+                    WHERE md.IdDocumentos = d.IdDocumentos
+                    ORDER BY md.IdMovimientoDocumento DESC LIMIT 1
+                ) = ad.IdAreas
+                WHERE d.IdAreas = ? AND d.NumeroDocumento LIKE '%EXP.%'
+                ORDER BY d.FechaIngreso DESC";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$areaFiltro]);
+        $expedientes = $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }
 ?>
@@ -218,6 +241,9 @@ if ($areaFiltro !== '') {
                         <select name="tipo" id="tipo" onchange="this.form.submit();">
                             <option value="documentos" <?= $tipoReporte === 'documentos' ? 'selected' : '' ?>>Documentos</option>
                             <option value="memorandums" <?= $tipoReporte === 'memorandums' ? 'selected' : '' ?>>Memorándums</option>
+                            <?php if ($mostrarExpedientes): ?>
+                                <option value="expedientes" <?= $tipoReporte === 'expedientes' ? 'selected' : '' ?>>Expedientes</option>
+                            <?php endif; ?>
                         </select>
                     </form>
                 </div>
@@ -244,6 +270,15 @@ if ($areaFiltro !== '') {
                                         <th>Usuario Emisor</th>
                                         <th>Tipo Memo</th>
                                         <th>Asunto</th>
+                                        <th>Folios</th>
+                                    <?php elseif ($tipoReporte === 'expedientes'): ?>
+                                        <th>Código</th>
+                                        <th>Fecha</th>
+                                        <th>Hora</th>
+                                        <th>Razón Social</th>
+                                        <th>Asunto</th>
+                                        <th>Área</th>
+                                        <th>Para</th>
                                         <th>Folios</th>
                                     <?php endif; ?>
                                 </tr>
@@ -273,6 +308,19 @@ if ($areaFiltro !== '') {
                                             <td><?= htmlspecialchars($mem['TipoMemo']) ?></td>
                                             <td><?= htmlspecialchars($mem['Asunto']) ?></td>
                                             <td><?= htmlspecialchars($mem['NumeroFolios']) ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php elseif ($tipoReporte === 'expedientes'): ?>
+                                    <?php foreach ($expedientes as $exp): ?>
+                                        <tr>
+                                            <td><?= htmlspecialchars($exp['NumeroDocumento']) ?></td>
+                                            <td><?= htmlspecialchars($exp['Fecha']) ?></td>
+                                            <td><?= htmlspecialchars($exp['Hora']) ?></td>
+                                            <td><?= htmlspecialchars($exp['NombreContribuyente']) ?></td>
+                                            <td><?= htmlspecialchars($exp['Asunto']) ?></td>
+                                            <td><?= htmlspecialchars($exp['AreaOrigen']) ?></td>
+                                            <td><?= htmlspecialchars($exp['AreaDestino']) ?></td>
+                                            <td><?= htmlspecialchars($exp['NumeroFolios']) ?></td>
                                         </tr>
                                     <?php endforeach; ?>
                                 <?php endif; ?>

@@ -24,6 +24,7 @@ $area = (int) $area;
 
 $documentos = [];
 $memorandums = [];
+$expedientes = [];
 $headers = [];
 
 if ($tipo == 'documentos') {
@@ -73,10 +74,30 @@ if ($tipo == 'documentos') {
 
     // Definir encabezados para memorándums
     $headers = ['Código Memo', 'Fecha Emisión', 'Año', 'Área Origen', 'Tipo Memo', 'Asunto', 'Usuario Emisor', 'Folios'];
+} elseif ($tipo == 'expedientes') {
+    // Obtener expedientes
+    $sql = "SELECT d.NumeroDocumento, DATE(d.FechaIngreso) as Fecha, TIME(d.FechaIngreso) as Hora, d.NombreContribuyente, d.Asunto,
+            a.Nombre AS AreaOrigen, ad.Nombre AS AreaDestino, d.NumeroFolios
+            FROM documentos d
+            LEFT JOIN areas a ON d.IdAreas = a.IdAreas
+            LEFT JOIN areas ad ON (
+                SELECT md.AreaDestino
+                FROM movimientodocumento md
+                WHERE md.IdDocumentos = d.IdDocumentos
+                ORDER BY md.IdMovimientoDocumento DESC LIMIT 1
+            ) = ad.IdAreas
+            WHERE d.IdAreas = ? AND d.NumeroDocumento LIKE '%EXP.%'
+            ORDER BY d.FechaIngreso DESC";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$area]);
+    $expedientes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Definir encabezados para expedientes
+    $headers = ['Código', 'Fecha', 'Hora', 'Razón Social', 'Asunto', 'Área', 'Para', 'Folios'];
 }
 
 // Verificación de resultados
-if (empty($documentos) && empty($memorandums)) {
+if (empty($documentos) && empty($memorandums) && empty($expedientes)) {
     die("No se encontraron datos para el área seleccionada.");
 }
 
@@ -143,7 +164,21 @@ if ($tipo == 'documentos') {
             <td>' . $mem['NumeroFolios'] . '</td>
         </tr>';
     }
-}
+} elseif ($tipo == 'expedientes') {
+    // Mostrar datos de expedientes
+    foreach ($expedientes as $exp) {
+        $html .= '<tr>
+            <td>' . $exp['NumeroDocumento'] . '</td>
+            <td>' . $exp['Fecha'] . '</td>
+            <td>' . $exp['Hora'] . '</td>
+            <td>' . $exp['NombreContribuyente'] . '</td>
+            <td>' . $exp['Asunto'] . '</td>
+            <td>' . $exp['AreaOrigen'] . '</td>
+            <td>' . $exp['AreaDestino'] . '</td>
+            <td>' . $exp['NumeroFolios'] . '</td>
+        </tr>';
+    }
+} 
 
 $html .= '
         </tbody>
