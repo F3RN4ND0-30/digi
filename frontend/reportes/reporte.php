@@ -9,7 +9,7 @@ if (!isset($_SESSION['dg_id'])) {
 $rolUsuario = $_SESSION['dg_rol'] ?? null;
 
 // Si el rol es 1 o 5, se mostrará la opción "Expedientes"
-$mostrarExpedientes = in_array($rolUsuario, [1, 5]);
+$mostrarExpedientes = in_array($rolUsuario, [1, 3]);
 
 require '../../backend/db/conexion.php';
 
