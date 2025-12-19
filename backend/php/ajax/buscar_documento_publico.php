@@ -1,35 +1,26 @@
 <?php
 require '../../db/conexion.php';
 
-$dni_ruc             = trim($_GET['dni_ruc'] ?? '');
-$expediente_num      = trim($_GET['expediente_num'] ?? ''); // 8 dígitos
-$anio                = trim($_GET['anio'] ?? '');
-$expediente_formato  = trim($_GET['expediente_formateado'] ?? '');
+$dni_ruc    = $_GET['dni_ruc']    ?? '';
+$expediente = $_GET['expediente'] ?? '';
 
-// Validación mínima
-if ($dni_ruc === '' || ($expediente_num === '' && $expediente_formato === '')) {
+$dni_ruc    = trim($dni_ruc);
+$expediente = trim($expediente);
 
-    registrarAuditoria($pdo, $dni_ruc, null, $expediente_formato, "DATOS_INCOMPLETOS");
+// Si faltan datos, devolvemos vacío
+if ($dni_ruc === '' || $expediente === '') {
 
-    // Mostrar en el log de errores PHP
-    error_log("Datos incompletos: DNI/RUC: $dni_ruc, Expediente: $expediente_num, Año: $anio");
+    // Registrar auditoría incluso si el usuario no completó todo
+    registrarAuditoria($pdo, $dni_ruc, null, $expediente, "DATOS_INCOMPLETOS");
 
-    // Enviar una respuesta vacía
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode([]);
     exit;
 }
 
-/*
-  Construimos el LIKE:
-  Ejemplo final:
-  NumeroDocumento LIKE '%00000008-%'
-*/
-$likeExpediente = '%' . $expediente_num . '-%';
-
 $sql = "
     SELECT 
-        -- DOCUMENTO
+        -- DATOS DEL DOCUMENTO
         d.IdDocumentos,
         d.NumeroDocumento,
         d.Asunto,
@@ -41,7 +32,7 @@ $sql = "
         d.FechaIngreso,
         d.NumeroFolios           AS DocumentoFolios,
 
-        -- MOVIMIENTO
+        -- DATOS DEL MOVIMIENTO
         md.IdMovimientoDocumento,
         md.AreaOrigen,
         md.AreaDestino,
@@ -50,17 +41,13 @@ $sql = "
         md.Recibido,
         md.Observacion,
         md.IdInforme,
-        md.IdCarta,
 
-        -- AREAS
+        -- NOMBRES DE ÁREAS
         ao.Nombre                AS OrigenNombre,
         ad.Nombre                AS DestinoNombre,
 
-        -- INFORME
-        inf.NombreInforme        AS InformeNombre,
-
-        -- CARTA
-        car.NombreCarta        AS CartaNombre
+        -- INFORME 
+        inf.NombreInforme        AS InformeNombre
 
     FROM documentos d
     INNER JOIN movimientodocumento md 
@@ -71,47 +58,39 @@ $sql = "
         ON md.AreaDestino = ad.IdAreas
     LEFT JOIN informes inf 
         ON md.IdInforme = inf.IdInforme
-    LEFT JOIN cartas car
-        ON md.IdCarta = car.IdCarta
 
     WHERE 
-        d.DniRuc = :dni_ruc
-        AND d.Exterior = 1
-        AND d.Año = :anio
-        AND d.NumeroDocumento LIKE :expediente_like
+        d.DniRuc           = :dni_ruc
+        AND d.NumeroDocumento = :expediente
+        AND d.Exterior     = 1        -- SOLO DOCUMENTOS EXTERNOS
 
     ORDER BY md.FechaMovimiento ASC
 ";
 
 $stmt = $pdo->prepare($sql);
 $stmt->bindParam(':dni_ruc', $dni_ruc, PDO::PARAM_STR);
-$stmt->bindParam(':anio', $anio, PDO::PARAM_INT);
-$stmt->bindParam(':expediente_like', $likeExpediente, PDO::PARAM_STR);
+$stmt->bindParam(':expediente', $expediente, PDO::PARAM_STR);
 $stmt->execute();
 
 $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Auditoría
+// Obtener nombre para auditoría (si existe)
 $nombreConsultado = $resultados[0]['NombreContribuyente'] ?? null;
+
+// Determinar resultado de la búsqueda
 $resultadoConsulta = empty($resultados) ? "NO_ENCONTRADO" : "ENCONTRADO";
 
-registrarAuditoria(
-    $pdo,
-    $dni_ruc,
-    $nombreConsultado,
-    $expediente_formato ?: $expediente_num . '-' . $anio,
-    $resultadoConsulta
-);
+// Registrar auditoría
+registrarAuditoria($pdo, $dni_ruc, $nombreConsultado, $expediente, $resultadoConsulta);
 
-// Mostrar en el log de errores PHP los datos enviados
-error_log("Consulta realizada con los siguientes parámetros: DNI/RUC: $dni_ruc, Expediente: $expediente_num, Año: $anio");
-
-// Respuesta
+// Devolver datos
 header('Content-Type: application/json; charset=utf-8');
 echo json_encode($resultados);
 
+
+
 /* ============================================================
-   ================= FUNCIÓN AUDITORÍA ========================
+   ===============   FUNCIÓN DE AUDITORÍA   ===================
    ============================================================ */
 function registrarAuditoria($pdo, $dni_ruc, $nombre, $expediente, $resultado)
 {
@@ -138,11 +117,11 @@ function registrarAuditoria($pdo, $dni_ruc, $nombre, $expediente, $resultado)
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
-        ':dni_ruc'    => $dni_ruc,
-        ':nombre'     => $nombre,
+        ':dni_ruc'   => $dni_ruc,
+        ':nombre'    => $nombre,
         ':expediente' => $expediente,
-        ':ip'         => $ip,
-        ':userAgent'  => $userAgent,
-        ':resultado'  => $resultado
+        ':ip'        => $ip,
+        ':userAgent' => $userAgent,
+        ':resultado' => $resultado
     ]);
 }
