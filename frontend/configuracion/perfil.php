@@ -101,7 +101,7 @@ unset($_SESSION['mensaje']);
         </script>
 
     <?php endif; ?>
-    <div class="layout-perfil">
+    <div class="layout-escritorio">
         <!-- Incluir el navbar correcto -->
         <?php include "../navbar/$navbarFile"; ?>
 

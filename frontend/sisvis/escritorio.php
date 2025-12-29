@@ -119,6 +119,11 @@ unset($_SESSION['mensaje']);
                 'cafe.gif',
                 'pengu-nice.gif',
                 'pengu-teclado.gif',
+                'pengu-cansado.gif',
+                'pengu-like.gif',
+                'pengu-obligado.gif',
+                'pengu-ojo.gif',
+                'pengu-trabajando.gif',
                 'pengu-zzz.gif'
             ];
             $gifAleatorio = $gifs[array_rand($gifs)];
