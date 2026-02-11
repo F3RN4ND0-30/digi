@@ -49,8 +49,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $area_origen      = (int)$datos['AreaOrigen'];
                 $numero_documento = $datos['NumeroDocumento'];
 
-                $stmt = $pdo->prepare("UPDATE movimientodocumento SET Recibido = 1 WHERE IdMovimientoDocumento = ?");
-                $stmt->execute([$id_movimiento]);
+                $stmt = $pdo->prepare("
+    UPDATE movimientodocumento 
+    SET Recibido = 1,
+        FechaRecibido = NOW(),
+        IdUsuarioRecibe = ?
+    WHERE IdMovimientoDocumento = ?
+    AND Recibido = 0
+");
+                $stmt->execute([$_SESSION['dg_id'], $id_movimiento]);
+
+                if ($stmt->rowCount() === 0) {
+                    throw new Exception("El documento ya fue recepcionado anteriormente.");
+                }
+
 
                 $stmt3 = $pdo->prepare("UPDATE documentos SET IdEstadoDocumento = 3, IdAreaFinal = ? WHERE IdDocumentos = ?");
                 $stmt3->execute([$area_destino, $id_documento]);
@@ -96,14 +108,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['folios_actual'] = max(0, (int)$folios);
 
             $updDest = $pdo->prepare("
-                UPDATE memorandum_destinos
-                SET Recibido = 1
-                WHERE IdMemo = ? AND IdAreaDestino = ? AND Recibido = 0
-            ");
-            $updDest->execute([$id_memo, $area_destino]);
-            if ($updDest->rowCount() === 0) {
-                throw new Exception("Este memorándum ya fue recepcionado por tu área.");
-            }
+    UPDATE memorandum_destinos
+    SET Recibido = 1,
+        FechaRecibido = NOW(),
+        IdUsuarioRecibe = ?
+    WHERE IdMemo = ? 
+    AND IdAreaDestino = ? 
+    AND Recibido = 0
+");
+            $updDest->execute([$_SESSION['dg_id'], $id_memo, $area_destino]);
 
             $cnt = $pdo->prepare("
                 SELECT COUNT(*) FROM memorandum_destinos

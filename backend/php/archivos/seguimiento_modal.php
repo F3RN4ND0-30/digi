@@ -22,6 +22,7 @@ try {
             md.IdCarta, 
             md.Observacion, 
             md.Recibido,
+            md.FechaRecibido,
             ao.Nombre AS OrigenNombre,
             ad.Nombre AS DestinoNombre,
             inf.NombreInforme AS InformeNombre,
