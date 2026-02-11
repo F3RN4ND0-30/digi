@@ -1,0 +1,14 @@
+.documento-titulo {
+    background-color: #5A9BD5;
+    /* azul */
+    color: #000000;
+    border-radius: 5px;
+}
+
+.documento-asunto {
+    background-color: #e9ecef;
+    /* gris claro */
+    color: #333;
+    border-left: 4px solid #e9ecef;
+    border-radius: 3px;
+}

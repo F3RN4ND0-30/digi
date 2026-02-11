@@ -184,10 +184,10 @@ $longitud_prefijo_fijo = strlen($prefijo_base);
                             <input
                                 type="number"
                                 id="solo_numero"
-                                placeholder="Ingrese solo número (máx. 3 dígitos)"
+                                placeholder="Ingrese solo número (máx. 4 dígitos)"
                                 min="1"
-                                max="999"
-                                maxlength="3"
+                                max="9999"
+                                maxlength="4"
                                 style="margin-top:5px;">
                         </div>
 
@@ -370,7 +370,7 @@ $longitud_prefijo_fijo = strlen($prefijo_base);
             inputNumero.addEventListener("input", function() {
 
                 // 🔒 Limitar a 3 dígitos
-                this.value = this.value.slice(0, 3);
+                this.value = this.value.slice(0, 4);
 
                 const numero = this.value;
                 inputVisible.value = prefijo + numero + sufijo;

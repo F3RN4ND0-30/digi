@@ -44,10 +44,10 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
                         </h6>
                         <div class="column-items">
                             <?php if ($user_role == 1 || $user_role == 3): ?>
-                            <a href="../archivos/registrar_exp.php" class="module-item <?= ($current_page === 'registrar_exp') ? 'active' : '' ?>">
-                                <i class="fas fa-plus-circle"></i>
-                                <span>Registrar Expedientes</span>
-                            </a>
+                                <a href="../archivos/registrar_exp.php" class="module-item <?= ($current_page === 'registrar_exp') ? 'active' : '' ?>">
+                                    <i class="fas fa-plus-circle"></i>
+                                    <span>Registrar Expedientes</span>
+                                </a>
                             <?php endif; ?>
                             <a href="../archivos/registrar.php" class="module-item <?= ($current_page === 'registrar') ? 'active' : '' ?>">
                                 <i class="fas fa-plus-circle"></i>
@@ -72,6 +72,10 @@ $user_role = $_SESSION['dg_rol'] ?? 999;
                             <a href="../seguimiento/busqueda.php" class="module-item <?= ($current_page === 'busqueda') ? 'active' : '' ?>">
                                 <i class="fas fa-route"></i>
                                 <span>Seguimiento</span>
+                            </a>
+                            <a href="../trazabilidad/trazabilidad.php" class="module-item <?= ($current_page === 'trazabilidad') ? 'active' : '' ?>">
+                                <i class="fas fa-paperclip"></i>
+                                <span>Trazabilidad</span>
                             </a>
                         </div>
                     </div>

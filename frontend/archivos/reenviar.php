@@ -125,6 +125,7 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../../backend/css/navbar/<?= $navbarCss ?>" />
+    <link rel="stylesheet" href="../../backend/css/archivos/modal_anexo.css" />
     <link rel="stylesheet" href="../../backend/css/archivos/reenviados.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <link href="https://cdn.jsdelivr.net/npm/selectize@0.12.6/dist/css/selectize.default.css" rel="stylesheet" />
@@ -244,6 +245,10 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
             border-radius: 999px;
             padding: .45rem .75rem
         }
+
+        .btn-anexar-documentos {
+            background-color: #0c4a6e;
+        }
     </style>
 </head>
 
@@ -292,12 +297,17 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
 
         <main class="contenido-principal">
             <div class="tarjeta">
-                <div class="tarjeta-header" style="justify-content:space-between;align-items:center">
+                <div class="tarjeta-header" style="display:flex; justify-content:space-between;align-items:center">
                     <h2 class="mb-0"><i class="fas fa-share"></i> Reenviar Documentos</h2>
-                    <span id="correlativoLabel" data-area="<?= $_SESSION['dg_area_id'] ?>" class="badge bg-purple"
-                        style="font-size:1rem;padding:.6rem .9rem;background:#6c5ce7;color:white;">
-                        Siguiente Informe: CARGANDO...
-                    </span>
+                    <div class="acciones-header" style="display:flex; align-items:center; gap: 12px;">
+                        <button class="btn btn-outline-primary btn-sm btn-axenar-documentos">
+                            Anexar Documento
+                        </button>
+                        <span id="correlativoLabel" data-area="<?= $_SESSION['dg_area_id'] ?>" class="badge bg-purple"
+                            style="font-size:1rem;padding:.6rem .9rem;background:#6c5ce7;color:white;">
+                            Siguiente Informe: CARGANDO...
+                        </span>
+                    </div>
                 </div>
 
                 <div class="tarjeta-body">
@@ -499,6 +509,54 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
         </div>
     </div>
 
+    <div id="modalAnexarDocumento" class="modal-overlay" style="display:none;">
+        <div class="modal-contenido tarjeta-modal animar-entrada">
+
+            <div class="modal-header tarjeta-header">
+                <h3><i class="fas fa-paperclip"></i> Anexar Documento</h3>
+                <button class="close-modal" onclick="cerrarModalAnexar()">&times;</button>
+            </div>
+
+            <div class="modal-body tarjeta-body">
+
+                <!-- EXPEDIENTE ORIGEN -->
+                <label>Expediente origen</label>
+                <input type="text" id="buscarOrigen" placeholder="Número de expediente">
+                <div id="listaOrigen" class="lista-sugerencias"></div>
+                <div id="origenSeleccionado" class="seleccionado"></div>
+
+                <!-- EXPEDIENTE DESTINO -->
+                <label style="margin-top:10px;">Expediente nuevo</label>
+                <input type="text" id="buscarDestino" placeholder="Número de expediente">
+                <div id="listaDestino" class="lista-sugerencias"></div>
+                <div id="destinoSeleccionado" class="seleccionado"></div>
+
+                <!-- TIPO RELACIÓN -->
+                <label style="margin-top:10px;">Tipo de relación</label>
+                <select id="tipoRelacion" style="width:100%;">
+                    <option value="ANEXO">Anexo</option>
+                    <option value="SUBSANACION">Subsanación</option>
+                    <option value="CONTINUACION">Continuación</option>
+                </select>
+
+                <!-- OBSERVACIÓN -->
+                <textarea id="observacionRelacion"
+                    placeholder="Observación (opcional)"
+                    style="width:100%;margin-top:8px;"
+                    rows="2"></textarea>
+
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="cerrarModalAnexar()">Cancelar</button>
+                <button class="btn btn-primary" id="btnConfirmarAnexo" disabled>
+                    Anexar
+                </button>
+            </div>
+
+        </div>
+    </div>
+
     <!-- JS -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
@@ -513,6 +571,11 @@ unset($_SESSION['flash_type'], $_SESSION['flash_text']);
     <script src="../../backend/js/reenvio/formularios.js"></script>
     <script src="../../backend/js/reenvio/password.js"></script>
     <script src="../../backend/js/reenvio/tablas.js"></script>
+
+    <script>
+        const ID_DOCUMENTO_ACTUAL = <?= intval($IdDocumentos) ?>;
+    </script>
+    <script src="../../backend/js/reenvio/anexos.js"></script>
 
     <script>
         document.addEventListener("DOMContentLoaded", () => {
