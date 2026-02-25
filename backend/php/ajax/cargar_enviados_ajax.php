@@ -26,8 +26,7 @@ try {
             e.Estado                AS Estado,
             m.FechaMovimiento       AS FechaMovimiento,
             a_dest.Nombre           AS AreaDestino,
-            m.Observacion           AS Observacion,
-            m.Recibido              AS Recibido
+            m.Observacion           AS Observacion
         FROM movimientodocumento m
         INNER JOIN documentos d        ON m.IdDocumentos      = d.IdDocumentos
         INNER JOIN estadodocumento e   ON d.IdEstadoDocumento = e.IdEstadoDocumento
@@ -50,11 +49,7 @@ try {
                 GROUP_CONCAT(DISTINCT a_dest2.Nombre ORDER BY a_dest2.Nombre SEPARATOR ', '),
                 'SIN DESTINOS'
             )                            AS AreaDestino,
-            ''                           AS Observacion,
-            CASE 
-                WHEN SUM(CASE WHEN md.Recibido = 0 THEN 1 ELSE 0 END) > 0 THEN 0
-                ELSE 1
-            END                          AS Recibido
+            ''                           AS Observacion
         FROM memorandums m
         LEFT JOIN memorandum_destinos md   ON md.IdMemo           = m.IdMemo
         LEFT JOIN areas a_dest2            ON md.IdAreaDestino    = a_dest2.IdAreas

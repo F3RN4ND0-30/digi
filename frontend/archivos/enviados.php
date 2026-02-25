@@ -183,7 +183,7 @@ if (!$area_id) {
                                         <th>Fecha</th>
                                         <th>Área Destino</th>
                                         <th>Observación</th>
-                                        <th>Recibido</th>
+                                        <th>Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody></tbody>
@@ -204,7 +204,7 @@ if (!$area_id) {
                                         <th>Fecha</th>
                                         <th>Áreas Destino</th>
                                         <th>Observación</th>
-                                        <th>Recibido</th>
+                                        <th>Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody></tbody>
@@ -217,6 +217,35 @@ if (!$area_id) {
         </main>
     </div>
 
+    <!-- Modal Editar Asunto -->
+    <div id="modalEditarAsunto" class="modal-overlay" style="display:none;">
+        <div class="modal-contenido tarjeta-modal animar-entrada">
+            <div class="modal-header tarjeta-header">
+                <h3><i class="fas fa-edit"></i> Editar Asunto</h3>
+                <button class="close-modal" onclick="cerrarModalEditar()">&times;</button>
+            </div>
+
+            <div class="modal-body tarjeta-body">
+                <input type="hidden" id="editId">
+                <input type="hidden" id="editTipo">
+
+                <div class="form-group">
+                    <label>Nuevo Asunto:</label>
+                    <textarea id="editAsunto" class="form-control" rows="4"></textarea>
+                </div>
+
+                <div id="editError" style="color:red;display:none;margin-top:5px;">
+                    El asunto no puede estar vacío.
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="cerrarModalEditar()">Cancelar</button>
+                <button class="btn btn-success" onclick="guardarAsunto()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Notificaciones -->
     <script src="../../backend/js/notificaciones.js"></script>
 
@@ -224,6 +253,79 @@ if (!$area_id) {
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+    <script>
+        function abrirModalEditar(id, tipo, asunto) {
+
+            // Limpiar errores anteriores
+            $('#editError').hide();
+
+            // Asignar valores
+            $('#editId').val(id);
+            $('#editTipo').val(tipo);
+            $('#editAsunto').val(asunto);
+
+            // Mostrar modal
+            $('#modalEditarAsunto').fadeIn();
+        }
+
+        function cerrarModalEditar() {
+            $('#modalEditarAsunto').fadeOut();
+            $('#editError').hide();
+            $('#editAsunto').val('');
+        }
+
+        function guardarAsunto() {
+
+            let id = $('#editId').val();
+            let tipo = $('#editTipo').val();
+            let asunto = $('#editAsunto').val().trim();
+
+            if (asunto === '') {
+                $('#editError').text('El asunto no puede estar vacío.').show();
+                return;
+            }
+
+            $.ajax({
+                url: '../../backend/php/ajax/actualizar_asunto.php',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    id: id,
+                    tipo: tipo,
+                    asunto: asunto
+                },
+                success: function(resp) {
+
+                    if (resp.success) {
+
+                        cerrarModalEditar();
+
+                        if ($.fn.DataTable.isDataTable('#tablaEnviadosDocs')) {
+                            $('#tablaEnviadosDocs').DataTable().ajax.reload(null, false);
+                        }
+
+                        if ($.fn.DataTable.isDataTable('#tablaEnviadosMemos')) {
+                            $('#tablaEnviadosMemos').DataTable().ajax.reload(null, false);
+                        }
+
+                    } else {
+                        $('#editError').text('No se pudo actualizar.').show();
+                    }
+                },
+                error: function() {
+                    $('#editError').text('Error del servidor.').show();
+                }
+            });
+        }
+
+        // Cerrar modal al hacer clic fuera del contenido
+        $(window).on('click', function(e) {
+            if ($(e.target).is('#modalEditarAsunto')) {
+                cerrarModalEditar();
+            }
+        });
+    </script>
 
     <script>
         $(document).ready(function() {
@@ -269,11 +371,18 @@ if (!$area_id) {
                         data: 'Observacion'
                     },
                     {
-                        data: 'Recibido',
-                        render: function(data) {
-                            return data == 1 ?
-                                '<span class="badge bg-success"><i class="fas fa-check"></i> Recibido</span>' :
-                                '<span class="badge bg-warning"><i class="fas fa-clock"></i> Pendiente</span>';
+                        data: null,
+                        render: function(data, type, row) {
+                            return `
+            <button class="btn btn-sm btn-primary"
+                onclick="abrirModalEditar(
+                    '${row.IdMovimientoDocumento}',
+                    '${row.TipoRegistro}',
+                    \`${row.Asunto}\`
+                )">
+                <i class="fas fa-edit">Editar</i>
+            </button>
+        `;
                         }
                     }
                 ],
@@ -319,11 +428,18 @@ if (!$area_id) {
                         data: 'Observacion'
                     },
                     {
-                        data: 'Recibido',
-                        render: function(data) {
-                            return data == 1 ?
-                                '<span class="badge bg-success"><i class="fas fa-check"></i> Recibido</span>' :
-                                '<span class="badge bg-warning"><i class="fas fa-clock"></i> Pendiente</span>';
+                        data: null,
+                        render: function(data, type, row) {
+                            return `
+            <button class="btn btn-sm btn-primary"
+                onclick="abrirModalEditar(
+                    '${row.IdMovimientoDocumento}',
+                    '${row.TipoRegistro}',
+                    \`${row.Asunto}\`
+                )">
+                <i class="fas fa-edit">Editar</i>
+            </button>
+        `;
                         }
                     }
                 ],
